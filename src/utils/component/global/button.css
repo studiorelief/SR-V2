@@ -1,0 +1,91 @@
+/*
+ *==========================================
+ * PRIMARY BUTTON
+ *==========================================
+ */
+
+.button_main_wrap {
+  position: relative;
+}
+
+.button_main_hover-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.button_main_hover-wrapper .button_main_hover {
+  /* visibility: hidden; */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.button_main_hover::before {
+  aspect-ratio: 1/1;
+
+  border-radius: 50%;
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  width: 200%;
+  pointer-events: none;
+}
+
+[data-wf--button-main--variant='primary'] .button_main_hover::before {
+  background-color: var(--_buttons---surface--hover);
+}
+
+[data-wf--button-main--variant='secondary'] .button_main_hover::before {
+  background-color: var(--_buttons---surface--default);
+}
+
+.button_main_animal {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0) translateY(0%);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+/*
+ *==========================================
+ * LINK BUTTON
+ *==========================================
+ */
+
+[data-wf--button-link--variant='base'] {
+  transition: padding-left 0.3s var(--ease-back-out);
+}
+
+[data-wf--button-link--variant='base']:hover {
+  padding-left: var(--_layout---spacing--xsmall);
+}
+
+/*
+ *==========================================
+ * FOOTER LINK 
+ *==========================================
+ */
+
+.footer_link .footer_link-icon {
+  opacity: 0;
+  transform: translateX(-100%);
+  transition:
+    opacity 0.3s var(--ease-back-out),
+    transform 0.3s var(--ease-back-out);
+}
+
+.footer_link:hover .footer_link-icon {
+  opacity: 1;
+  transform: translateX(0%);
+}

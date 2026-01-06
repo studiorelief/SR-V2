@@ -1,0 +1,14 @@
+/*
+ *============================================================================
+ * FOOTER COMPONENT
+ *============================================================================
+ */
+
+/* Ville Drop - City Badges */
+[trigger='footer-tours'],
+[trigger='footer-paris'],
+[trigger='footer-bordeaux'],
+[trigger='footer-everywhere'] {
+  transform-origin: center center;
+  will-change: transform, opacity;
+}

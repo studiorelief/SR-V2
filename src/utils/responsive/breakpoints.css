@@ -1,0 +1,11 @@
+/* 
+*==========================================
+* HOME PAGE - HERO SECTION
+*==========================================
+*/
+
+@media (max-width: 1165px) {
+  .home_hero_content .button_main_wrap {
+    display: none;
+  }
+}

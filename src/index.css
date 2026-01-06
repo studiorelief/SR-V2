@@ -1,0 +1,47 @@
+/* 
+*==========================================
+* GLOBAL
+*==========================================
+*/
+
+/* 
+
+* ↳ EASINGS
+*/
+
+@import './utils/global/easings/easings.css';
+
+/* 
+*==========================================
+* RESPONSIVE
+*==========================================
+*/
+
+@import './utils/responsive/breakpoints.css';
+
+/* 
+*==========================================
+* COMPONENTS
+*==========================================
+*/
+
+/* 
+* ↳ GLOBAL
+*/
+
+@import './utils/component/global/navbar.css';
+@import './utils/component/global/footer.css';
+@import './utils/component/global/button.css';
+@import './utils/component/global/sticker.css';
+
+/* 
+* ↳ CARDS
+*/
+
+@import './utils/component/cards/portfolio-card.css';
+
+/* 
+* ↳ SECTIONS
+*/
+
+@import './utils/component/section/review-slider.css';

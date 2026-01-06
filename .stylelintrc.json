@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": ["corner-shape"]
+      }
+    ]
+  }
+}
+

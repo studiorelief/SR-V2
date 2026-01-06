@@ -1,0 +1,11 @@
+.review_pagination-cards {
+  opacity: 0.5;
+}
+
+.review_pagination-cards:hover {
+  opacity: 1;
+}
+
+.review_pagination-cards.is-active {
+  opacity: 1;
+}

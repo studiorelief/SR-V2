@@ -1,0 +1,84 @@
+/*
+ *============================================================================
+ * ANIMATION NAVBAR ON PC
+ * GSAP gère tout sauf les hovers de liens
+ *============================================================================
+ */
+
+@media (min-width: 991px) {
+  /* ==========================================
+   * BASE
+   * ========================================== */
+
+  .nav_container {
+    max-height: 100dvh;
+    overflow: scroll;
+  }
+
+  /* ==========================================
+   * LOGO ICONS - Forcer l'affichage, GSAP gère l'opacity
+   * ========================================== */
+
+  .nav_component .nav_menu-section-brand .nav_menu_link-icon {
+    position: relative;
+  }
+
+  /* Les deux icônes toujours affichées, superposées */
+  .nav_component .nav_menu-section-brand .nav_menu_link-icon-close {
+    display: flex !important;
+  }
+
+  .nav_component .nav_menu-section-brand .nav_menu_link-icon-open {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* ==========================================
+   * MENU SECTION - Current page highlight
+   * ========================================== */
+
+  .nav_menu-section:has(.nav_menu_link.w--current) {
+    background-color: var(--_theme---text-color--accent-blue);
+  }
+
+  /* ==========================================
+   * MENU LINK HOVER - CSS transitions
+   * ========================================== */
+
+  .nav_menu_link {
+    transition: padding-left 0.3s var(--ease-back-out);
+  }
+
+  .nav_menu_link .svg-component {
+    transition: transform 0.3s var(--ease-back-out);
+  }
+
+  /* Hover & Current - seulement quand nav ouverte */
+  .nav_component.is-open .nav_menu_link:hover,
+  .nav_component.is-open .nav_menu_link.w--current {
+    padding-left: var(--_layout---spacing--large);
+  }
+
+  .nav_component.is-open .nav_menu_link:hover .svg-component,
+  .nav_component.is-open .nav_menu_link.w--current .svg-component {
+    transform: rotateZ(-180deg);
+  }
+
+  /* ==========================================
+   * ÉTATS INITIAUX (cachés) - GSAP override
+   * ========================================== */
+
+  .nav_component .nav_menu_link-title-text {
+    display: none;
+  }
+
+  .nav_component .nav_menu_link-wrapper {
+    display: none;
+  }
+}
