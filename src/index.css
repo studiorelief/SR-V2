@@ -5,7 +5,6 @@
 */
 
 /* 
-
 * ↳ EASINGS
 */
 
@@ -33,15 +32,27 @@
 @import './utils/component/global/footer.css';
 @import './utils/component/global/button.css';
 @import './utils/component/global/sticker.css';
+@import './utils/component/global/ariane.css';
+@import './utils/component/global/accordion.css';
+@import './utils/component/global/toc.css';
 
 /* 
 * ↳ CARDS
 */
 
-@import './utils/component/cards/portfolio-card.css';
+@import './utils/component/cards/card-portfolio.css';
+@import './utils/component/cards/card-services-list.css';
 
 /* 
 * ↳ SECTIONS
 */
 
 @import './utils/component/section/review-slider.css';
+
+/* 
+*==========================================
+* HOME
+*==========================================
+*/
+
+@import './utils/page/home/ressources.css';

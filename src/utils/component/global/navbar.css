@@ -44,7 +44,9 @@
    * ========================================== */
 
   .nav_menu-section:has(.nav_menu_link.w--current) {
-    background-color: var(--_theme---text-color--accent-blue);
+    /* background-color: var(--_theme---text-color--accent-blue); */
+    background-color: var(--_theme---background--accent-orange);
+    /* background-color: var(--_theme---background--secondary); */
   }
 
   /* ==========================================

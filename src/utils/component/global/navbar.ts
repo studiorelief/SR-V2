@@ -261,7 +261,7 @@ const isDesktop = (): boolean => window.matchMedia(CONFIG.mediaQuery).matches;
 /**
  * Navbar Highlight - Animations between triggers
  */
-const navbarHighlight = (): void => {
+export function initNavbarHighlight(): void {
   const triggerMap: Record<string, string> = {
     portfolio: 'nav-portfolio',
     solutions: 'nav-solutions',
@@ -282,7 +282,7 @@ const navbarHighlight = (): void => {
       // Mouse enter
       sourceEl.addEventListener('mouseenter', () => {
         gsap.to(targetElement, {
-          backgroundColor: 'var(--_theme---background--accent-blue)',
+          backgroundColor: 'var(--_theme---background--accent-orange)',
         });
 
         if (svgComponent) {
@@ -316,6 +316,52 @@ const navbarHighlight = (): void => {
       });
     });
   });
+}
+
+/**
+ * Initialize inner page highlight
+ * Applies background color to nav triggers based on URL path
+ */
+export const initInnerHighlight = (): void => {
+  const currentUrl = window.location.pathname;
+
+  // Map URL paths to their corresponding nav triggers
+  const pathToTriggerMap: Record<string, string> = {
+    '/blog/': 'nav-ressources',
+    '/labs/': 'nav-ressources',
+    '/stack/': 'nav-ressources',
+    '/formation/': 'nav-ressources',
+    '/portfolio/': 'nav-portfolio',
+  };
+
+  // Get all unique triggers
+  const allTriggers = [...new Set(Object.values(pathToTriggerMap))];
+
+  // First, remove background color from all possible triggers
+  allTriggers.forEach((trigger) => {
+    const element = document.querySelector<HTMLElement>(`[trigger="${trigger}"]`);
+    if (element) {
+      gsap.set(element, {
+        backgroundColor: '',
+        clearProps: 'backgroundColor',
+      });
+    }
+  });
+
+  // Find matching path and get corresponding trigger
+  const matchingPath = Object.keys(pathToTriggerMap).find((path) => currentUrl.includes(path));
+
+  // If URL matches, apply background color to corresponding trigger
+  if (matchingPath) {
+    const trigger = pathToTriggerMap[matchingPath];
+    const targetElement = document.querySelector<HTMLElement>(`[trigger="${trigger}"]`);
+
+    if (targetElement) {
+      gsap.set(targetElement, {
+        backgroundColor: 'var(--_theme---background--accent-orange)',
+      });
+    }
+  }
 };
 
 /**
@@ -329,9 +375,6 @@ export const initNavbar = (): void => {
 
   setInitialState();
   mainTimeline = buildTimeline();
-
-  // Initialize navbar highlight
-  navbarHighlight();
 
   elements.component.addEventListener('mouseenter', () => {
     if (isDesktop()) openNavbar();

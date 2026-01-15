@@ -1,0 +1,20 @@
+.home_ressources_cards-layer.is-hover-top,
+.home_ressources_cards-layer.is-hover-bottom {
+  transition:
+    opacity 0.6s var(--ease-back-out),
+    transform 0.6s var(--ease-back-out);
+}
+
+#ressources-blog .home_ressources_cards-layer.is-hover-top {
+  transform: translateX(100%);
+}
+
+#ressources-blog .home_ressources_cards-layer.is-hover-bottom {
+  transform: translateX(-100%);
+}
+
+#ressources-blog:hover .home_ressources_cards-layer.is-hover-top,
+#ressources-blog:hover .home_ressources_cards-layer.is-hover-bottom {
+  opacity: 1;
+  transform: translateX(0%);
+}

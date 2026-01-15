@@ -64,28 +64,69 @@ const initFooterLoop = (): void => {
         },
       });
 
-      // Pause on hover on each card
-      allItems.forEach((item) => {
-        item.addEventListener('mouseenter', () => {
-          gsap.to(animation, { timeScale: 0, duration: 0.5 });
-        });
+      // Optimized hover management with counter to prevent glitches when switching between cards
+      // Counter ensures smooth transitions when moving from one card to another
+      let hoverCount = 0;
+      let timeScaleTween: gsap.core.Tween | null = null;
 
-        item.addEventListener('mouseleave', () => {
-          gsap.to(animation, { timeScale: 1, duration: 0.5 });
-        });
+      const updateTimeScale = (targetScale: number): void => {
+        // Kill any existing timeScale animation to prevent conflicts
+        if (timeScaleTween) {
+          timeScaleTween.kill();
+          timeScaleTween = null;
+        }
+
+        // Only create new animation if scale actually needs to change
+        if (animation.timeScale() !== targetScale) {
+          timeScaleTween = gsap.to(animation, {
+            timeScale: targetScale,
+            duration: 0.3,
+            ease: 'power2.out',
+            overwrite: true,
+          });
+        }
+      };
+
+      const pauseAnimation = (): void => {
+        hoverCount += 1;
+        if (hoverCount === 1) {
+          updateTimeScale(0);
+        }
+      };
+
+      const resumeAnimation = (): void => {
+        hoverCount = Math.max(0, hoverCount - 1);
+        if (hoverCount === 0) {
+          updateTimeScale(1);
+        }
+      };
+
+      // Add hover listeners to all items (including clones)
+      // Counter system ensures smooth transitions between cards
+      allItems.forEach((item) => {
+        item.addEventListener('mouseenter', pauseAnimation);
+        item.addEventListener('mouseleave', resumeAnimation);
       });
     });
   });
 };
 
 /**
- * Ville Drop Animation
+ * Footer Drop Animation
  * Animates city badges dropping and stacking on scroll
  * Each element has its own rotation for the stacked look
  */
-const villeDrop = (): void => {
+export function initFooterDrop(): void {
   const footerComponent = document.querySelector('.footer_component');
   if (!footerComponent) return;
+
+  // Clean up any existing ScrollTriggers for the footer before creating new ones
+  // This prevents conflicts when reinitializing during Barba.js page transitions
+  ScrollTrigger.getAll().forEach((st) => {
+    if (st.trigger === footerComponent) {
+      st.kill();
+    }
+  });
 
   // Define city elements with their final rotations
   const cityConfig = [
@@ -102,44 +143,55 @@ const villeDrop = (): void => {
 
   if (elements.length === 0) return;
 
-  // Set initial state for all elements
-  gsap.set(elements, {
-    yPercent: -750,
-    opacity: 0,
-    rotation: -15,
-    scale: 0.8,
+  // Clear any existing GSAP animations on these elements to prevent conflicts
+  elements.forEach((element) => {
+    gsap.killTweensOf(element);
   });
 
-  // Create timeline with ScrollTrigger
-  const tl = gsap.timeline({
-    scrollTrigger: {
-      markers: false,
-      trigger: footerComponent,
-      start: '50% 80%',
-      end: '50% 50%',
-      toggleActions: 'play none play reverse',
-    },
-  });
+  // Set initial state for all elements (reset to starting position)
+  // Using requestAnimationFrame to ensure DOM is ready and previous animations are cleared
+  requestAnimationFrame(() => {
+    gsap.set(elements, {
+      yPercent: -750,
+      opacity: 0,
+      rotation: -15,
+      scale: 0.8,
+    });
 
-  // Animate each element with stagger and specific rotation
-  elements.forEach((element, index) => {
-    const config = cityConfig[index];
-    if (!config) return;
-
-    tl.to(
-      element,
-      {
-        yPercent: 0,
-        opacity: 1,
-        rotation: config.rotation,
-        scale: 1,
-        duration: 0.8,
-        ease: 'bounce.out',
+    // Create timeline with ScrollTrigger
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        markers: false,
+        trigger: footerComponent,
+        start: '50% 80%',
+        end: '50% 50%',
+        toggleActions: 'play none play reverse',
       },
-      index * 0.15 // Stagger timing
-    );
+    });
+
+    // Animate each element with stagger and specific rotation
+    elements.forEach((element, index) => {
+      const config = cityConfig[index];
+      if (!config) return;
+
+      tl.to(
+        element,
+        {
+          yPercent: 0,
+          opacity: 1,
+          rotation: config.rotation,
+          scale: 1,
+          duration: 0.8,
+          ease: 'bounce.out',
+        },
+        index * 0.15 // Stagger timing
+      );
+    });
+
+    // Refresh ScrollTrigger after creating the timeline to ensure it calculates correctly
+    ScrollTrigger.refresh();
   });
-};
+}
 
 /**
  * Initialize Footer Component
@@ -150,5 +202,5 @@ export const initFooter = (): void => {
   initFooterLoop();
 
   // Initialize city drop animation
-  villeDrop();
+  initFooterDrop();
 };

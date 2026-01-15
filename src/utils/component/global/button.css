@@ -1,8 +1,12 @@
 /*
  *==========================================
- * PRIMARY BUTTON
+ * MAIN BUTTON
  *==========================================
  */
+
+.button_main_icon {
+  transition: border-color 0.15s ease-out;
+}
 
 .button_main_wrap {
   position: relative;
@@ -41,14 +45,6 @@
   pointer-events: none;
 }
 
-[data-wf--button-main--variant='primary'] .button_main_hover::before {
-  background-color: var(--_buttons---surface--hover);
-}
-
-[data-wf--button-main--variant='secondary'] .button_main_hover::before {
-  background-color: var(--_buttons---surface--default);
-}
-
 .button_main_animal {
   position: absolute;
   opacity: 0;
@@ -59,16 +55,53 @@
 
 /*
  *==========================================
+ * ↳ PRIMARY BUTTON
+ *==========================================
+ */
+
+[data-wf--button-main--variant='primary'] .button_main_hover::before {
+  background-color: var(--_buttons---surface--hover);
+}
+
+[data-wf--button-main--variant='secondary'] .button_main_hover::before {
+  background-color: var(--_buttons---surface--default);
+}
+
+/*
+ *==========================================
+ * ↳ SECONDARY BUTTON
+ *==========================================
+ */
+
+[data-wf--button-main--variant='secondary']:hover .button_main_icon {
+  border-color: var(--_theme---border-color--primary);
+}
+
+/*
+ *==========================================
  * LINK BUTTON
  *==========================================
  */
 
-[data-wf--button-link--variant='base'] {
+[data-wf--button-link--variant*='base'] {
   transition: padding-left 0.3s var(--ease-back-out);
 }
 
-[data-wf--button-link--variant='base']:hover {
+[data-wf--button-link--variant*='base']:hover {
   padding-left: var(--_layout---spacing--xsmall);
+}
+
+[data-wf--button-link--variant*='base'] .button_link_icon {
+  opacity: 1;
+  transform: translateX(-100%);
+  transition:
+    opacity 0.3s var(--ease-back-out),
+    transform 0.3s var(--ease-back-out);
+}
+
+[data-wf--button-link--variant*='base']:hover .button_link_icon {
+  opacity: 1;
+  transform: translateX(0%);
 }
 
 /*

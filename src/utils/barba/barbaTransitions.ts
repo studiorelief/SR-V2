@@ -56,7 +56,7 @@ const enter_end = 'M 0 0 V 0 C 16 0 84 0 100 0 V 0 L 0 0 Z'; // Plat en haut (Ca
  * @param data - Barba.js leave hook data containing the current container
  * @returns GSAP timeline for the leave animation
  */
-export const leaveAnimation = (data: BarbaLeaveData): gsap.core.Timeline => {
+export const initLeaveAnimation = (data: BarbaLeaveData): gsap.core.Timeline => {
   const tl = gsap.timeline();
 
   const transitionComponent = document.querySelector('.transition_component') as HTMLElement;
@@ -113,7 +113,7 @@ export const leaveAnimation = (data: BarbaLeaveData): gsap.core.Timeline => {
  * @param data - Barba.js enter hook data containing the next container
  * @returns GSAP timeline for the enter animation
  */
-export const enterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
+export const initEnterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
   const tl = gsap.timeline({
     onComplete: () => {
       const transitionComponent = document.querySelector('.transition_component') as HTMLElement;
@@ -137,9 +137,12 @@ export const enterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
   // 1. Swap Path (Invisible car les deux sont plein écran)
   tl.set(path, { attr: { d: enter_start } });
 
-  // Scroll to top before revealing the new page
-  // Use GSAP to force scroll at the right time in the timeline
+  // 2. Scroll to top (synchrone, avant que Finsweet ne puisse interférer)
   tl.call(() => {
+    window.scrollTo(0, 0);
+    if (document.scrollingElement) {
+      (document.scrollingElement as HTMLElement).scrollTop = 0;
+    }
     // Force scroll using multiple methods for maximum compatibility
     requestAnimationFrame(() => {
       window.scrollTo(0, 0);
@@ -159,7 +162,7 @@ export const enterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
     });
   });
 
-  // 2. Logo animations (démarrent ensemble après 0.2s pause)
+  // 3. Logo animations (démarrent ensemble après 0.2s pause)
   if (logo) {
     // Scale + AutoAlpha
     tl.to(
@@ -185,7 +188,7 @@ export const enterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
     );
   }
 
-  // 3. Sortie vers le haut (Uncover)
+  // 4. Sortie vers le haut (Uncover)
   tl.to(
     path,
     {
@@ -193,7 +196,7 @@ export const enterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
       duration: 0.3,
       ease: 'power2.in',
     },
-    logo ? '>-0.3' : '0' // Démarre plus tôt (overlap de 0.25s)
+    logo ? '>-0.3' : '0' // Démarre plus tôt (overlap de 0.3s)
   );
 
   tl.to(path, {
@@ -202,7 +205,7 @@ export const enterAnimation = (data: BarbaEnterData): gsap.core.Timeline => {
     ease: 'power2.out',
   });
 
-  // 4. Setup + Animation hero (pendant que le rideau se lève)
+  // 5. Setup + Animation hero (pendant que le rideau se lève)
   setupAndAnimateGlobalHero(tl, '<');
 
   return tl;

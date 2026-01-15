@@ -51,7 +51,9 @@ export const initSunHeroParallax = (): void => {
     // On utilise un double requestAnimationFrame pour s'assurer que le DOM et le ScrollTrigger sont prêts
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        const st = ScrollTrigger.getById(`hero-sun-parallax-${sun.id || Array.from(suns).indexOf(sun)}`);
+        const st = ScrollTrigger.getById(
+          `hero-sun-parallax-${sun.id || Array.from(suns).indexOf(sun)}`
+        );
         if (st) {
           st.refresh();
         }

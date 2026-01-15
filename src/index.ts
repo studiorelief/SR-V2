@@ -1,5 +1,18 @@
 /*
  *==========================================
+ ! TODO :
+ * [ ] Issue on Scroll Top when Blog inner > Other
+  *      ↳ Sûrement lié aux scripts de Finsweet Attributes
+  *      ↳ Conflit avec toc
+  *           ↳ Issue vient de fs-toc-offsettop="1.875rem" -> Retoré mais à fix côté webflow (+ scroll smooth)
+ * [ ] Issue on VilleDrop Function -> SVG container plutôt que Stack... plus simple
+ * [ ] Fix LottieFiles issue on Anchor Links (interne) -> Ex Home & Portfolio Kill Lottie (14.01.2026)
+ *      ↳ Check Self in Transitions
+ *==========================================
+ */
+
+/*
+ *==========================================
  * GLOBAL - IMPORT
  *==========================================
  */
@@ -20,27 +33,50 @@ gsap.registerPlugin(ScrollTrigger);
  */
 
 import { initGlobalHero } from '$utils/barba/barbaGlobalHero';
-import { enterAnimation, leaveAnimation } from '$utils/barba/barbaTransitions';
-import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
+import { initEnterAnimation, initLeaveAnimation } from '$utils/barba/barbaTransitions';
 import {
-  /* destroyAllCtaHeadings, */
-  destroyAllCtaAnimations,
-  initCtaAnimation,
-  initCtaHeading,
-} from '$utils/component/global/cta';
+  destroyCardVideoPlayer,
+  initCardVideoPlayer,
+} from '$utils/component/cards/cardVideoPlayer';
+import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
 import { initCtaFixed } from '$utils/component/global/ctaFixed';
 import { destroyAllDraggables, initDraggable } from '$utils/component/global/draggable';
 import { initFooter } from '$utils/component/global/footer';
-import { initNavbar } from '$utils/component/global/navbar';
-import { destroyAllStickers, initSticker } from '$utils/component/global/sticker';
+import {
+  initInnerHighlight,
+  initNavbar,
+  initNavbarHighlight,
+} from '$utils/component/global/navbar';
+// import { initScrollbar } from '$utils/component/global/scrollbar';
+import { initSticker } from '$utils/component/global/sticker';
+import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { initClientLoop } from '$utils/component/section/clientsLoop';
+import {
+  destroyAllCtaAnimations,
+  initCtaAnimation,
+  initCtaHeading,
+  /* destroyAllCtaHeadings, */
+} from '$utils/component/section/cta';
 import { initReviewSlider } from '$utils/component/section/reviewSlider';
+import {
+  initAccordionScrollTrigger,
+  killAccordionScrollTrigger,
+} from '$utils/global/animations/accordionScrollTrigger';
+import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lottieFiles';
 import { initScrollTop } from '$utils/global/animations/scrollTop';
 import { initSunHeroParallax } from '$utils/global/animations/sunHero';
-import { /* destroyAllTextPaths, */ initTextPath } from '$utils/global/animations/textPath';
-// import { initMarker } from '$utils/global/script/marker';
-import { initHomeHeroSun } from '$utils/page/hero/homeHeroV2';
+import { initTextPath /* destroyAllTextPaths, */ } from '$utils/global/animations/textPath';
+import { initCustomFavicon } from '$utils/global/brand/customFav';
+import {
+  destroyFsAttributesScripts,
+  initFsAttributesScripts,
+  restartFsAttributesModules,
+} from '$utils/global/script/loadFsAttributes';
+import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
+import { initHomeHero } from '$utils/page/hero/homeHeroV2';
+import { initMonkeyFall } from '$utils/page/home/monkeyFall';
 // import { initCloudAnimations } from '$utils/page/hero/homeHero';
+// import { initMarker } from '$utils/global/script/marker';
 
 /*
  *==========================================
@@ -49,36 +85,46 @@ import { initHomeHeroSun } from '$utils/page/hero/homeHeroV2';
  */
 
 const initGlobalFunctions = (): void => {
-  // initMarker();
+  // Global Animations
   initScrollTop();
   initFooter();
-
-  // Global Animations
-
+  // initScrollbar();
   initTextPath();
   initSunHeroParallax();
+  initSticker();
+  initAllAnchorFills();
 
-  // Utilise un double requestAnimationFrame pour s'assurer que tous les ScrollTriggers sont créés
-  // avant de faire le refresh global. Cela évite les glitches au refresh de page au milieu.
+  // Lottie Files
+  initLottieFiles();
+
+  // Navbar
+  initNavbarHighlight();
+  initInnerHighlight();
+
+  // Scripts
+  initFsAttributesScripts();
+  initFsLibrairiesScripts(
+    'https://cdn.jsdelivr.net/npm/@finsweet/attributes-accordion@1/accordion.js'
+  );
+
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       initButtonHover();
-      initCtaHeading();
-      initCtaAnimation();
-      initCtaFixed();
       initDraggable();
-      initSticker();
+      initCtaFixed();
+      initCtaHeading();
+      initAccordionScrollTrigger();
+      initCardVideoPlayer();
     });
   });
 };
 
-// Call on first load
-initGlobalFunctions();
-initGlobalHero(); // Animation hero au premier chargement (sans transition Barba)
-
-// Navbar is initialized once and persists across page transitions
-initNavbar();
+barba.hooks.ready(() => {
+  initGlobalFunctions();
+  initGlobalHero();
+  initNavbar();
+});
 
 /*
  *==========================================
@@ -93,30 +139,27 @@ barba.init({
     {
       name: 'swap-transition',
       leave(data: { current: { container: HTMLElement } }) {
-        return leaveAnimation(data);
+        return initLeaveAnimation(data);
       },
       enter(data: { next: { container: HTMLElement } }) {
-        ScrollTrigger.refresh();
-        return enterAnimation(data);
+        return initEnterAnimation(data);
       },
     },
-    {
-      name: 'self',
-      leave(data: { current: { container: HTMLElement }; next: { url: { hash: string } } }) {
-        // Ne pas exécuter l'animation si c'est une ancre vers la page
-        if (data.next.url.hash) {
-          return Promise.resolve();
-        }
-        return leaveAnimation(data);
-      },
-      enter(data: { next: { container: HTMLElement; url: { hash: string } } }) {
-        // Ne pas exécuter l'animation si c'est une ancre vers la page
-        if (data.next.url.hash) {
-          return Promise.resolve();
-        }
-        return enterAnimation(data);
-      },
-    },
+    // {
+    //   name: 'self',
+    //   leave(data: { current: { container: HTMLElement }; next: { url: { hash: string } } }) {
+    //     if (data.next.url.hash) {
+    //       return Promise.resolve();
+    //     }
+    //     return initLeaveAnimation(data);
+    //   },
+    //   enter(data: { next: { container: HTMLElement; url: { hash: string } } }) {
+    //     if (data.next.url.hash) {
+    //       return Promise.resolve();
+    //     }
+    //     return initEnterAnimation(data);
+    //   },
+    // },
   ],
 
   /*
@@ -130,15 +173,27 @@ barba.init({
     {
       namespace: 'home',
       beforeEnter() {
-        // initCloudAnimations();
-        initHomeHeroSun();
+        initHomeHero();
+        initMonkeyFall();
         initClientLoop();
         initReviewSlider();
       },
+      afterEnter() {},
     },
     {
       namespace: 'expertises',
       beforeEnter() {},
+      afterEnter() {},
+    },
+    {
+      namespace: 'blog',
+      beforeEnter() {},
+      afterEnter() {},
+    },
+    {
+      namespace: 'blog-article',
+      beforeEnter() {},
+      After() {},
     },
   ],
 });
@@ -151,21 +206,28 @@ barba.init({
  */
 
 barba.hooks.beforeLeave(() => {
-  // Nettoyer les instances de boutons avant de quitter la page
-
   destroyAllButtons();
-  // destroyAllCtaHeadings();
   destroyAllCtaAnimations();
   destroyAllDraggables();
-  destroyAllStickers();
-  // destroyAllTextPaths();
+  destroyLottieFiles();
+  destroyFsAttributesScripts();
+  killAccordionScrollTrigger();
+  destroyCardVideoPlayer();
 });
 
 barba.hooks.enter(() => {
   initGlobalFunctions();
-
-  // initGlobalHero est maintenant appelé dans enterAnimation (barbaTransitions.ts)
   requestAnimationFrame(() => {
     restartWebflow();
+    if (barba.history.previous) {
+      restartFsAttributesModules();
+    }
+  });
+});
+
+barba.hooks.afterEnter(() => {
+  requestAnimationFrame(() => {
+    initCustomFavicon();
+    initCtaAnimation();
   });
 });

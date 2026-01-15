@@ -1,0 +1,11 @@
+[data-wf--card-services-list--variant='orange'] .list_bullet {
+  background-color: var(--_theme---background--accent-orange);
+}
+
+[data-wf--card-services-list--variant='blue'] .list_bullet {
+  background-color: var(--_theme---background--accent-blue);
+}
+
+[data-wf--card-services-list--variant='purple'] .list_bullet {
+  background-color: var(--_theme---background--accent-purple);
+}

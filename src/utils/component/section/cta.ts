@@ -189,7 +189,7 @@ const initCtaHeadingOnElement = (
   // Créer une timeline pour synchroniser les animations
   const tl = gsap.timeline({
     scrollTrigger: {
-      markers: true,
+      markers: false,
       trigger: triggerElement,
       start: 'top bottom',
       end: 'center center',
@@ -382,9 +382,9 @@ const animateCtaMascotte2 = (
       yPercent: 0,
       xPercent: 0,
       objectPosition: '100% 50%',
-      duration: 1,
-      delay: 0.5,
-      ease: 'power2.out',
+      duration: 0.8,
+      delay: 0.6,
+      ease: 'back.out(1)',
       onComplete: () => {
         // Petit flottement vertical permanent entre -0.5rem et 0.5rem
         const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
@@ -481,7 +481,7 @@ const animateCtaPlain = (
     {
       objectPosition: '100% 50%',
       duration: 4,
-      ease: 'easeOut',
+      ease: 'power3.out',
     },
     position
   );

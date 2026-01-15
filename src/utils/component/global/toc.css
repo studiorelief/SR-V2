@@ -1,0 +1,31 @@
+.cms_main_summary-link:hover {
+  color: var(--_theme---text-color--primary);
+  font-weight: var(--font-weight--bold);
+}
+
+.cms_main_summary-link-w {
+  margin-left: -2.5rem;
+  transition:
+    padding-left 0.3s ease-out,
+    color 0.3s ease-out,
+    font-weight 0.3s ease-out;
+}
+
+.cms_main_summary-link-w:has(.cms_main_summary-link.w--current) {
+  padding-left: 2.5rem;
+}
+
+.cms_main_summary-icon {
+  transform: scale(0);
+  opacity: 0;
+  display: flex;
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+.cms_main_summary-link-w:has(.cms_main_summary-link.w--current) .cms_main_summary-icon {
+  display: flex;
+  opacity: 1;
+  transform: scale(1);
+}
