@@ -11,6 +11,12 @@
 @import './utils/global/easings/easings.css';
 
 /* 
+* ↳ OPTIMISATIONS
+*/
+
+@import './utils/global/optimisations/cms-rt.css';
+
+/* 
 *==========================================
 * RESPONSIVE
 *==========================================
@@ -32,8 +38,6 @@
 @import './utils/component/global/footer.css';
 @import './utils/component/global/button.css';
 @import './utils/component/global/sticker.css';
-@import './utils/component/global/ariane.css';
-@import './utils/component/global/accordion.css';
 @import './utils/component/global/toc.css';
 
 /* 
@@ -47,7 +51,7 @@
 * ↳ SECTIONS
 */
 
-@import './utils/component/section/review-slider.css';
+@import './utils/component/section/sliders.css';
 
 /* 
 *==========================================

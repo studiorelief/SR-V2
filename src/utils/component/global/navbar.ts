@@ -259,10 +259,10 @@ const closeNavbar = (): void => {
 const isDesktop = (): boolean => window.matchMedia(CONFIG.mediaQuery).matches;
 
 /**
- * Navbar Highlight - Animations between triggers
+ * Navbar Highlight - Animations between highlights
  */
 export function initNavbarHighlight(): void {
-  const triggerMap: Record<string, string> = {
+  const highlightMap: Record<string, string> = {
     portfolio: 'nav-portfolio',
     solutions: 'nav-solutions',
     approche: 'nav-approche',
@@ -270,9 +270,11 @@ export function initNavbarHighlight(): void {
     reperes: 'nav-reperes',
   };
 
-  Object.entries(triggerMap).forEach(([sourceTrigger, targetTrigger]) => {
-    const sourceElements = document.querySelectorAll<HTMLElement>(`[trigger="${sourceTrigger}"]`);
-    const targetElement = document.querySelector<HTMLElement>(`[trigger="${targetTrigger}"]`);
+  Object.entries(highlightMap).forEach(([sourceHighlight, targetHighlight]) => {
+    const sourceElements = document.querySelectorAll<HTMLElement>(
+      `[highlight="${sourceHighlight}"]`
+    );
+    const targetElement = document.querySelector<HTMLElement>(`[highlight="${targetHighlight}"]`);
 
     if (!targetElement) return;
 
@@ -320,13 +322,13 @@ export function initNavbarHighlight(): void {
 
 /**
  * Initialize inner page highlight
- * Applies background color to nav triggers based on URL path
+ * Applies background color to nav highlights based on URL path
  */
 export const initInnerHighlight = (): void => {
   const currentUrl = window.location.pathname;
 
-  // Map URL paths to their corresponding nav triggers
-  const pathToTriggerMap: Record<string, string> = {
+  // Map URL paths to their corresponding nav highlights
+  const pathToHighlightMap: Record<string, string> = {
     '/blog/': 'nav-ressources',
     '/labs/': 'nav-ressources',
     '/stack/': 'nav-ressources',
@@ -334,12 +336,12 @@ export const initInnerHighlight = (): void => {
     '/portfolio/': 'nav-portfolio',
   };
 
-  // Get all unique triggers
-  const allTriggers = [...new Set(Object.values(pathToTriggerMap))];
+  // Get all unique highlights
+  const allHighlights = [...new Set(Object.values(pathToHighlightMap))];
 
-  // First, remove background color from all possible triggers
-  allTriggers.forEach((trigger) => {
-    const element = document.querySelector<HTMLElement>(`[trigger="${trigger}"]`);
+  // First, remove background color from all possible highlights
+  allHighlights.forEach((highlight) => {
+    const element = document.querySelector<HTMLElement>(`[highlight="${highlight}"]`);
     if (element) {
       gsap.set(element, {
         backgroundColor: '',
@@ -348,13 +350,13 @@ export const initInnerHighlight = (): void => {
     }
   });
 
-  // Find matching path and get corresponding trigger
-  const matchingPath = Object.keys(pathToTriggerMap).find((path) => currentUrl.includes(path));
+  // Find matching path and get corresponding highlight
+  const matchingPath = Object.keys(pathToHighlightMap).find((path) => currentUrl.includes(path));
 
-  // If URL matches, apply background color to corresponding trigger
+  // If URL matches, apply background color to corresponding highlight
   if (matchingPath) {
-    const trigger = pathToTriggerMap[matchingPath];
-    const targetElement = document.querySelector<HTMLElement>(`[trigger="${trigger}"]`);
+    const highlight = pathToHighlightMap[matchingPath];
+    const targetElement = document.querySelector<HTMLElement>(`[highlight="${highlight}"]`);
 
     if (targetElement) {
       gsap.set(targetElement, {

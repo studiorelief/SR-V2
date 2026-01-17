@@ -1,7 +1,0 @@
-.ariane_link .ariane_sub-line {
-  transition: width 0.3s var(--ease-back-out);
-}
-
-.ariane_link:hover .ariane_sub-line {
-  width: 100%;
-}

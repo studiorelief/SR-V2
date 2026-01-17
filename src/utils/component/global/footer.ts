@@ -189,7 +189,7 @@ export function initFooterDrop(): void {
     });
 
     // Refresh ScrollTrigger after creating the timeline to ensure it calculates correctly
-    ScrollTrigger.refresh();
+    // ScrollTrigger.refresh();
   });
 }
 

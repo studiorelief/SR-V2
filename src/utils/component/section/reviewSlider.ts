@@ -1,6 +1,6 @@
 /*
  *============================================================================
- * COMPONENT : SECTION / WHO (STUDIOS)
+ * COMPONENT : SECTION / REVIEWS
  *============================================================================
  */
 
@@ -36,16 +36,6 @@ export function initReviewSlider() {
         releaseOnEdges: true,
         eventsTarget: 'container',
       },
-      // pagination: {
-      //   el: '.services_component .swiper-pagination-wrapper',
-      //   bulletClass: 'swiper-bullet',
-      //   bulletActiveClass: 'is-active',
-      //   clickable: true,
-      // },
-      //   navigation: {
-      //     prevEl: '.home_who_navigation .swiper-left',
-      //     nextEl: '.home_who_navigation .swiper-right',
-      //   },
       touchEventsTarget: 'wrapper',
       //   breakpoints: {
       //     992: {

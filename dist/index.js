@@ -11032,7 +11032,6 @@
           // Stagger timing
         );
       });
-      ScrollTrigger2.refresh();
     });
   }
   var initFooter = () => {
@@ -11228,16 +11227,18 @@
   };
   var isDesktop = () => window.matchMedia(CONFIG.mediaQuery).matches;
   function initNavbarHighlight() {
-    const triggerMap = {
+    const highlightMap = {
       portfolio: "nav-portfolio",
       solutions: "nav-solutions",
       approche: "nav-approche",
       ressources: "nav-ressources",
       reperes: "nav-reperes"
     };
-    Object.entries(triggerMap).forEach(([sourceTrigger, targetTrigger]) => {
-      const sourceElements = document.querySelectorAll(`[trigger="${sourceTrigger}"]`);
-      const targetElement = document.querySelector(`[trigger="${targetTrigger}"]`);
+    Object.entries(highlightMap).forEach(([sourceHighlight, targetHighlight]) => {
+      const sourceElements = document.querySelectorAll(
+        `[highlight="${sourceHighlight}"]`
+      );
+      const targetElement = document.querySelector(`[highlight="${targetHighlight}"]`);
       if (!targetElement) return;
       const svgComponent = targetElement.querySelector(".svg-component");
       sourceElements.forEach((sourceEl) => {
@@ -11276,16 +11277,16 @@
   }
   var initInnerHighlight = () => {
     const currentUrl = window.location.pathname;
-    const pathToTriggerMap = {
+    const pathToHighlightMap = {
       "/blog/": "nav-ressources",
       "/labs/": "nav-ressources",
       "/stack/": "nav-ressources",
       "/formation/": "nav-ressources",
       "/portfolio/": "nav-portfolio"
     };
-    const allTriggers = [...new Set(Object.values(pathToTriggerMap))];
-    allTriggers.forEach((trigger) => {
-      const element = document.querySelector(`[trigger="${trigger}"]`);
+    const allHighlights = [...new Set(Object.values(pathToHighlightMap))];
+    allHighlights.forEach((highlight) => {
+      const element = document.querySelector(`[highlight="${highlight}"]`);
       if (element) {
         gsapWithCSS.set(element, {
           backgroundColor: "",
@@ -11293,10 +11294,10 @@
         });
       }
     });
-    const matchingPath = Object.keys(pathToTriggerMap).find((path) => currentUrl.includes(path));
+    const matchingPath = Object.keys(pathToHighlightMap).find((path) => currentUrl.includes(path));
     if (matchingPath) {
-      const trigger = pathToTriggerMap[matchingPath];
-      const targetElement = document.querySelector(`[trigger="${trigger}"]`);
+      const highlight = pathToHighlightMap[matchingPath];
+      const targetElement = document.querySelector(`[highlight="${highlight}"]`);
       if (targetElement) {
         gsapWithCSS.set(targetElement, {
           backgroundColor: "var(--_theme---background--accent-orange)"
@@ -11347,6 +11348,36 @@
         }
       }
     });
+  };
+
+  // src/utils/component/global/scrollbar.ts
+  init_live_reload();
+  var updateHandler = null;
+  var initScrollbar = () => {
+    killScrollbar();
+    const bar = document.querySelector(".scrollbar_fill");
+    if (!bar) return;
+    updateHandler = () => {
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop || 0;
+      const scrollHeight = doc.scrollHeight - doc.clientHeight;
+      if (scrollHeight <= 0) {
+        bar.style.width = "0%";
+        return;
+      }
+      const progress = scrollTop / scrollHeight * 100;
+      bar.style.width = `${progress}%`;
+    };
+    updateHandler();
+    window.addEventListener("scroll", updateHandler, { passive: true });
+    window.addEventListener("resize", updateHandler);
+  };
+  var killScrollbar = () => {
+    if (updateHandler) {
+      window.removeEventListener("scroll", updateHandler);
+      window.removeEventListener("resize", updateHandler);
+    }
+    updateHandler = null;
   };
 
   // src/utils/component/global/sticker.ts
@@ -11839,375 +11870,7 @@
     });
   }
 
-  // src/utils/component/section/cta.ts
-  init_live_reload();
-  var defaultConfig2 = {
-    curveHeight: 150,
-    // Valeur par défaut plus marquée (augmentée de 30 à 50)
-    verticalOffset: 0,
-    animateOnScroll: false
-  };
-  var instances = [];
-  var getCurveHeightInPixels = (curveHeight, height) => {
-    if (typeof curveHeight === "string" && curveHeight.endsWith("%")) {
-      const percentage = parseFloat(curveHeight) / 100;
-      return height * percentage;
-    }
-    return typeof curveHeight === "number" ? curveHeight : parseFloat(String(curveHeight)) || 30;
-  };
-  var createArcPath = (width, height, curveHeightPx, verticalOffset) => {
-    const startY = height / 2 + verticalOffset;
-    const endY = height / 2 + verticalOffset;
-    const controlY = startY - curveHeightPx;
-    return `M 0 ${startY} Q ${width / 2} ${controlY} ${width} ${endY}`;
-  };
-  var createSVGText = (svgNS, textStyles) => {
-    const textSvg = document.createElementNS(svgNS, "text");
-    textSvg.setAttribute("font-family", textStyles.fontFamily);
-    textSvg.setAttribute("font-size", textStyles.fontSize);
-    textSvg.setAttribute("font-weight", textStyles.fontWeight);
-    textSvg.setAttribute("letter-spacing", textStyles.letterSpacing || "normal");
-    textSvg.setAttribute("fill", textStyles.color);
-    textSvg.setAttribute("dominant-baseline", "middle");
-    textSvg.setAttribute("text-anchor", "middle");
-    if (textStyles.textTransform !== "none") {
-      textSvg.style.textTransform = textStyles.textTransform;
-    }
-    return textSvg;
-  };
-  var initCtaHeadingOnElement = (element, config3) => {
-    if (element.hasAttribute("data-cta-heading-initialized")) {
-      return null;
-    }
-    element.setAttribute("data-cta-heading-initialized", "true");
-    const textContent = element.textContent?.trim();
-    if (!textContent) {
-      element.removeAttribute("data-cta-heading-initialized");
-      return null;
-    }
-    const rect = element.getBoundingClientRect();
-    const textStyles = getComputedStyle(element);
-    const elementCurveHeight = element.getAttribute("data-curve-height");
-    const elementVerticalOffset = element.getAttribute("data-vertical-offset");
-    const elementAnimateOnScroll = element.getAttribute("data-animate-scroll");
-    const finalConfig = {
-      curveHeight: elementCurveHeight ? elementCurveHeight.includes("%") ? elementCurveHeight : parseFloat(elementCurveHeight) || config3.curveHeight : config3.curveHeight,
-      verticalOffset: elementVerticalOffset ? parseFloat(elementVerticalOffset) || config3.verticalOffset : config3.verticalOffset,
-      animateOnScroll: elementAnimateOnScroll !== null ? elementAnimateOnScroll === "true" : config3.animateOnScroll
-    };
-    const wrapper = element.closest('[trigger="cta-heading-wrapper"]');
-    const triggerElement = wrapper || element;
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    const uniqueId = `cta-heading-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const svgWidth = rect.width || 600;
-    const svgHeight = rect.height || 100;
-    svg.setAttribute("width", String(svgWidth));
-    svg.setAttribute("height", String(svgHeight));
-    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
-    svg.style.cssText = `
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    overflow: visible;
-  `;
-    const finalCurveHeightPx = getCurveHeightInPixels(finalConfig.curveHeight, svgHeight);
-    const defs = document.createElementNS(svgNS, "defs");
-    const path = document.createElementNS(svgNS, "path");
-    path.setAttribute("id", uniqueId);
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke", "none");
-    const initialPathD = createArcPath(svgWidth, svgHeight, 0, finalConfig.verticalOffset);
-    path.setAttribute("d", initialPathD);
-    defs.appendChild(path);
-    svg.appendChild(defs);
-    const textSvg = createSVGText(svgNS, textStyles);
-    const textPath = document.createElementNS(svgNS, "textPath");
-    textPath.setAttribute("href", `#${uniqueId}`);
-    textPath.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", `#${uniqueId}`);
-    textPath.setAttribute("startOffset", "50%");
-    textPath.textContent = textContent;
-    textSvg.appendChild(textPath);
-    svg.appendChild(textSvg);
-    const computedStyle = getComputedStyle(element);
-    if (computedStyle.position === "static") {
-      element.style.position = "relative";
-    }
-    element.style.overflow = "visible";
-    element.style.color = "transparent";
-    element.appendChild(svg);
-    const curveHeightObj = { value: 0 };
-    const tl = gsapWithCSS.timeline({
-      scrollTrigger: {
-        markers: false,
-        trigger: triggerElement,
-        start: "top bottom",
-        end: "center center",
-        scrub: true
-      }
-    });
-    tl.to(curveHeightObj, {
-      value: finalCurveHeightPx,
-      duration: 1,
-      ease: "none",
-      onUpdate: () => {
-        const newPathD = createArcPath(
-          svgWidth,
-          svgHeight,
-          curveHeightObj.value,
-          finalConfig.verticalOffset
-        );
-        path.setAttribute("d", newPathD);
-      }
-    });
-    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    const translateY = 4 * rootFontSize;
-    tl.to(
-      element,
-      {
-        y: translateY,
-        duration: 1,
-        ease: "none"
-      },
-      0
-    );
-    const animation = tl;
-    return {
-      element,
-      svg,
-      animation,
-      destroy: () => {
-        try {
-          animation.kill();
-          ScrollTrigger2.getAll().forEach((trigger) => {
-            if (trigger.vars.trigger === element || trigger.vars.trigger === element.closest('[trigger="cta-heading-wrapper"]')) {
-              trigger.kill();
-            }
-          });
-          if (svg && svg.parentNode) {
-            svg.remove();
-          }
-          if (element && document.contains(element)) {
-            element.style.color = "";
-            element.style.overflow = "";
-            element.removeAttribute("data-cta-heading-initialized");
-          }
-        } catch {
-        }
-      }
-    };
-  };
-  var initCtaHeading = (config3 = {}) => {
-    const mergedConfig = { ...defaultConfig2, ...config3 };
-    const elements2 = document.querySelectorAll('[trigger="cta-heading"]');
-    if (elements2.length === 0) {
-      return;
-    }
-    elements2.forEach((element) => {
-      const instance = initCtaHeadingOnElement(element, mergedConfig);
-      if (instance) {
-        instances.push(instance);
-      }
-    });
-  };
-  var animateCtaEagle = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "0% 50%", yPercent: -100, xPercent: 0 });
-    tl.to(
-      element,
-      {
-        yPercent: 0,
-        xPercent: 0,
-        objectPosition: "120% 50%",
-        duration: 5,
-        ease: "power2.out",
-        onComplete: () => {
-          const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-          const amplitude = -0.5 * rootFontSize;
-          gsapWithCSS.to(element, {
-            y: amplitude,
-            duration: 1.2,
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1,
-            yoyoEase: "sine.inOut"
-          });
-        }
-      },
-      position
-    );
-  };
-  var animateCtaMascotte2 = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "0% 50%", yPercent: -100, xPercent: -110 });
-    tl.to(
-      element,
-      {
-        yPercent: 0,
-        xPercent: 0,
-        objectPosition: "100% 50%",
-        duration: 0.8,
-        delay: 0.6,
-        ease: "back.out(1)",
-        onComplete: () => {
-          const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-          const amplitude = 1 * rootFontSize;
-          gsapWithCSS.to(element, {
-            y: amplitude,
-            duration: 1.2,
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1,
-            yoyoEase: "sine.inOut"
-          });
-        }
-      },
-      position
-    );
-  };
-  var animateCtaMascotte1 = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "0% 50%" });
-    tl.to(
-      element,
-      {
-        objectPosition: "100% 50%",
-        duration: 2,
-        ease: "power2.out"
-      },
-      position
-    );
-  };
-  var animateCtaSun = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "75% 50%" });
-    tl.to(
-      element,
-      {
-        objectPosition: "100% 50%",
-        duration: 8,
-        ease: "easeIn"
-      },
-      position
-    );
-  };
-  var animateCtaCloud = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "0% 50%" });
-    tl.to(
-      element,
-      {
-        objectPosition: "100% 50%",
-        duration: 20,
-        ease: "power2.out"
-      },
-      position
-    );
-  };
-  var animateCtaPlain = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "0% 50%" });
-    tl.to(
-      element,
-      {
-        objectPosition: "100% 50%",
-        duration: 4,
-        ease: "power3.out"
-      },
-      position
-    );
-  };
-  var animateCtaMontain = (tl, element, position) => {
-    gsapWithCSS.set(element, { objectPosition: "35% 50%" });
-    tl.to(
-      element,
-      {
-        objectPosition: "100% 50%",
-        duration: 30,
-        ease: "easeOut"
-      },
-      position
-    );
-  };
-  var initCtaAnimation = () => {
-    const trigger = document.querySelector(".cta_a--trigger");
-    const wrapper = document.querySelector('[trigger="cta-bg-wrapper"]');
-    if (!trigger || !wrapper) {
-      return;
-    }
-    const eagle = wrapper.querySelector('[trigger="cta-eagle"]');
-    const mascotte2 = wrapper.querySelector('[trigger="cta-mascotte-2"]');
-    const mascotte1 = wrapper.querySelector('[trigger="cta-mascotte-1"]');
-    const sun = wrapper.querySelector('[trigger="cta-sun"]');
-    const cloud = wrapper.querySelector('[trigger="cta-cloud"]');
-    const plain = wrapper.querySelector('[trigger="cta-plain"]');
-    const montain = wrapper.querySelector('[trigger="cta-montain"]');
-    const tl = gsapWithCSS.timeline({ paused: true });
-    if (eagle) {
-      animateCtaEagle(tl, eagle, "0");
-    }
-    if (mascotte2) {
-      animateCtaMascotte2(tl, mascotte2, "0");
-    }
-    if (mascotte1) {
-      animateCtaMascotte1(tl, mascotte1, "0");
-    }
-    if (sun) {
-      animateCtaSun(tl, sun, "0");
-    }
-    if (cloud) {
-      animateCtaCloud(tl, cloud, "0");
-    }
-    if (plain) {
-      animateCtaPlain(tl, plain, "0");
-    }
-    if (montain) {
-      animateCtaMontain(tl, montain, "0");
-    }
-    let hoverInDelay = null;
-    let hoverOutDelay = null;
-    let isHovered = false;
-    const handleMouseEnter = () => {
-      isHovered = true;
-      if (hoverOutDelay) {
-        hoverOutDelay.kill();
-        hoverOutDelay = null;
-      }
-      if (tl.isActive() && tl.reversed()) {
-        tl.timeScale(1);
-        tl.play();
-        return;
-      }
-      if (hoverInDelay) {
-        hoverInDelay.kill();
-        hoverInDelay = null;
-      }
-      hoverInDelay = gsapWithCSS.delayedCall(0.3, () => {
-        if (!isHovered) return;
-        tl.timeScale(1);
-        tl.play();
-      });
-    };
-    const handleMouseLeave = () => {
-      isHovered = false;
-      if (hoverInDelay) {
-        hoverInDelay.kill();
-        hoverInDelay = null;
-      }
-      if (hoverOutDelay) {
-        hoverOutDelay.kill();
-        hoverOutDelay = null;
-      }
-      hoverOutDelay = gsapWithCSS.delayedCall(0.5, () => {
-        if (isHovered) return;
-        tl.timeScale(3);
-        tl.reverse();
-      });
-    };
-    trigger.addEventListener("mouseenter", handleMouseEnter);
-    trigger.addEventListener("mouseleave", handleMouseLeave);
-  };
-  var destroyAllCtaAnimations = () => {
-  };
-
-  // src/utils/component/section/reviewSlider.ts
+  // src/utils/component/section/cmsCardsSlider.ts
   init_live_reload();
 
   // node_modules/.pnpm/swiper@12.0.3/node_modules/swiper/swiper-bundle.mjs
@@ -21539,7 +21202,409 @@
   var modules = [Virtual, Keyboard, Mousewheel, Navigation, Pagination, Scrollbar, Parallax, Zoom, Controller, A11y, History, HashNavigation, Autoplay, Thumb, freeMode, Grid, Manipulation, EffectFade, EffectCube, EffectFlip, EffectCoverflow, EffectCreative, EffectCards];
   Swiper.use(modules);
 
+  // src/utils/component/section/cmsCardsSlider.ts
+  function initCmsCardsSlider() {
+    const swipers = document.querySelectorAll(".swiper.is-cms-cards-slider");
+    if (swipers.length === 0) {
+      return;
+    }
+    swipers.forEach((swiperEl) => {
+      new Swiper(swiperEl, {
+        direction: "horizontal",
+        loop: true,
+        //   centeredSlides: true,
+        spaceBetween: 2 * 16,
+        speed: 500,
+        grabCursor: true,
+        allowTouchMove: true,
+        keyboard: true,
+        mousewheel: {
+          forceToAxis: true,
+          sensitivity: 1,
+          releaseOnEdges: true,
+          eventsTarget: "container"
+        },
+        touchEventsTarget: "wrapper",
+        breakpoints: {
+          992: {
+            slidesPerView: 3,
+            spaceBetween: 2 * 16
+          }
+        }
+      });
+    });
+  }
+
+  // src/utils/component/section/cta.ts
+  init_live_reload();
+  var defaultConfig2 = {
+    curveHeight: 150,
+    // Valeur par défaut plus marquée (augmentée de 30 à 50)
+    verticalOffset: 0,
+    animateOnScroll: false
+  };
+  var instances = [];
+  var getCurveHeightInPixels = (curveHeight, height) => {
+    if (typeof curveHeight === "string" && curveHeight.endsWith("%")) {
+      const percentage = parseFloat(curveHeight) / 100;
+      return height * percentage;
+    }
+    return typeof curveHeight === "number" ? curveHeight : parseFloat(String(curveHeight)) || 30;
+  };
+  var createArcPath = (width, height, curveHeightPx, verticalOffset) => {
+    const startY = height / 2 + verticalOffset;
+    const endY = height / 2 + verticalOffset;
+    const controlY = startY - curveHeightPx;
+    return `M 0 ${startY} Q ${width / 2} ${controlY} ${width} ${endY}`;
+  };
+  var createSVGText = (svgNS, textStyles) => {
+    const textSvg = document.createElementNS(svgNS, "text");
+    textSvg.setAttribute("font-family", textStyles.fontFamily);
+    textSvg.setAttribute("font-size", textStyles.fontSize);
+    textSvg.setAttribute("font-weight", textStyles.fontWeight);
+    textSvg.setAttribute("letter-spacing", textStyles.letterSpacing || "normal");
+    textSvg.setAttribute("fill", textStyles.color);
+    textSvg.setAttribute("dominant-baseline", "middle");
+    textSvg.setAttribute("text-anchor", "middle");
+    if (textStyles.textTransform !== "none") {
+      textSvg.style.textTransform = textStyles.textTransform;
+    }
+    return textSvg;
+  };
+  var initCtaHeadingOnElement = (element, config3) => {
+    if (element.hasAttribute("data-cta-heading-initialized")) {
+      return null;
+    }
+    element.setAttribute("data-cta-heading-initialized", "true");
+    const textContent = element.textContent?.trim();
+    if (!textContent) {
+      element.removeAttribute("data-cta-heading-initialized");
+      return null;
+    }
+    const rect = element.getBoundingClientRect();
+    const textStyles = getComputedStyle(element);
+    const elementCurveHeight = element.getAttribute("data-curve-height");
+    const elementVerticalOffset = element.getAttribute("data-vertical-offset");
+    const elementAnimateOnScroll = element.getAttribute("data-animate-scroll");
+    const finalConfig = {
+      curveHeight: elementCurveHeight ? elementCurveHeight.includes("%") ? elementCurveHeight : parseFloat(elementCurveHeight) || config3.curveHeight : config3.curveHeight,
+      verticalOffset: elementVerticalOffset ? parseFloat(elementVerticalOffset) || config3.verticalOffset : config3.verticalOffset,
+      animateOnScroll: elementAnimateOnScroll !== null ? elementAnimateOnScroll === "true" : config3.animateOnScroll
+    };
+    const wrapper = element.closest('[trigger="cta-heading-wrapper"]');
+    const triggerElement = wrapper || element;
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    const uniqueId = `cta-heading-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const svgWidth = rect.width || 600;
+    const svgHeight = rect.height || 100;
+    svg.setAttribute("width", String(svgWidth));
+    svg.setAttribute("height", String(svgHeight));
+    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+    svg.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  `;
+    const finalCurveHeightPx = getCurveHeightInPixels(finalConfig.curveHeight, svgHeight);
+    const defs = document.createElementNS(svgNS, "defs");
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute("id", uniqueId);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "none");
+    const initialPathD = createArcPath(svgWidth, svgHeight, 0, finalConfig.verticalOffset);
+    path.setAttribute("d", initialPathD);
+    defs.appendChild(path);
+    svg.appendChild(defs);
+    const textSvg = createSVGText(svgNS, textStyles);
+    const textPath = document.createElementNS(svgNS, "textPath");
+    textPath.setAttribute("href", `#${uniqueId}`);
+    textPath.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", `#${uniqueId}`);
+    textPath.setAttribute("startOffset", "50%");
+    textPath.textContent = textContent;
+    textSvg.appendChild(textPath);
+    svg.appendChild(textSvg);
+    const computedStyle = getComputedStyle(element);
+    if (computedStyle.position === "static") {
+      element.style.position = "relative";
+    }
+    element.style.overflow = "visible";
+    element.style.color = "transparent";
+    element.appendChild(svg);
+    const curveHeightObj = { value: 0 };
+    const tl = gsapWithCSS.timeline({
+      scrollTrigger: {
+        markers: false,
+        trigger: triggerElement,
+        start: "top bottom",
+        end: "center center",
+        scrub: true
+      }
+    });
+    tl.to(curveHeightObj, {
+      value: finalCurveHeightPx,
+      duration: 1,
+      ease: "none",
+      onUpdate: () => {
+        const newPathD = createArcPath(
+          svgWidth,
+          svgHeight,
+          curveHeightObj.value,
+          finalConfig.verticalOffset
+        );
+        path.setAttribute("d", newPathD);
+      }
+    });
+    const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const translateY = 4 * rootFontSize;
+    tl.to(
+      element,
+      {
+        y: translateY,
+        duration: 1,
+        ease: "none"
+      },
+      0
+    );
+    const animation = tl;
+    return {
+      element,
+      svg,
+      animation,
+      destroy: () => {
+        try {
+          animation.kill();
+          ScrollTrigger2.getAll().forEach((trigger) => {
+            if (trigger.vars.trigger === element || trigger.vars.trigger === element.closest('[trigger="cta-heading-wrapper"]')) {
+              trigger.kill();
+            }
+          });
+          if (svg && svg.parentNode) {
+            svg.remove();
+          }
+          if (element && document.contains(element)) {
+            element.style.color = "";
+            element.style.overflow = "";
+            element.removeAttribute("data-cta-heading-initialized");
+          }
+        } catch {
+        }
+      }
+    };
+  };
+  var initCtaHeading = (config3 = {}) => {
+    const mergedConfig = { ...defaultConfig2, ...config3 };
+    const elements2 = document.querySelectorAll('[trigger="cta-heading"]');
+    if (elements2.length === 0) {
+      return;
+    }
+    elements2.forEach((element) => {
+      const instance = initCtaHeadingOnElement(element, mergedConfig);
+      if (instance) {
+        instances.push(instance);
+      }
+    });
+  };
+  var animateCtaEagle = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "0% 50%", yPercent: -100, xPercent: 0 });
+    tl.to(
+      element,
+      {
+        yPercent: 0,
+        xPercent: 0,
+        objectPosition: "120% 50%",
+        duration: 5,
+        ease: "power2.out",
+        onComplete: () => {
+          const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+          const amplitude = -0.5 * rootFontSize;
+          gsapWithCSS.to(element, {
+            y: amplitude,
+            duration: 1.2,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+            yoyoEase: "sine.inOut"
+          });
+        }
+      },
+      position
+    );
+  };
+  var animateCtaMascotte2 = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "0% 50%", yPercent: -100, xPercent: -110 });
+    tl.to(
+      element,
+      {
+        yPercent: 0,
+        xPercent: 0,
+        objectPosition: "100% 50%",
+        duration: 0.8,
+        delay: 0.6,
+        ease: "back.out(1)",
+        onComplete: () => {
+          const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+          const amplitude = 1 * rootFontSize;
+          gsapWithCSS.to(element, {
+            y: amplitude,
+            duration: 1.2,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+            yoyoEase: "sine.inOut"
+          });
+        }
+      },
+      position
+    );
+  };
+  var animateCtaMascotte1 = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "0% 50%" });
+    tl.to(
+      element,
+      {
+        objectPosition: "100% 50%",
+        duration: 2,
+        ease: "power2.out"
+      },
+      position
+    );
+  };
+  var animateCtaSun = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "75% 50%" });
+    tl.to(
+      element,
+      {
+        objectPosition: "100% 50%",
+        duration: 8,
+        ease: "easeIn"
+      },
+      position
+    );
+  };
+  var animateCtaCloud = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "0% 50%" });
+    tl.to(
+      element,
+      {
+        objectPosition: "100% 50%",
+        duration: 20,
+        ease: "power2.out"
+      },
+      position
+    );
+  };
+  var animateCtaPlain = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "0% 50%" });
+    tl.to(
+      element,
+      {
+        objectPosition: "100% 50%",
+        duration: 4,
+        ease: "power3.out"
+      },
+      position
+    );
+  };
+  var animateCtaMontain = (tl, element, position) => {
+    gsapWithCSS.set(element, { objectPosition: "35% 50%" });
+    tl.to(
+      element,
+      {
+        objectPosition: "100% 50%",
+        duration: 30,
+        ease: "easeOut"
+      },
+      position
+    );
+  };
+  var initCtaAnimation = () => {
+    const trigger = document.querySelector(".cta_a--trigger");
+    const wrapper = document.querySelector('[trigger="cta-bg-wrapper"]');
+    if (!trigger || !wrapper) {
+      return;
+    }
+    const eagle = wrapper.querySelector('[trigger="cta-eagle"]');
+    const mascotte2 = wrapper.querySelector('[trigger="cta-mascotte-2"]');
+    const mascotte1 = wrapper.querySelector('[trigger="cta-mascotte-1"]');
+    const sun = wrapper.querySelector('[trigger="cta-sun"]');
+    const cloud = wrapper.querySelector('[trigger="cta-cloud"]');
+    const plain = wrapper.querySelector('[trigger="cta-plain"]');
+    const montain = wrapper.querySelector('[trigger="cta-montain"]');
+    const tl = gsapWithCSS.timeline({ paused: true });
+    if (eagle) {
+      animateCtaEagle(tl, eagle, "0");
+    }
+    if (mascotte2) {
+      animateCtaMascotte2(tl, mascotte2, "0");
+    }
+    if (mascotte1) {
+      animateCtaMascotte1(tl, mascotte1, "0");
+    }
+    if (sun) {
+      animateCtaSun(tl, sun, "0");
+    }
+    if (cloud) {
+      animateCtaCloud(tl, cloud, "0");
+    }
+    if (plain) {
+      animateCtaPlain(tl, plain, "0");
+    }
+    if (montain) {
+      animateCtaMontain(tl, montain, "0");
+    }
+    let hoverInDelay = null;
+    let hoverOutDelay = null;
+    let isHovered = false;
+    const handleMouseEnter = () => {
+      isHovered = true;
+      if (hoverOutDelay) {
+        hoverOutDelay.kill();
+        hoverOutDelay = null;
+      }
+      if (tl.isActive() && tl.reversed()) {
+        tl.timeScale(1);
+        tl.play();
+        return;
+      }
+      if (hoverInDelay) {
+        hoverInDelay.kill();
+        hoverInDelay = null;
+      }
+      hoverInDelay = gsapWithCSS.delayedCall(0.3, () => {
+        if (!isHovered) return;
+        tl.timeScale(1);
+        tl.play();
+      });
+    };
+    const handleMouseLeave = () => {
+      isHovered = false;
+      if (hoverInDelay) {
+        hoverInDelay.kill();
+        hoverInDelay = null;
+      }
+      if (hoverOutDelay) {
+        hoverOutDelay.kill();
+        hoverOutDelay = null;
+      }
+      hoverOutDelay = gsapWithCSS.delayedCall(0.5, () => {
+        if (isHovered) return;
+        tl.timeScale(3);
+        tl.reverse();
+      });
+    };
+    trigger.addEventListener("mouseenter", handleMouseEnter);
+    trigger.addEventListener("mouseleave", handleMouseLeave);
+  };
+  var destroyAllCtaAnimations = () => {
+  };
+
   // src/utils/component/section/reviewSlider.ts
+  init_live_reload();
   function initReviewSlider() {
     const swipers = document.querySelectorAll(".swiper.is-review");
     if (swipers.length === 0) {
@@ -21566,16 +21631,6 @@
           releaseOnEdges: true,
           eventsTarget: "container"
         },
-        // pagination: {
-        //   el: '.services_component .swiper-pagination-wrapper',
-        //   bulletClass: 'swiper-bullet',
-        //   bulletActiveClass: 'is-active',
-        //   clickable: true,
-        // },
-        //   navigation: {
-        //     prevEl: '.home_who_navigation .swiper-left',
-        //     nextEl: '.home_who_navigation .swiper-right',
-        //   },
         touchEventsTarget: "wrapper"
         //   breakpoints: {
         //     992: {
@@ -24006,7 +24061,7 @@
   // src/utils/global/animations/scrollTop.ts
   init_live_reload();
   var initScrollTop = () => {
-    const triggers = document.querySelectorAll('[trigger="scroll_top"]');
+    const triggers = document.querySelectorAll("[scroll-top]");
     triggers.forEach((trigger) => {
       trigger.addEventListener("click", () => {
         window.scrollTo({
@@ -24427,6 +24482,15 @@
     updateFavicon();
   }
 
+  // src/utils/global/optimisations/cmsRt.ts
+  init_live_reload();
+  var initCmsSummaryFade = () => {
+    const summaryContent = document.querySelector(".cms_main_summary-content");
+    if (!summaryContent) return;
+    gsapWithCSS.set(summaryContent, { opacity: 0 });
+    gsapWithCSS.to(summaryContent, { opacity: 1, duration: 0.5, delay: 0.5, ease: "power2.out" });
+  };
+
   // src/utils/global/script/loadFsAttributes.ts
   init_live_reload();
   var loadedScripts = [];
@@ -24541,7 +24605,7 @@
     });
   }
 
-  // src/utils/page/hero/homeHeroV2.ts
+  // src/utils/page/hero/homeHero.ts
   init_live_reload();
   gsapWithCSS.registerPlugin(ScrollTrigger2);
   var initHomeHero = () => {
@@ -24664,6 +24728,7 @@
   var initGlobalFunctions = () => {
     initScrollTop();
     initFooter();
+    initCmsSummaryFade();
     initTextPath();
     initSunHeroParallax();
     initSticker();
@@ -24671,6 +24736,8 @@
     initLottieFiles();
     initNavbarHighlight();
     initInnerHighlight();
+    initCmsCardsSlider();
+    initReviewSlider();
     initFsAttributesScripts();
     initFsLibrairiesScripts(
       "https://cdn.jsdelivr.net/npm/@finsweet/attributes-accordion@1/accordion.js"
@@ -24684,6 +24751,7 @@
         initCtaHeading();
         initAccordionScrollTrigger();
         initCardVideoPlayer();
+        initScrollbar();
       });
     });
   };
@@ -24733,7 +24801,6 @@
           initHomeHero();
           initMonkeyFall();
           initClientLoop();
-          initReviewSlider();
         },
         afterEnter() {
         }
@@ -24756,7 +24823,7 @@
         namespace: "blog-article",
         beforeEnter() {
         },
-        After() {
+        afterEnter() {
         }
       }
     ]

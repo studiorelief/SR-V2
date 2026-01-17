@@ -5,6 +5,7 @@
   *      ↳ Sûrement lié aux scripts de Finsweet Attributes
   *      ↳ Conflit avec toc
   *           ↳ Issue vient de fs-toc-offsettop="1.875rem" -> Retoré mais à fix côté webflow (+ scroll smooth)
+  *           ↳ Links are anchor
  * [ ] Issue on VilleDrop Function -> SVG container plutôt que Stack... plus simple
  * [ ] Fix LottieFiles issue on Anchor Links (interne) -> Ex Home & Portfolio Kill Lottie (14.01.2026)
  *      ↳ Check Self in Transitions
@@ -47,10 +48,11 @@ import {
   initNavbar,
   initNavbarHighlight,
 } from '$utils/component/global/navbar';
-// import { initScrollbar } from '$utils/component/global/scrollbar';
+import { initScrollbar } from '$utils/component/global/scrollbar';
 import { initSticker } from '$utils/component/global/sticker';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { initClientLoop } from '$utils/component/section/clientsLoop';
+import { initCmsCardsSlider } from '$utils/component/section/cmsCardsSlider';
 import {
   destroyAllCtaAnimations,
   initCtaAnimation,
@@ -67,13 +69,14 @@ import { initScrollTop } from '$utils/global/animations/scrollTop';
 import { initSunHeroParallax } from '$utils/global/animations/sunHero';
 import { initTextPath /* destroyAllTextPaths, */ } from '$utils/global/animations/textPath';
 import { initCustomFavicon } from '$utils/global/brand/customFav';
+import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
 import {
   destroyFsAttributesScripts,
   initFsAttributesScripts,
   restartFsAttributesModules,
 } from '$utils/global/script/loadFsAttributes';
 import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
-import { initHomeHero } from '$utils/page/hero/homeHeroV2';
+import { initHomeHero } from '$utils/page/hero/homeHero';
 import { initMonkeyFall } from '$utils/page/home/monkeyFall';
 // import { initCloudAnimations } from '$utils/page/hero/homeHero';
 // import { initMarker } from '$utils/global/script/marker';
@@ -88,7 +91,7 @@ const initGlobalFunctions = (): void => {
   // Global Animations
   initScrollTop();
   initFooter();
-  // initScrollbar();
+  initCmsSummaryFade();
   initTextPath();
   initSunHeroParallax();
   initSticker();
@@ -100,6 +103,10 @@ const initGlobalFunctions = (): void => {
   // Navbar
   initNavbarHighlight();
   initInnerHighlight();
+
+  // Sliders
+  initCmsCardsSlider();
+  initReviewSlider();
 
   // Scripts
   initFsAttributesScripts();
@@ -116,6 +123,7 @@ const initGlobalFunctions = (): void => {
       initCtaHeading();
       initAccordionScrollTrigger();
       initCardVideoPlayer();
+      initScrollbar();
     });
   });
 };
@@ -176,7 +184,6 @@ barba.init({
         initHomeHero();
         initMonkeyFall();
         initClientLoop();
-        initReviewSlider();
       },
       afterEnter() {},
     },
@@ -193,7 +200,7 @@ barba.init({
     {
       namespace: 'blog-article',
       beforeEnter() {},
-      After() {},
+      afterEnter() {},
     },
   ],
 });

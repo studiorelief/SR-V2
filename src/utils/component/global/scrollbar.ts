@@ -1,4 +1,3 @@
-let isInitialized = false;
 let updateHandler: (() => void) | null = null;
 
 /**
@@ -9,11 +8,8 @@ let updateHandler: (() => void) | null = null;
  *   <div class="scrollbar_progress"></div>
  */
 export const initScrollbar = (): void => {
-  if (isInitialized) {
-    // Forcer une mise à jour immédiate si déjà initialisé
-    if (updateHandler) updateHandler();
-    return;
-  }
+  // Toujours kill avant de réinitialiser pour éviter les listeners orphelins
+  killScrollbar();
 
   const bar = document.querySelector<HTMLElement>('.scrollbar_fill');
   if (!bar) return;
@@ -37,6 +33,16 @@ export const initScrollbar = (): void => {
 
   window.addEventListener('scroll', updateHandler, { passive: true });
   window.addEventListener('resize', updateHandler);
+};
 
-  isInitialized = true;
+/**
+ * Nettoie les event listeners et reset l'état
+ * À appeler lors des transitions Barba (beforeLeave)
+ */
+export const killScrollbar = (): void => {
+  if (updateHandler) {
+    window.removeEventListener('scroll', updateHandler);
+    window.removeEventListener('resize', updateHandler);
+  }
+  updateHandler = null;
 };

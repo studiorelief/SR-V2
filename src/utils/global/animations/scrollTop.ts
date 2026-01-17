@@ -1,5 +1,5 @@
 export const initScrollTop = (): void => {
-  const triggers = document.querySelectorAll<HTMLElement>('[trigger="scroll_top"]');
+  const triggers = document.querySelectorAll<HTMLElement>('[scroll-top]');
 
   triggers.forEach((trigger) => {
     trigger.addEventListener('click', () => {

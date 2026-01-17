@@ -1,5 +1,81 @@
 /*
  *==========================================
+ * BUTTON ICONS ANIMATIONS
+ *==========================================
+ */
+
+/* 
+* ↳ TRIGGER POSITION
+*/
+
+[trigger='icon-left-to-right'] [trigger='button-icon-wrapper'] {
+  display: flex;
+  justify-content: right;
+  align-items: flex-start;
+}
+
+[trigger='icon-right-to-left'] [trigger='button-icon-wrapper'] {
+  display: flex;
+  justify-content: left;
+  align-items: flex-start;
+}
+
+[trigger='icon-bottom-to-top'] [trigger='button-icon-wrapper'] {
+  display: flex;
+  flex-flow: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+[trigger='icon-top-to-bottom'] [trigger='button-icon-wrapper'] {
+  display: flex;
+  flex-flow: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* 
+* ↳ ICON ANIMATIONS
+*/
+
+[trigger='button-icon'] {
+  transition:
+    transform 0.3s var(--ease-back-out),
+    opacity 0.3s var(--ease-back-out);
+}
+
+[trigger='icon-left-to-right']:hover [trigger='button-icon'] {
+  transform: translateX(100%);
+}
+
+[trigger='icon-right-to-left']:hover [trigger='button-icon'] {
+  transform: translateX(-100%);
+}
+
+[trigger='icon-bottom-to-top']:hover [trigger='button-icon'] {
+  transform: translateY(-100%);
+}
+
+[trigger='icon-top-to-bottom']:hover [trigger='button-icon'] {
+  transform: translateY(100%);
+}
+
+/*
+ *==========================================
+ * SUBLINE ANIMATION
+ *==========================================
+ */
+
+[subline='line'] {
+  transition: width 0.3s var(--ease-back-out);
+}
+
+[subline='right-to-left']:hover [subline='line'] {
+  width: 100%;
+}
+
+/*
+ *==========================================
  * MAIN BUTTON
  *==========================================
  */
@@ -91,7 +167,7 @@
   padding-left: var(--_layout---spacing--xsmall);
 }
 
-[data-wf--button-link--variant*='base'] .button_link_icon {
+/* [data-wf--button-link--variant*='base'] .button_link_icon {
   opacity: 1;
   transform: translateX(-100%);
   transition:
@@ -102,7 +178,7 @@
 [data-wf--button-link--variant*='base']:hover .button_link_icon {
   opacity: 1;
   transform: translateX(0%);
-}
+} */
 
 /*
  *==========================================
@@ -110,15 +186,85 @@
  *==========================================
  */
 
-.footer_link .footer_link-icon {
-  opacity: 0;
-  transform: translateX(-100%);
-  transition:
-    opacity 0.3s var(--ease-back-out),
-    transform 0.3s var(--ease-back-out);
+[trigger='icon-left-to-right']:hover [trigger='button-icon'] {
+  opacity: 1;
 }
 
-.footer_link:hover .footer_link-icon {
-  opacity: 1;
-  transform: translateX(0%);
+/*
+ *==========================================
+ * SOCIAL BUTTONS
+ *==========================================
+ */
+/* 
+.social_icon {
+  transition:
+    transform 0.3s var(--ease-back-out),
+    scale 0.3s var(--ease-back-out);
+}
+
+.social_icon-w:hover .social_icon {
+  transform: translateY(100%);
+}
+
+.social_icon-w:hover .social_icon {
+  transform: translateY(100%);
+} */
+
+/*
+ *==========================================
+ * ACCORDION BUTTON
+ *==========================================
+ */
+
+[trigger='accordion-plus'],
+[trigger='accordion-sub'] {
+  transition:
+    transform 0.3s var(--ease-back-out),
+    scale 0.3s var(--ease-back-out);
+}
+
+[trigger='accordion-sub'] {
+  scale: 0;
+  height: 0%;
+  width: 0%;
+}
+
+[trigger='accordion-plus'] {
+  scale: 1;
+  height: 100%;
+  width: 100%;
+}
+
+[trigger='accordion-header'].is-active-accordion [trigger='accordion-plus'] {
+  scale: 0;
+  height: 0%;
+  width: 0%;
+}
+
+[trigger='accordion-header'].is-active-accordion [trigger='accordion-sub'] {
+  scale: 1;
+  height: 100%;
+  width: 100%;
+}
+
+[trigger='accordion']:hover [trigger='accordion-plus'] {
+  transform: translateY(100%);
+}
+
+[trigger='accordion-icon-w']:hover [trigger='accordion-sub'] {
+  transform: translateY(100%);
+}
+
+/*
+ *==========================================
+ * ARIANE LINK
+ *==========================================
+ */
+
+.ariane_link .ariane_sub-line {
+  transition: width 0.3s var(--ease-back-out);
+}
+
+.ariane_link:hover .ariane_sub-line {
+  width: 100%;
 }
