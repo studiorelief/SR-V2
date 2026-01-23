@@ -1,0 +1,14 @@
+/* ==========================================
+* ACCORDION - Scale animation body
+* ========================================== */
+
+.services-list_accordion-content .services-list_accordion-body-content,
+.services-list_accordion-content .services-list_accordion-body-asset {
+  transform: scale(0.9);
+  transition: transform 0.15s ease-out;
+}
+
+.services-list_accordion-content.is-active-accordion .services-list_accordion-body-content,
+.services-list_accordion-content.is-active-accordion .services-list_accordion-body-asset {
+  transform: scale(1);
+}

@@ -198,7 +198,12 @@ barba.init({
       afterEnter() {},
     },
     {
-      namespace: 'blog-article',
+      namespace: 'cms-blog',
+      beforeEnter() {},
+      afterEnter() {},
+    },
+    {
+      namespace: 'cms-portfolio',
       beforeEnter() {},
       afterEnter() {},
     },

@@ -114,7 +114,6 @@ const initFooterLoop = (): void => {
 /**
  * Footer Drop Animation
  * Animates city badges dropping and stacking on scroll
- * Each element has its own rotation for the stacked look
  */
 export function initFooterDrop(): void {
   const footerComponent = document.querySelector('.footer_component');
@@ -128,12 +127,12 @@ export function initFooterDrop(): void {
     }
   });
 
-  // Define city elements with their final rotations
+  // Define city elements
   const cityConfig = [
-    { selector: '[trigger="footer-tours"]', rotation: -7 },
-    { selector: '[trigger="footer-paris"]', rotation: 15 },
-    { selector: '[trigger="footer-bordeaux"]', rotation: -2 },
-    { selector: '[trigger="footer-everywhere"]', rotation: 2 },
+    { selector: '[trigger="footer-tours"]' },
+    { selector: '[trigger="footer-paris"]' },
+    { selector: '[trigger="footer-bordeaux"]' },
+    { selector: '[trigger="footer-everywhere"]' },
   ];
 
   // Collect all elements
@@ -152,9 +151,8 @@ export function initFooterDrop(): void {
   // Using requestAnimationFrame to ensure DOM is ready and previous animations are cleared
   requestAnimationFrame(() => {
     gsap.set(elements, {
-      yPercent: -750,
+      yPercent: -200,
       opacity: 0,
-      rotation: -15,
       scale: 0.8,
     });
 
@@ -169,7 +167,7 @@ export function initFooterDrop(): void {
       },
     });
 
-    // Animate each element with stagger and specific rotation
+    // Animate each element with stagger
     elements.forEach((element, index) => {
       const config = cityConfig[index];
       if (!config) return;
@@ -179,7 +177,6 @@ export function initFooterDrop(): void {
         {
           yPercent: 0,
           opacity: 1,
-          rotation: config.rotation,
           scale: 1,
           duration: 0.8,
           ease: 'bounce.out',
