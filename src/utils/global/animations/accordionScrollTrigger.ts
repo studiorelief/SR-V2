@@ -49,7 +49,7 @@ const setupAccordionObservers = (): void => {
  */
 export const initAccordionScrollTrigger = (): void => {
   // Clean up existing observers if any
-  killAccordionScrollTrigger();
+  destroyAccordionScrollTrigger();
 
   // Create MutationObserver to watch for class changes on existing headers
   observer = new MutationObserver((mutations) => {
@@ -91,7 +91,7 @@ export const initAccordionScrollTrigger = (): void => {
 /**
  * Kill the accordion ScrollTrigger listener
  */
-export const killAccordionScrollTrigger = (): void => {
+export const destroyAccordionScrollTrigger = (): void => {
   if (observer) {
     observer.disconnect();
     observer = null;

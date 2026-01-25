@@ -52,7 +52,7 @@ import {
 import { initScrollbar } from '$utils/component/global/scrollbar';
 import { initSticker } from '$utils/component/global/sticker';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
-import { initClientLoop } from '$utils/component/section/clientsLoop';
+import { destroyClientLoop, initClientLoop } from '$utils/component/section/clientsLoop';
 import { initCmsCardsSlider } from '$utils/component/section/cmsCardsSlider';
 import {
   destroyAllCtaAnimations,
@@ -63,8 +63,8 @@ import {
 import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
 import { initReviewSlider } from '$utils/component/sliders/reviewSlider';
 import {
+  destroyAccordionScrollTrigger,
   initAccordionScrollTrigger,
-  killAccordionScrollTrigger,
 } from '$utils/global/animations/accordionScrollTrigger';
 import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lottieFiles';
 import { initScrollTop } from '$utils/global/animations/scrollTop';
@@ -78,8 +78,8 @@ import {
   restartFsAttributesModules,
 } from '$utils/global/script/loadFsAttributes';
 import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
-import { initHomeHero } from '$utils/page/hero/homeHero';
-import { initMonkeyFall } from '$utils/page/home/monkeyFall';
+import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
+import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 // import { initCloudAnimations } from '$utils/page/hero/homeHero';
 // import { initMarker } from '$utils/global/script/marker';
 
@@ -104,6 +104,7 @@ const initGlobalFunctions = (): void => {
 
   // Components
   initBeforeAfter();
+  initClientLoop();
 
   // Navbar
   initNavbarHighlight();
@@ -152,6 +153,9 @@ barba.init({
   transitions: [
     {
       name: 'swap-transition',
+      // once(data: { next: { container: HTMLElement } }) {
+      //   return --> Animation de preloader
+      // },
       leave(data: { current: { container: HTMLElement } }) {
         return initLeaveAnimation(data);
       },
@@ -189,30 +193,34 @@ barba.init({
       beforeEnter() {
         initHomeHero();
         initMonkeyFall();
-        initClientLoop();
       },
       afterEnter() {},
+      afterLeave() {
+        destroyHomeHero();
+        destroyMonkeyFall();
+        destroyClientLoop();
+      },
     },
-    {
-      namespace: 'expertises',
-      beforeEnter() {},
-      afterEnter() {},
-    },
-    {
-      namespace: 'blog',
-      beforeEnter() {},
-      afterEnter() {},
-    },
-    {
-      namespace: 'cms-blog',
-      beforeEnter() {},
-      afterEnter() {},
-    },
-    {
-      namespace: 'cms-portfolio',
-      beforeEnter() {},
-      afterEnter() {},
-    },
+    // {
+    //   namespace: 'expertises',
+    //   beforeEnter() {},
+    //   afterEnter() {},
+    // },
+    // {
+    //   namespace: 'blog',
+    //   beforeEnter() {},
+    //   afterEnter() {},
+    // },
+    // {
+    //   namespace: 'cms-blog',
+    //   beforeEnter() {},
+    //   afterEnter() {},
+    // },
+    // {
+    //   namespace: 'cms-portfolio',
+    //   beforeEnter() {},
+    //   afterEnter() {},
+    // },
   ],
 });
 
@@ -223,13 +231,17 @@ barba.init({
  *==========================================
  */
 
-barba.hooks.beforeLeave(() => {
+// afterLeave : le rideau couvre l'écran, on peut détruire sans glitch visuel
+barba.hooks.afterLeave(() => {
+  // Kill ALL ScrollTriggers to prevent memory leaks
+  ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+
   destroyAllButtons();
   destroyAllCtaAnimations();
   destroyAllDraggables();
   destroyLottieFiles();
   destroyFsAttributesScripts();
-  killAccordionScrollTrigger();
+  destroyAccordionScrollTrigger();
   destroyCardVideoPlayer();
 });
 
@@ -245,7 +257,7 @@ barba.hooks.enter(() => {
 
 barba.hooks.afterEnter(() => {
   requestAnimationFrame(() => {
-    initCustomFavicon();
     initCtaAnimation();
+    initCustomFavicon();
   });
 });
