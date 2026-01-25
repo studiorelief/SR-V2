@@ -6,9 +6,9 @@
   *      ↳ Conflit avec toc
   *           ↳ Issue vient de fs-toc-offsettop="1.875rem" -> Retoré mais à fix côté webflow (+ scroll smooth)
   *           ↳ Links are anchor
- * [ ] Issue on VilleDrop Function -> SVG container plutôt que Stack... plus simple
  * [ ] Fix LottieFiles issue on Anchor Links (interne) -> Ex Home & Portfolio Kill Lottie (14.01.2026)
  *      ↳ Check Self in Transitions
+ * [ ] Refactor Footer Slider in Swiper (+ ratio cards) - Hover effect (on/off)
  *==========================================
  */
 
@@ -39,6 +39,7 @@ import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
 } from '$utils/component/cards/cardVideoPlayer';
+import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
 import { initCtaFixed } from '$utils/component/global/ctaFixed';
 import { destroyAllDraggables, initDraggable } from '$utils/component/global/draggable';
@@ -59,7 +60,8 @@ import {
   initCtaHeading,
   /* destroyAllCtaHeadings, */
 } from '$utils/component/section/cta';
-import { initReviewSlider } from '$utils/component/section/reviewSlider';
+import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
+import { initReviewSlider } from '$utils/component/sliders/reviewSlider';
 import {
   initAccordionScrollTrigger,
   killAccordionScrollTrigger,
@@ -100,12 +102,16 @@ const initGlobalFunctions = (): void => {
   // Lottie Files
   initLottieFiles();
 
+  // Components
+  initBeforeAfter();
+
   // Navbar
   initNavbarHighlight();
   initInnerHighlight();
 
   // Sliders
   initCmsCardsSlider();
+  initCmsProjetsSlider();
   initReviewSlider();
 
   // Scripts

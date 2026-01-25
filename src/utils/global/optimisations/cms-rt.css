@@ -1,11 +1,3 @@
-.cms-rich-text .w-richtext-figure-type-image {
-  max-width: 100% !important;
-}
-
-.cms-rich-text .w-richtext-figure-type-image div {
-  width: 100% !important;
-}
-
 .cms-rich-text [id] {
   scroll-margin-top: var(--_layout---spacing--huge);
 }
