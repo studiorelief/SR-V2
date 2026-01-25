@@ -7,6 +7,24 @@ gsap.registerPlugin(ScrollTrigger);
  * Animation parallax du soleil sur le hero de la home
  * Le soleil monte vers le haut au scroll de la page
  */
+// IDs des ScrollTriggers pour le cleanup
+const HOME_HERO_TRIGGER_IDS = [
+  'hero-bottom-scale',
+  'hero-ponton-bg-scale',
+  'hero-plant-left-rotate',
+];
+
+/**
+ * Détruit tous les ScrollTriggers liés au hero de la home
+ */
+export const destroyHomeHero = (): void => {
+  ScrollTrigger.getAll().forEach((st) => {
+    if (typeof st.vars.id === 'string' && HOME_HERO_TRIGGER_IDS.includes(st.vars.id)) {
+      st.kill();
+    }
+  });
+};
+
 export const initHomeHero = (): void => {
   const section = document.querySelector('.section_home_hero') as HTMLElement | null;
   if (!section) return;

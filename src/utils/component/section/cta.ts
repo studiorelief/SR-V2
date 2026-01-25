@@ -495,7 +495,7 @@ const animateCtaMontain = (
   element: HTMLElement,
   position: string | number
 ): void => {
-  gsap.set(element, { objectPosition: '35% 50%' });
+  // gsap.set(element, { objectPosition: '35% 50%' });
 
   tl.to(
     element,

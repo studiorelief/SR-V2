@@ -2,16 +2,35 @@ import gsap from 'gsap';
 
 import { EASINGS } from '$utils/global/easings/easings';
 
+// Stockage des références pour le cleanup
+let activeContainers: HTMLElement[] = [];
+
+/**
+ * Détruit les animations du client loop
+ */
+export function destroyClientLoop(): void {
+  activeContainers.forEach((container) => {
+    gsap.killTweensOf(container);
+  });
+  activeContainers = [];
+}
+
 /**
  * Creates an infinite horizontal marquee loop using GSAP
  */
 export function initClientLoop() {
   const containers = document.querySelectorAll<HTMLElement>('.clients-loop_collection-list');
 
+  // Reset containers list
+  activeContainers = [];
+
   containers.forEach((container) => {
     const items = container.querySelectorAll<HTMLElement>('.clients-loop_collection-item');
 
     if (items.length === 0) return;
+
+    // Track container for cleanup
+    activeContainers.push(container);
 
     // Clone items to create seamless loop
     items.forEach((item) => {

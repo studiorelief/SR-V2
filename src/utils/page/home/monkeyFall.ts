@@ -54,7 +54,7 @@ export const initMonkeyFall = (): void => {
 /**
  * Nettoie tous les ScrollTriggers liés aux monkeys
  */
-export const killMonkeyFall = (): void => {
+export const destroyMonkeyFall = (): void => {
   ScrollTrigger.getAll().forEach((st) => {
     if (typeof st.vars.id === 'string' && st.vars.id.startsWith('home-monkey-fall')) {
       st.kill();
