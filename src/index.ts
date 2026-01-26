@@ -2,10 +2,10 @@
  *==========================================
  ! TODO :
  * [ ] Issue on Scroll Top when Blog inner > Other
-  *      ↳ Sûrement lié aux scripts de Finsweet Attributes
-  *      ↳ Conflit avec toc
-  *           ↳ Issue vient de fs-toc-offsettop="1.875rem" -> Retoré mais à fix côté webflow (+ scroll smooth)
-  *           ↳ Links are anchor
+ *      ↳ Sûrement lié aux scripts de Finsweet Attributes
+ *      ↳ Conflit avec toc
+ *           ↳ Issue vient de fs-toc-offsettop="1.875rem" -> Retoré mais à fix côté webflow (+ scroll smooth)
+ *           ↳ Links are anchor
  * [ ] Fix LottieFiles issue on Anchor Links (interne) -> Ex Home & Portfolio Kill Lottie (14.01.2026)
  *      ↳ Check Self in Transitions
  * [ ] Refactor Footer Slider in Swiper (+ ratio cards) - Hover effect (on/off)
@@ -20,12 +20,13 @@
 
 import './index.css';
 
-import barba from '@barba/core';
-import { restartWebflow } from '@finsweet/ts-utils';
+// import { restartWebflow } from '@finsweet/ts-utils';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
+
+// console.log('[SR-V2] Script loaded');
 
 /*
  *==========================================
@@ -33,8 +34,6 @@ gsap.registerPlugin(ScrollTrigger);
  *==========================================
  */
 
-import { initGlobalHero } from '$utils/barba/barbaGlobalHero';
-import { initEnterAnimation, initLeaveAnimation } from '$utils/barba/barbaTransitions';
 import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
@@ -47,6 +46,7 @@ import { initFooter } from '$utils/component/global/footer';
 import {
   initInnerHighlight,
   initNavbar,
+  initNavbarCurrentState,
   initNavbarHighlight,
 } from '$utils/component/global/navbar';
 import { initScrollbar } from '$utils/component/global/scrollbar';
@@ -56,7 +56,7 @@ import { destroyClientLoop, initClientLoop } from '$utils/component/section/clie
 import {
   destroyAllCtaAnimations,
   initCtaAnimation,
-  initCtaHeading /* destroyAllCtaHeadings, */,
+  initCtaHeading,
 } from '$utils/component/section/cta';
 import { initCmsCardsSlider } from '$utils/component/sliders/cmsCardsSlider';
 import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
@@ -68,7 +68,7 @@ import {
 import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lottieFiles';
 import { initScrollTop } from '$utils/global/animations/scrollTop';
 import { initSunHeroParallax } from '$utils/global/animations/sunHero';
-import { initTextPath /* destroyAllTextPaths, */ } from '$utils/global/animations/textPath';
+import { initTextPath } from '$utils/global/animations/textPath';
 import { initCustomFavicon } from '$utils/global/brand/customFav';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
 import {
@@ -77,10 +77,23 @@ import {
   restartFsAttributesModules,
 } from '$utils/global/script/loadFsAttributes';
 import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
+import {
+  destroyCmsPortfolioParallax,
+  initAnimateCmsPortfolioHero,
+  initCmsPortfolioHero,
+  initCmsPortfolioParallax,
+  initSetupCmsPortfolioHero,
+} from '$utils/page/hero/cmsPortfolioHero';
 import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
-// import { initCloudAnimations } from '$utils/page/hero/homeHero';
-// import { initMarker } from '$utils/global/script/marker';
+import { initGlobalHero } from '$utils/swup/swupGlobalHero';
+import { initSwup } from '$utils/swup/swupInit';
+import {
+  registerNamespace,
+  runNamespaceAnimate,
+  runNamespaceInit,
+  runNamespaceSetup,
+} from '$utils/swup/swupNamespaces';
 
 /*
  *==========================================
@@ -106,8 +119,11 @@ const initGlobalFunctions = (): void => {
   initClientLoop();
 
   // Home
-  initHomeHero();
   initMonkeyFall();
+  initHomeHero();
+
+  // Portfolio CMS - géré par namespace dans visit:end
+  initSetupCmsPortfolioHero();
 
   // Navbar
   initNavbarHighlight();
@@ -138,126 +154,121 @@ const initGlobalFunctions = (): void => {
   });
 };
 
-barba.hooks.ready(() => {
+/*
+ *==========================================
+ * SWUP
+ * ↳ NAMESPACES REGISTRY
+ *==========================================
+ */
+
+registerNamespace('cms-portfolio', {
+  setup: initSetupCmsPortfolioHero,
+  animate: () => {
+    initAnimateCmsPortfolioHero();
+    initCmsPortfolioParallax();
+  },
+  init: () => {
+    initCmsPortfolioHero();
+    initCmsPortfolioParallax();
+  },
+});
+
+/*
+ *==========================================
+ * SWUP
+ * ↳ INITIALIZATION
+ *==========================================
+ */
+
+// Track navigation history for Finsweet modules
+let hasNavigated = false;
+
+/**
+ * Équivalent de barba.hooks.ready()
+ * Premier chargement de la page + initialisation Swup
+ */
+const init = () => {
+  // Init global functions on first load
   initGlobalFunctions();
   initGlobalHero();
   initNavbar();
-});
 
-/*
- *==========================================
- * BARBA
- * ↳ TRANSITIONS
- *==========================================
- */
+  // Animations spécifiques par namespace (premier chargement)
+  runNamespaceInit();
 
-barba.init({
-  preventRunning: true,
-  transitions: [
-    {
-      name: 'swap-transition',
-      // once(data: { next: { container: HTMLElement } }) {
-      //   return --> Animation de preloader
-      // },
-      leave(data: { current: { container: HTMLElement } }) {
-        return initLeaveAnimation(data);
-      },
-      enter(data: { next: { container: HTMLElement } }) {
-        return initEnterAnimation(data);
-      },
-    },
-    // {
-    //   name: 'self',
-    //   leave(data: { current: { container: HTMLElement }; next: { url: { hash: string } } }) {
-    //     if (data.next.url.hash) {
-    //       return Promise.resolve();
-    //     }
-    //     return initLeaveAnimation(data);
-    //   },
-    //   enter(data: { next: { container: HTMLElement; url: { hash: string } } }) {
-    //     if (data.next.url.hash) {
-    //       return Promise.resolve();
-    //     }
-    //     return initEnterAnimation(data);
-    //   },
-    // },
-  ],
-
-  /*
-   *==========================================
-   * BARBA
-   * ↳ VIEWS
-   *==========================================
-   */
-
-  views: [
-    {
-      namespace: 'home',
-      enter() {},
-      afterEnter() {},
-      afterLeave() {
-        destroyHomeHero();
-        destroyMonkeyFall();
-        destroyClientLoop();
-      },
-    },
-    // {
-    //   namespace: 'expertises',
-    //   beforeEnter() {},
-    //   afterEnter() {},
-    // },
-    // {
-    //   namespace: 'blog',
-    //   beforeEnter() {},
-    //   afterEnter() {},
-    // },
-    // {
-    //   namespace: 'cms-blog',
-    //   beforeEnter() {},
-    //   afterEnter() {},
-    // },
-    // {
-    //   namespace: 'cms-portfolio',
-    //   beforeEnter() {},
-    //   afterEnter() {},
-    // },
-  ],
-});
-
-/*
- *==========================================
- * BARBA
- * ↳ HOOKS
- *==========================================
- */
-
-// afterLeave : le rideau couvre l'écran, on peut détruire sans glitch visuel
-barba.hooks.afterLeave(() => {
-  // Kill ALL ScrollTriggers to prevent memory leaks
-  ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-
-  destroyAllButtons();
-  destroyAllCtaAnimations();
-  destroyAllDraggables();
-  destroyLottieFiles();
-  destroyFsAttributesScripts();
-  destroyAccordionScrollTrigger();
-  destroyCardVideoPlayer();
-});
-
-barba.hooks.enter(() => {
-  initGlobalFunctions();
-  requestAnimationFrame(() => {
-    restartWebflow();
-    if (barba.history.previous) {
-      restartFsAttributesModules();
-    }
-  });
-});
-
-barba.hooks.afterEnter(() => {
+  // Animations visuelles (premier chargement)
   requestAnimationFrame(() => {
     initCtaAnimation();
     initCustomFavicon();
   });
-});
+
+  // Initialize Swup after DOM is ready
+  const swup = initSwup();
+
+  /*
+   *==========================================
+   * SWUP
+   * ↳ HOOKS
+   *==========================================
+   */
+
+  /**
+   * Équivalent de barba.hooks.afterLeave()
+   * Le rideau couvre l'écran, on peut détruire sans glitch visuel
+   */
+  swup.hooks.on('content:replace', () => {
+    // Kill ALL ScrollTriggers to prevent memory leaks
+    ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+
+    destroyAllButtons();
+    destroyAllCtaAnimations();
+    destroyAllDraggables();
+    destroyLottieFiles();
+    destroyFsAttributesScripts();
+    destroyAccordionScrollTrigger();
+    destroyCardVideoPlayer();
+    destroyHomeHero();
+    destroyMonkeyFall();
+    destroyClientLoop();
+    destroyCmsPortfolioParallax();
+
+    // Setup animations par namespace AVANT que le rideau se lève
+    runNamespaceSetup();
+  });
+
+  /**
+   * Équivalent de barba.hooks.enter()
+   * Nouveau contenu injecté, on peut initialiser
+   */
+  swup.hooks.on('page:view', () => {
+    initGlobalFunctions();
+    initNavbarCurrentState(); // Met à jour w--current sur les liens
+    requestAnimationFrame(() => {
+      // restartWebflow();
+      if (hasNavigated) {
+        restartFsAttributesModules();
+      }
+      hasNavigated = true;
+    });
+  });
+
+  /**
+   * Équivalent de barba.hooks.afterEnter()
+   * Animation terminée, on peut initialiser les animations visuelles
+   */
+  swup.hooks.on('visit:end', () => {
+    requestAnimationFrame(() => {
+      initCtaAnimation();
+      initCustomFavicon();
+
+      // Animations spécifiques par namespace (APRÈS le rideau)
+      runNamespaceAnimate();
+    });
+  });
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

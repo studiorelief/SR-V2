@@ -1,6 +1,6 @@
 import gsap from 'gsap';
 
-import { animateGlobalHeroLeave, setupAndAnimateGlobalHero } from '$utils/barba/barbaGlobalHero';
+import { animateGlobalHeroLeave, setupAndAnimateGlobalHero } from '$utils/swup/swupGlobalHero';
 
 /**
  * Animation de transition "Curved Curtain"
@@ -8,20 +8,6 @@ import { animateGlobalHeroLeave, setupAndAnimateGlobalHero } from '$utils/barba/
  * Le rideau monte pour couvrir l'écran (Leave: Bas -> Haut avec courbe inversée),
  * puis continue de monter pour dévoiler la nouvelle page (Enter: Bas -> Haut).
  */
-
-/*
- *============================================================================
- * TYPES
- *============================================================================
- */
-
-interface BarbaLeaveData {
-  current: { container: HTMLElement };
-}
-
-interface BarbaEnterData {
-  next: { container: HTMLElement };
-}
 
 /*
  *============================================================================
@@ -53,10 +39,9 @@ const enter_end = 'M 0 0 V 0 C 16 0 84 0 100 0 V 0 L 0 0 Z'; // Plat en haut (Ca
 
 /**
  * Leave transition - Curved curtain rises to cover the screen
- * @param data - Barba.js leave hook data containing the current container
  * @returns Promise that resolves when the animation is complete
  */
-export const initLeaveAnimation = (data: BarbaLeaveData): Promise<void> => {
+export const swupLeaveAnimation = (): Promise<void> => {
   return new Promise((resolve) => {
     const transitionComponent = document.querySelector('.transition_component') as HTMLElement;
     const path = document.querySelector('.overlay--background') as SVGPathElement;
@@ -68,7 +53,6 @@ export const initLeaveAnimation = (data: BarbaLeaveData): Promise<void> => {
 
     // Si les éléments de transition ne sont pas trouvés, résoudre immédiatement
     if (!transitionComponent || !path) {
-      // console.warn('[Barba] Transition elements not found in leave, using fallback');
       tl.to({}, { duration: 0.1 });
       return;
     }
@@ -94,7 +78,6 @@ export const initLeaveAnimation = (data: BarbaLeaveData): Promise<void> => {
     });
 
     // 3. Animation hero leave (suns descendent) - en même temps que le path
-    // Revient au début de l'animation du path (0.4 + 0.3 = 0.7s en arrière)
     animateGlobalHeroLeave(tl, '-=0.7');
 
     // 4. Logo monte du bas vers le centre
@@ -109,22 +92,14 @@ export const initLeaveAnimation = (data: BarbaLeaveData): Promise<void> => {
         '-=0.5'
       );
     }
-
-    // 5. Hide current container
-    tl.set(data.current.container, { display: 'none' });
   });
 };
 
 /**
  * Enter transition - Curved curtain rises to reveal the new page
- * @param data - Barba.js enter hook data containing the next container
- * @param onAnimationComplete - Optional callback called exactly when the animation completes
  * @returns Promise that resolves when the animation is complete
  */
-export const initEnterAnimation = (
-  data: BarbaEnterData,
-  onAnimationComplete?: () => void
-): Promise<void> => {
+export const swupEnterAnimation = (): Promise<void> => {
   return new Promise((resolve) => {
     const transitionComponent = document.querySelector('.transition_component') as HTMLElement;
     const path = document.querySelector('.overlay--background') as SVGPathElement;
@@ -139,16 +114,12 @@ export const initEnterAnimation = (
         if (logo) {
           gsap.set(logo, { clearProps: 'y,scale,autoAlpha' });
         }
-        gsap.set(data.next.container, { clearProps: 'all' });
-        // Appeler le callback synchronisé avec la fin de l'animation
-        onAnimationComplete?.();
         resolve();
       },
     });
 
     // Si les éléments de transition ne sont pas trouvés, résoudre après un délai minimal
     if (!transitionComponent || !path) {
-      // console.warn('[Barba] Transition elements not found in enter, using fallback');
       tl.to({}, { duration: 0.1 });
       return;
     }
@@ -156,32 +127,7 @@ export const initEnterAnimation = (
     // 1. Swap Path (Invisible car les deux sont plein écran)
     tl.set(path, { attr: { d: enter_start } });
 
-    // 2. Scroll to top (synchrone, avant que Finsweet ne puisse interférer)
-    tl.call(() => {
-      window.scrollTo(0, 0);
-      if (document.scrollingElement) {
-        (document.scrollingElement as HTMLElement).scrollTop = 0;
-      }
-      // Force scroll using multiple methods for maximum compatibility
-      requestAnimationFrame(() => {
-        window.scrollTo(0, 0);
-        if (document.documentElement) {
-          document.documentElement.scrollTop = 0;
-          document.documentElement.scrollLeft = 0;
-        }
-        if (document.body) {
-          document.body.scrollTop = 0;
-          document.body.scrollLeft = 0;
-        }
-        // Also try scrollingElement for modern browsers
-        if (document.scrollingElement) {
-          (document.scrollingElement as HTMLElement).scrollTop = 0;
-          (document.scrollingElement as HTMLElement).scrollLeft = 0;
-        }
-      });
-    });
-
-    // 3. Logo animations (démarrent ensemble après 0.2s pause)
+    // 2. Logo animations (démarrent ensemble après 0.2s pause)
     if (logo) {
       // Scale + AutoAlpha
       tl.to(
@@ -207,7 +153,7 @@ export const initEnterAnimation = (
       );
     }
 
-    // 4. Sortie vers le haut (Uncover)
+    // 3. Sortie vers le haut (Uncover)
     tl.to(
       path,
       {
@@ -224,7 +170,7 @@ export const initEnterAnimation = (
       ease: 'power2.out',
     });
 
-    // 5. Setup + Animation hero (pendant que le rideau se lève)
+    // 4. Setup + Animation hero (pendant que le rideau se lève)
     setupAndAnimateGlobalHero(tl, '<');
   });
 };

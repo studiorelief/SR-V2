@@ -52,7 +52,6 @@ export const setupAndAnimateGlobalHero = (
   // ============================================
   sections.forEach((section) => {
     const h2 = section.querySelector('h2') as H2WithSplit | null;
-    // const heroContent = section.querySelector('.hero_content') as HTMLElement | null;
 
     // H2 - Setup + Animation avec SplitText
     if (h2) {
@@ -85,24 +84,6 @@ export const setupAndAnimateGlobalHero = (
         startPosition
       );
     }
-
-    // Hero Content - Setup + Animation
-    // if (heroContent) {
-    //   // Setup (hidden)
-    //   gsap.set(heroContent, { opacity: 0, x: -50 });
-
-    //   // Animation
-    //   parentTl.to(
-    //     heroContent,
-    //     {
-    //       opacity: 1,
-    //       x: 0,
-    //       duration: 0.6,
-    //       ease: 'easeOut',
-    //     },
-    //     '<'
-    //   );
-    // }
   });
 
   // ============================================
@@ -120,9 +101,9 @@ export const setupAndAnimateGlobalHero = (
 
     setupAndAnimateGlareHero(parentTl, glareStartTime, {
       glareColor: '#ffffff',
-      glareOpacity: 0.8, // Très visible pour debug
-      duration: 1.5, // Lent pour bien voir
-      angle: 90, // Horizontal pour mieux voir
+      glareOpacity: 0.8,
+      duration: 1.5,
+      angle: 90,
     });
   }
 };
@@ -161,7 +142,7 @@ export const animateGlobalHeroLeave = (
 };
 
 /**
- * Fonction legacy pour le premier chargement (sans Barba)
+ * Fonction legacy pour le premier chargement (sans Swup)
  * Crée sa propre timeline et la joue
  */
 export const initGlobalHero = (): void => {
