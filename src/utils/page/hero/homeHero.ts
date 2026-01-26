@@ -60,7 +60,7 @@ export const initHomeHero = (): void => {
       scrollTrigger: {
         id: 'hero-bottom-scale',
         trigger: section,
-        start: 'top top',
+        start: 'top bottom',
         end: 'bottom top',
         scrub: true,
         invalidateOnRefresh: true,
@@ -85,7 +85,7 @@ export const initHomeHero = (): void => {
       scrollTrigger: {
         id: 'hero-ponton-bg-scale',
         trigger: section,
-        start: 'top top',
+        start: 'top bottom',
         end: 'bottom top',
         scrub: true,
         invalidateOnRefresh: true,
@@ -110,7 +110,7 @@ export const initHomeHero = (): void => {
       scrollTrigger: {
         id: 'hero-plant-left-rotate',
         trigger: section,
-        start: 'top top',
+        start: 'top bottom',
         end: 'bottom top',
         scrub: true,
         invalidateOnRefresh: true,

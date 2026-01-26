@@ -53,13 +53,12 @@ import { initScrollbar } from '$utils/component/global/scrollbar';
 import { initSticker } from '$utils/component/global/sticker';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { destroyClientLoop, initClientLoop } from '$utils/component/section/clientsLoop';
-import { initCmsCardsSlider } from '$utils/component/section/cmsCardsSlider';
 import {
   destroyAllCtaAnimations,
   initCtaAnimation,
-  initCtaHeading,
-  /* destroyAllCtaHeadings, */
+  initCtaHeading /* destroyAllCtaHeadings, */,
 } from '$utils/component/section/cta';
+import { initCmsCardsSlider } from '$utils/component/sliders/cmsCardsSlider';
 import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
 import { initReviewSlider } from '$utils/component/sliders/reviewSlider';
 import {
@@ -105,6 +104,10 @@ const initGlobalFunctions = (): void => {
   // Components
   initBeforeAfter();
   initClientLoop();
+
+  // Home
+  initHomeHero();
+  initMonkeyFall();
 
   // Navbar
   initNavbarHighlight();
@@ -190,10 +193,7 @@ barba.init({
   views: [
     {
       namespace: 'home',
-      beforeEnter() {
-        initHomeHero();
-        initMonkeyFall();
-      },
+      enter() {},
       afterEnter() {},
       afterLeave() {
         destroyHomeHero();

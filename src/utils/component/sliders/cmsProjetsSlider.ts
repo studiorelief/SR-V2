@@ -16,6 +16,11 @@ export function initCmsProjetsSlider() {
   }
 
   swipers.forEach((swiperEl) => {
+    // Find pagination element within the slider's parent container
+    const parent = swiperEl.parentElement;
+    const paginationEl =
+      parent?.querySelector('.swiper-pagination') || swiperEl.querySelector('.swiper-pagination');
+
     new Swiper(swiperEl as HTMLElement, {
       direction: 'horizontal',
       //   loop: true,
@@ -32,6 +37,12 @@ export function initCmsProjetsSlider() {
         sensitivity: 1,
         releaseOnEdges: true,
         eventsTarget: 'container',
+      },
+      pagination: {
+        el: paginationEl as HTMLElement,
+        bulletClass: 'swiper-bullet',
+        bulletActiveClass: 'is-active',
+        clickable: true,
       },
       touchEventsTarget: 'wrapper',
       breakpoints: {
