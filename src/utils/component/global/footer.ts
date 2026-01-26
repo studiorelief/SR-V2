@@ -17,11 +17,14 @@ const initFooterLoop = (): void => {
   const containers = document.querySelectorAll<HTMLElement>('.footer_collection-list');
 
   containers.forEach((container) => {
-    const items = container.querySelectorAll<HTMLElement>('.footer_collection-item');
+    // Skip if already initialized
+    if (container.hasAttribute('data-footer-loop-initialized')) return;
+    container.setAttribute('data-footer-loop-initialized', 'true');
 
+    const items = Array.from(container.querySelectorAll<HTMLElement>('.footer_collection-item'));
     if (items.length === 0) return;
 
-    // Set container display to flex for proper layout with gap FIRST
+    // Set container display to flex for proper layout with gap
     gsap.set(container, {
       display: 'flex',
       flexWrap: 'nowrap',
@@ -35,77 +38,58 @@ const initFooterLoop = (): void => {
     });
 
     // Get all items including clones
-    const allItems = container.querySelectorAll<HTMLElement>('.footer_collection-item');
+    const allItems = Array.from(container.querySelectorAll<HTMLElement>('.footer_collection-item'));
 
-    // Calculate total width AFTER setting gap and cloning
-    // Use a small delay to ensure DOM is updated
+    // Use double RAF to ensure layout is calculated
     requestAnimationFrame(() => {
-      // Get actual width of the first half (original items with gaps)
-      let totalWidth = 0;
-      items.forEach((item, index) => {
-        totalWidth += item.offsetWidth;
-        // Add gap width except for the last item
-        if (index < items.length - 1) {
-          const gap = parseFloat(getComputedStyle(container).gap) || 0;
-          totalWidth += gap;
-        }
-      });
+      requestAnimationFrame(() => {
+        // Get gap value
+        const gap = parseFloat(getComputedStyle(container).gap) || 0;
 
-      // Create the infinite loop animation
-      const duration = totalWidth / 50; // Adjust speed by changing divisor (higher = slower)
+        // Calculate width of original items + gaps (including gap after last original item)
+        let totalWidth = 0;
+        items.forEach((item) => {
+          totalWidth += item.offsetWidth + gap;
+        });
 
-      const animation = gsap.to(container, {
-        x: -totalWidth,
-        duration: duration,
-        ease: 'none',
-        repeat: -1,
-        modifiers: {
-          x: gsap.utils.unitize((x) => parseFloat(x) % totalWidth),
-        },
-      });
+        // Create seamless loop using onRepeat to reset position
+        const duration = totalWidth / 50; // Speed: higher = slower
 
-      // Optimized hover management with counter to prevent glitches when switching between cards
-      // Counter ensures smooth transitions when moving from one card to another
-      let hoverCount = 0;
-      let timeScaleTween: gsap.core.Tween | null = null;
+        const tl = gsap.timeline({ repeat: -1 });
 
-      const updateTimeScale = (targetScale: number): void => {
-        // Kill any existing timeScale animation to prevent conflicts
-        if (timeScaleTween) {
-          timeScaleTween.kill();
-          timeScaleTween = null;
-        }
+        tl.fromTo(
+          container,
+          { x: 0 },
+          {
+            x: -totalWidth,
+            duration: duration,
+            ease: 'none',
+          }
+        );
 
-        // Only create new animation if scale actually needs to change
-        if (animation.timeScale() !== targetScale) {
-          timeScaleTween = gsap.to(animation, {
-            timeScale: targetScale,
-            duration: 0.3,
-            ease: 'power2.out',
-            overwrite: true,
-          });
-        }
-      };
+        // Hover pause/resume avec debounce
+        let isHovering = false;
 
-      const pauseAnimation = (): void => {
-        hoverCount += 1;
-        if (hoverCount === 1) {
-          updateTimeScale(0);
-        }
-      };
+        const handleMouseEnter = (): void => {
+          if (isHovering) return;
+          isHovering = true;
+          gsap.to(tl, { timeScale: 0, duration: 0.3, ease: 'power2.out', overwrite: true });
+        };
 
-      const resumeAnimation = (): void => {
-        hoverCount = Math.max(0, hoverCount - 1);
-        if (hoverCount === 0) {
-          updateTimeScale(1);
-        }
-      };
+        const handleMouseLeave = (): void => {
+          if (!isHovering) return;
+          isHovering = false;
+          gsap.to(tl, { timeScale: 1, duration: 0.3, ease: 'power2.out', overwrite: true });
+        };
 
-      // Add hover listeners to all items (including clones)
-      // Counter system ensures smooth transitions between cards
-      allItems.forEach((item) => {
-        item.addEventListener('mouseenter', pauseAnimation);
-        item.addEventListener('mouseleave', resumeAnimation);
+        // Listen on container instead of individual items for better performance
+        container.addEventListener('mouseenter', handleMouseEnter);
+        container.addEventListener('mouseleave', handleMouseLeave);
+
+        // Also pause on individual item hover for when mouse moves between items
+        allItems.forEach((item) => {
+          item.addEventListener('mouseenter', handleMouseEnter);
+        });
       });
     });
   });

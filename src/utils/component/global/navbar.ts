@@ -367,6 +367,43 @@ export const initInnerHighlight = (): void => {
 };
 
 /**
+ * Met à jour les classes w--current sur les liens de la navbar
+ * À appeler après chaque navigation Swup
+ */
+export const initNavbarCurrentState = (): void => {
+  const currentPath = window.location.pathname;
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav_menu_link');
+
+  // Home = aucun lien current
+  if (currentPath === '/') {
+    navLinks.forEach((link) => link.classList.remove('w--current'));
+    return;
+  }
+
+  navLinks.forEach((link) => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+
+    // Enlève w--current de tous les liens
+    link.classList.remove('w--current');
+
+    // Compare les chemins
+    const linkPath = new URL(href, window.location.origin).pathname;
+
+    // Skip le lien home
+    if (linkPath === '/') return;
+
+    // Autres pages : match exact ou préfixe pour les pages CMS
+    const isExactMatch = currentPath === linkPath;
+    const isPrefixMatch = currentPath.startsWith(linkPath) && linkPath.endsWith('/');
+
+    if (isExactMatch || isPrefixMatch) {
+      link.classList.add('w--current');
+    }
+  });
+};
+
+/**
  * Initialize
  */
 export const initNavbar = (): void => {

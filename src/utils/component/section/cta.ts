@@ -515,10 +515,23 @@ const animateCtaMontain = (
  *============================================================================
  */
 
+// Instance tracking pour cleanup
+let ctaAnimationInstance: {
+  timeline: gsap.core.Timeline;
+  trigger: HTMLElement;
+  handleMouseEnter: () => void;
+  handleMouseLeave: () => void;
+  hoverInDelay: gsap.core.Tween | null;
+  hoverOutDelay: gsap.core.Tween | null;
+} | null = null;
+
 /**
  * Initialise l'animation hover pour tous les éléments CTA
  */
 export const initCtaAnimation = (): void => {
+  // Cleanup si déjà initialisé
+  destroyAllCtaAnimations();
+
   const trigger = document.querySelector<HTMLElement>('.cta_a--trigger');
   const wrapper = document.querySelector<HTMLElement>('[trigger="cta-bg-wrapper"]');
 
@@ -627,12 +640,37 @@ export const initCtaAnimation = (): void => {
 
   trigger.addEventListener('mouseenter', handleMouseEnter);
   trigger.addEventListener('mouseleave', handleMouseLeave);
+
+  // Tracker l'instance pour cleanup
+  ctaAnimationInstance = {
+    timeline: tl,
+    trigger,
+    handleMouseEnter,
+    handleMouseLeave,
+    hoverInDelay,
+    hoverOutDelay,
+  };
 };
 
 /**
  * Détruit toutes les animations CTA
  */
 export const destroyAllCtaAnimations = (): void => {
-  // Pour l'instant, cette fonction est vide car nous n'avons pas de système de tracking des instances
-  // Si nécessaire, on pourra ajouter un système de tracking plus tard
+  if (!ctaAnimationInstance) return;
+
+  const { timeline, trigger, handleMouseEnter, handleMouseLeave, hoverInDelay, hoverOutDelay } =
+    ctaAnimationInstance;
+
+  // Kill les delayed calls
+  if (hoverInDelay) hoverInDelay.kill();
+  if (hoverOutDelay) hoverOutDelay.kill();
+
+  // Kill la timeline
+  timeline.kill();
+
+  // Remove event listeners
+  trigger.removeEventListener('mouseenter', handleMouseEnter);
+  trigger.removeEventListener('mouseleave', handleMouseLeave);
+
+  ctaAnimationInstance = null;
 };

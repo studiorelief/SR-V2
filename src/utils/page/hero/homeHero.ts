@@ -4,25 +4,20 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Animation parallax du soleil sur le hero de la home
- * Le soleil monte vers le haut au scroll de la page
+ * Animation parallax du hero de la home
+ * Unified timeline pour toutes les animations = plus smooth
  */
-// IDs des ScrollTriggers pour le cleanup
-const HOME_HERO_TRIGGER_IDS = [
-  'hero-bottom-scale',
-  'hero-ponton-bg-scale',
-  'hero-plant-left-rotate',
-];
+
+let homeHeroTrigger: ScrollTrigger | null = null;
 
 /**
- * Détruit tous les ScrollTriggers liés au hero de la home
+ * Détruit le ScrollTrigger du hero de la home
  */
 export const destroyHomeHero = (): void => {
-  ScrollTrigger.getAll().forEach((st) => {
-    if (typeof st.vars.id === 'string' && HOME_HERO_TRIGGER_IDS.includes(st.vars.id)) {
-      st.kill();
-    }
-  });
+  if (homeHeroTrigger) {
+    homeHeroTrigger.kill();
+    homeHeroTrigger = null;
+  }
 };
 
 export const initHomeHero = (): void => {
@@ -33,89 +28,58 @@ export const initHomeHero = (): void => {
   const heroPontonBg = section.querySelector('[trigger="hero-ponton-bg"]') as HTMLElement | null;
   const heroPlantLeft = section.querySelector('[trigger="hero-plante-left"]') as HTMLElement | null;
 
-  // Kill les anciens ScrollTriggers liés à cette section
-  ScrollTrigger.getAll().forEach((st) => {
-    if (
-      st.trigger === section &&
-      (st.vars.id === 'hero-bottom-scale' ||
-        st.vars.id === 'hero-ponton-bg-scale' ||
-        st.vars.id === 'hero-plant-left-rotate')
-    ) {
-      st.kill();
-    }
-  });
-  // Animation scale hero-bottom - scale de 1 à 1.1
+  // Kill l'ancien ScrollTrigger s'il existe
+  destroyHomeHero();
+
+  // Setup initial states avec GPU layer
   if (heroBottom) {
     gsap.set(heroBottom, {
       scale: 1,
       transformOrigin: '50% 100%',
+      force3D: true,
       willChange: 'transform',
-      force3D: true,
-    });
-
-    gsap.to(heroBottom, {
-      scale: 1.05,
-      ease: 'none',
-      force3D: true,
-      scrollTrigger: {
-        id: 'hero-bottom-scale',
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true,
-        invalidateOnRefresh: true,
-        markers: false,
-      },
     });
   }
 
-  // Animation scale hero-ponton-bg - scale de 1 à 1.1
   if (heroPontonBg) {
     gsap.set(heroPontonBg, {
       scale: 1,
       transformOrigin: '50% 100%',
+      force3D: true,
       willChange: 'transform',
-      force3D: true,
-    });
-
-    gsap.to(heroPontonBg, {
-      scale: 1.2,
-      ease: 'none',
-      force3D: true,
-      scrollTrigger: {
-        id: 'hero-ponton-bg-scale',
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true,
-        invalidateOnRefresh: true,
-        markers: false,
-      },
     });
   }
 
-  // Animation rotation hero-plante-left au scroll
   if (heroPlantLeft) {
     gsap.set(heroPlantLeft, {
-      rotateZ: 0,
+      rotation: 0,
       transformOrigin: '50% 100%',
-      //   willChange: 'transform',
       force3D: true,
-    });
-
-    gsap.to(heroPlantLeft, {
-      rotateZ: -25,
-      ease: 'none',
-      force3D: true,
-      scrollTrigger: {
-        id: 'hero-plant-left-rotate',
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true,
-        invalidateOnRefresh: true,
-        markers: false,
-      },
+      willChange: 'transform',
     });
   }
+
+  // Unified timeline
+  const tl = gsap.timeline();
+
+  if (heroBottom) {
+    tl.to(heroBottom, { scale: 1.05, ease: 'none' }, 0);
+  }
+
+  if (heroPontonBg) {
+    tl.to(heroPontonBg, { scale: 1.2, ease: 'none' }, 0);
+  }
+
+  if (heroPlantLeft) {
+    tl.to(heroPlantLeft, { rotation: -25, ease: 'none' }, 0);
+  }
+
+  // Single ScrollTrigger pour tout
+  homeHeroTrigger = ScrollTrigger.create({
+    trigger: section,
+    start: 'top top',
+    end: 'bottom top',
+    scrub: 0,
+    animation: tl,
+  });
 };

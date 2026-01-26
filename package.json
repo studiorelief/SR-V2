@@ -52,13 +52,17 @@
     "typescript-eslint": "^8.23.0"
   },
   "dependencies": {
-    "@barba/core": "^2.10.3",
     "@finsweet/ts-utils": "^0.40.0",
     "@lottiefiles/dotlottie-web": "^0.60.0",
     "@lottiefiles/lottie-player": "^2.0.12",
     "@marker.io/browser": "^0.20.2",
     "gsap": "^3.13.0",
-    "swiper": "^12.0.3"
+    "swiper": "^12.0.3",
+    "swup": "^4.8.1",
+    "@swup/js-plugin": "^3.1.2",
+    "@swup/head-plugin": "^2.2.1",
+    "@swup/preload-plugin": "^3.2.10",
+    "@swup/scroll-plugin": "^4.0.0"
   },
   "engines": {
     "pnpm": ">=10"
