@@ -159,7 +159,7 @@ export const setupAndAnimateGlareHero = (
   startPosition: string | number = 0,
   config: Partial<GlareConfig> = {}
 ): void => {
-  const elements = document.querySelectorAll<HTMLElement>('[trigger="hero-tag"]');
+  const elements = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-tag"]');
 
   if (elements.length === 0) return;
 
@@ -192,11 +192,11 @@ export const setupAndAnimateGlareHero = (
 
 /**
  * Fonction d'initialisation standalone (sans timeline parent)
- * Déclenche le glare sur tous les éléments [trigger="hero-tag"]
+ * Déclenche le glare sur tous les éléments [transition-trigger="hero-tag"]
  * @param config - Configuration optionnelle du glare
  */
 export const initGlareHero = (config: Partial<GlareConfig> = {}): void => {
-  const elements = document.querySelectorAll<HTMLElement>('[trigger="hero-tag"]');
+  const elements = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-tag"]');
 
   if (elements.length === 0) return;
 

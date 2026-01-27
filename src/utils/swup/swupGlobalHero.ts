@@ -18,9 +18,9 @@ export const setupAndAnimateGlobalHero = (
   parentTl: gsap.core.Timeline,
   startPosition: string | number = 0
 ): void => {
-  const sections = document.querySelectorAll<HTMLElement>('[trigger="hero-section"]');
-  const suns = document.querySelectorAll<HTMLElement>('[trigger="hero-sun"]');
-  const heroTags = document.querySelectorAll<HTMLElement>('[trigger="hero-tag"]');
+  const sections = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-section"]');
+  const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
+  const heroTags = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-tag"]');
 
   // Si aucun élément hero, on sort
   if (sections.length === 0 && suns.length === 0 && heroTags.length === 0) return;
@@ -119,7 +119,7 @@ export const animateGlobalHeroLeave = (
   parentTl: gsap.core.Timeline,
   startPosition: string | number = 0
 ): void => {
-  const suns = document.querySelectorAll<HTMLElement>('[trigger="hero-sun"]');
+  const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
 
   if (suns.length === 0) return;
 

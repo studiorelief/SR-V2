@@ -127,30 +127,47 @@ export const destroyLottieFiles = (): void => {
   lottieInstances.length = 0;
 };
 
+/**
+ * Initialise un Lottie avec fade-in une fois chargé
+ */
+const initLottieWithFadeIn = (canvas: HTMLCanvasElement, url: string): DotLottie => {
+  // Cacher le canvas initialement
+  gsap.set(canvas, { opacity: 0 });
+
+  const dotLottie = new DotLottie({
+    autoplay: true,
+    loop: true,
+    canvas,
+    src: url,
+  });
+
+  // Fade-in une fois chargé
+  dotLottie.addEventListener('load', () => {
+    gsap.to(canvas, {
+      opacity: 1,
+      duration: 0.3,
+      ease: 'power2.out',
+    });
+  });
+
+  return dotLottie;
+};
+
 export const initLottieFiles = (): void => {
   // Footer Mascotte
-  const lottieMascotteFooter = document.querySelector('#lottie-footer');
+  const lottieMascotteFooter = document.querySelector<HTMLCanvasElement>('#lottie-footer');
   if (lottieMascotteFooter) {
-    // Get URL from data attribute if present, otherwise use default
-    // Add data-lottie-src="your-url" to the canvas element to customize per instance
-    // NOTE: If you encounter CORS errors, host the file on your own server
     const footerLottieUrl =
-      (lottieMascotteFooter as HTMLElement).dataset.lottieSrc ||
+      lottieMascotteFooter.dataset.lottieSrc ||
       'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-footer.lottie';
 
-    const dotLottieFooter = new DotLottie({
-      autoplay: true,
-      loop: true,
-      canvas: lottieMascotteFooter as HTMLCanvasElement,
-      src: footerLottieUrl,
-    });
+    const dotLottieFooter = initLottieWithFadeIn(lottieMascotteFooter, footerLottieUrl);
 
     // Stocker l'instance (avec ou sans hover)
     const instance = initLottieAnimation(lottieMascotteFooter, dotLottieFooter);
     if (instance) {
       lottieInstances.push(instance);
     } else {
-      // Stocker même sans hover pour pouvoir le détruire
       lottieInstances.push({
         element: lottieMascotteFooter,
         dotLottie: dotLottieFooter,
@@ -160,36 +177,36 @@ export const initLottieFiles = (): void => {
   }
 
   // Home Hero Mascotte
-  const lottieMascotteHomeHero = document.querySelector('#lottie-home-hero');
+  const lottieMascotteHomeHero = document.querySelector<HTMLCanvasElement>('#lottie-home-hero');
   if (lottieMascotteHomeHero) {
-    // Get URL from data attribute if present, otherwise use default
-    const homeHeroLottieUrl =
-      (lottieMascotteHomeHero as HTMLElement).dataset.lottieSrc ||
-      'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-home-hero.lottie';
+    // Vérifier si déjà initialisé par le preloader
+    const alreadyInitialized =
+      lottieMascotteHomeHero.getAttribute('data-preloader-initialized') === 'true';
 
-    const dotLottieHomeHero = new DotLottie({
-      autoplay: true,
-      loop: true,
-      canvas: lottieMascotteHomeHero as HTMLCanvasElement,
-      src: homeHeroLottieUrl,
-    });
+    if (!alreadyInitialized) {
+      const homeHeroLottieUrl =
+        lottieMascotteHomeHero.dataset.lottieSrc ||
+        'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-home-hero.lottie';
 
-    // Stocker l'instance (avec ou sans hover)
-    const instance = initLottieAnimation(lottieMascotteHomeHero, dotLottieHomeHero);
-    if (instance) {
-      lottieInstances.push(instance);
-    } else {
-      // Stocker même sans hover pour pouvoir le détruire
-      lottieInstances.push({
-        element: lottieMascotteHomeHero,
-        dotLottie: dotLottieHomeHero,
-        container: lottieMascotteHomeHero.parentElement || lottieMascotteHomeHero,
-      });
+      const dotLottieHomeHero = initLottieWithFadeIn(lottieMascotteHomeHero, homeHeroLottieUrl);
+
+      // Stocker l'instance (avec ou sans hover)
+      const instance = initLottieAnimation(lottieMascotteHomeHero, dotLottieHomeHero);
+      if (instance) {
+        lottieInstances.push(instance);
+      } else {
+        lottieInstances.push({
+          element: lottieMascotteHomeHero,
+          dotLottie: dotLottieHomeHero,
+          container: lottieMascotteHomeHero.parentElement || lottieMascotteHomeHero,
+        });
+      }
     }
+    // Si déjà initialisé par le preloader, on skip - le preloader gère l'instance
   }
 
   // Also initialize any other Lottie elements with trigger="hover-pause-lottie"
-  const lottieElementsWithTrigger = document.querySelectorAll<HTMLElement>(
+  const lottieElementsWithTrigger = document.querySelectorAll<HTMLCanvasElement>(
     '[trigger="hover-pause-lottie"]'
   );
 
@@ -209,18 +226,12 @@ export const initLottieFiles = (): void => {
       return;
     }
 
-    const dotLottie = new DotLottie({
-      autoplay: true,
-      loop: true,
-      canvas: element as HTMLCanvasElement,
-      src: lottieUrl,
-    });
+    const dotLottie = initLottieWithFadeIn(element, lottieUrl);
 
     const instance = initLottieAnimation(element, dotLottie);
     if (instance) {
       lottieInstances.push(instance);
     } else {
-      // Stocker même sans hover pour pouvoir le détruire
       lottieInstances.push({
         element,
         dotLottie,
