@@ -24,9 +24,15 @@ export const initHomeHero = (): void => {
   const section = document.querySelector('.section_home_hero') as HTMLElement | null;
   if (!section) return;
 
-  const heroBottom = section.querySelector('[trigger="hero-bottom-line"]') as HTMLElement | null;
-  const heroPontonBg = section.querySelector('[trigger="hero-ponton-bg"]') as HTMLElement | null;
-  const heroPlantLeft = section.querySelector('[trigger="hero-plante-left"]') as HTMLElement | null;
+  const heroBottom = section.querySelector(
+    '[home-hero-trigger="hero-bottom-line"]'
+  ) as HTMLElement | null;
+  const heroPontonBg = section.querySelector(
+    '[home-hero-trigger="hero-ponton-bg"]'
+  ) as HTMLElement | null;
+  const heroPlantLeft = section.querySelector(
+    '[home-hero-trigger="hero-plante-left"]'
+  ) as HTMLElement | null;
 
   // Kill l'ancien ScrollTrigger s'il existe
   destroyHomeHero();

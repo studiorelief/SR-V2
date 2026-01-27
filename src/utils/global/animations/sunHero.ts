@@ -5,18 +5,20 @@ gsap.registerPlugin(ScrollTrigger);
 
 /**
  * Animation parallax globale du soleil hero
- * Fonctionne sur toutes les pages ayant un élément [trigger="hero-sun"]
+ * Fonctionne sur toutes les pages ayant un élément [transition-trigger="hero-sun"]
  * Le soleil monte vers le haut au scroll de la page
  */
 export const initSunHeroParallax = (): void => {
-  const suns = document.querySelectorAll<HTMLElement>('[trigger="hero-sun"]');
+  const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
 
   if (suns.length === 0) return;
 
   suns.forEach((sun) => {
     // Trouve la section parent (hero-section ou la section parente la plus proche)
     const section =
-      sun.closest('[trigger="hero-section"]') || sun.closest('section') || sun.parentElement;
+      sun.closest('[transition-trigger="hero-section"]') ||
+      sun.closest('section') ||
+      sun.parentElement;
 
     if (!section) return;
 
@@ -32,7 +34,7 @@ export const initSunHeroParallax = (): void => {
 
     // Animation parallax - le soleil monte au scroll
     gsap.to(sun, {
-      y: '-10rem',
+      y: '-5rem',
       ease: 'none',
       force3D: true,
       scrollTrigger: {

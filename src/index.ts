@@ -38,6 +38,7 @@ import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
 } from '$utils/component/cards/cardVideoPlayer';
+import { initAiShare } from '$utils/component/global/aiShare';
 import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
 import { initCtaFixed } from '$utils/component/global/ctaFixed';
@@ -50,6 +51,7 @@ import {
   initNavbarHighlight,
 } from '$utils/component/global/navbar';
 import { initScrollbar } from '$utils/component/global/scrollbar';
+import { initSocialShare } from '$utils/component/global/socialShare';
 import { initSticker } from '$utils/component/global/sticker';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { destroyClientLoop, initClientLoop } from '$utils/component/section/clientsLoop';
@@ -71,6 +73,9 @@ import { initSunHeroParallax } from '$utils/global/animations/sunHero';
 import { initTextPath } from '$utils/global/animations/textPath';
 import { initCustomFavicon } from '$utils/global/brand/customFav';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
+import { hideDynListIfEmpty } from '$utils/global/optimisations/hideEmptyCMS';
+import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
+import { initPreloader } from '$utils/global/preloader/preloader';
 import {
   destroyFsAttributesScripts,
   initFsAttributesScripts,
@@ -105,18 +110,24 @@ const initGlobalFunctions = (): void => {
   // Global Animations
   initScrollTop();
   initFooter();
-  initCmsSummaryFade();
   initTextPath();
   initSunHeroParallax();
   initSticker();
   initAllAnchorFills();
 
+  // Optimisations
+  hideDynListIfEmpty();
+  initCmsSummaryFade();
+  initLazyVideos();
+
   // Lottie Files
   initLottieFiles();
 
   // Components
+  initAiShare();
   initBeforeAfter();
   initClientLoop();
+  initSocialShare();
 
   // Home
   initMonkeyFall();
@@ -180,14 +191,14 @@ registerNamespace('cms-portfolio', {
  *==========================================
  */
 
-// Track navigation history for Finsweet modules
-let hasNavigated = false;
-
 /**
  * Équivalent de barba.hooks.ready()
  * Premier chargement de la page + initialisation Swup
  */
 const init = () => {
+  // Preloader - doit être initialisé en premier (uniquement première visite)
+  initPreloader();
+
   // Init global functions on first load
   initGlobalFunctions();
   initGlobalHero();
@@ -224,6 +235,7 @@ const init = () => {
     destroyAllCtaAnimations();
     destroyAllDraggables();
     destroyLottieFiles();
+    destroyLazyVideos();
     destroyFsAttributesScripts();
     destroyAccordionScrollTrigger();
     destroyCardVideoPlayer();
@@ -245,10 +257,7 @@ const init = () => {
     initNavbarCurrentState(); // Met à jour w--current sur les liens
     requestAnimationFrame(() => {
       // restartWebflow();
-      if (hasNavigated) {
-        restartFsAttributesModules();
-      }
-      hasNavigated = true;
+      restartFsAttributesModules();
     });
   });
 
