@@ -17,6 +17,7 @@
   border-right-color: var(--_theme---border-color--invert);
   border-bottom-color: var(--_theme---border-color--invert);
   border-left-color: var(--_theme---border-color--invert);
+  background-color: var(--_theme---background--primary);
 }
 
 [data-wf--slider-pagination--variant='invert'] .swiper-bullet.is-active {
@@ -24,6 +25,7 @@
   border-right-color: var(--_theme---border-color--contrast-orange);
   border-bottom-color: var(--_theme---border-color--contrast-orange);
   border-left-color: var(--_theme---border-color--contrast-orange);
+  background-color: var(--_theme---text-color--accent-orange);
 }
 
 [data-wf--slider-pagination--variant='invert'] .swiper-bullet.is-active:hover {
@@ -31,5 +33,9 @@
 }
 
 [data-wf--slider-pagination--variant='invert'] .swiper-bullet:hover {
-  background-color: var(--_theme---background--primary);
+  background-color: var(--_theme---text-color--accent-orange);
+  border-top-color: var(--_theme---border-color--contrast-orange);
+  border-right-color: var(--_theme---border-color--contrast-orange);
+  border-bottom-color: var(--_theme---border-color--contrast-orange);
+  border-left-color: var(--_theme---border-color--contrast-orange);
 }
