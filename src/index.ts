@@ -34,6 +34,7 @@ gsap.registerPlugin(ScrollTrigger);
  *==========================================
  */
 
+import { destroyCardHoverIcon, initCardHoverIcon } from '$utils/component/cards/cardHoverIcon';
 import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
@@ -160,6 +161,7 @@ const initGlobalFunctions = (): void => {
       initCtaHeading();
       initAccordionScrollTrigger();
       initCardVideoPlayer();
+      initCardHoverIcon();
       initScrollbar();
     });
   });
@@ -239,6 +241,7 @@ const init = () => {
     destroyFsAttributesScripts();
     destroyAccordionScrollTrigger();
     destroyCardVideoPlayer();
+    destroyCardHoverIcon();
     destroyHomeHero();
     destroyMonkeyFall();
     destroyClientLoop();
