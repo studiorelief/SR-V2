@@ -42,7 +42,7 @@ import {
 import { initAiShare } from '$utils/component/global/aiShare';
 import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
-import { initCtaFixed } from '$utils/component/global/ctaFixed';
+import { initCtaFixed, initCtaText } from '$utils/component/global/ctaFixed';
 import { destroyAllDraggables, initDraggable } from '$utils/component/global/draggable';
 import { initFooter } from '$utils/component/global/footer';
 import {
@@ -205,6 +205,7 @@ const init = () => {
   initGlobalFunctions();
   initGlobalHero();
   initNavbar();
+  initCtaText();
 
   // Animations spécifiques par namespace (premier chargement)
   runNamespaceInit();
