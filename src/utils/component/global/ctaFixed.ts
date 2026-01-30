@@ -16,6 +16,7 @@ let ctaScrollTriggers: ScrollTrigger[] = [];
 const pageTextMap: Record<string, string> = {
   '/expertises': 'Expertises',
   '/portfolio': 'Portfolio',
+  '/portfolio/*': 'Projet',
   '/blog': 'Blog',
 };
 
@@ -60,10 +61,27 @@ let lastHoverMessageIndex: number | null = null;
 
 /**
  * Retourne le texte correspondant au chemin actuel
+ * Supporte les wildcards: '/portfolio/*' matche '/portfolio/jockiz'
  */
 const getTextForCurrentPage = (): string => {
   const path = window.location.pathname;
-  return pageTextMap[path] ?? defaultText;
+
+  // Vérifier d'abord les correspondances exactes
+  if (pageTextMap[path]) {
+    return pageTextMap[path];
+  }
+
+  // Vérifier les patterns avec wildcard (*)
+  for (const [pattern, text] of Object.entries(pageTextMap)) {
+    if (pattern.endsWith('/*')) {
+      const basePath = pattern.slice(0, -2); // Enlève '/*'
+      if (path.startsWith(basePath + '/')) {
+        return text;
+      }
+    }
+  }
+
+  return defaultText;
 };
 
 /*
