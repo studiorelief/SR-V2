@@ -12,7 +12,8 @@ import { EASINGS } from '$utils/global/easings/easings';
 interface CardHoverIconInstance {
   card: HTMLElement;
   icon: HTMLElement;
-  handleMouseEnter: () => void;
+  isHovering: boolean;
+  handleMouseEnter: (e: MouseEvent) => void;
   handleMouseLeave: () => void;
   handleMouseMove: (e: MouseEvent) => void;
 }
@@ -40,20 +41,32 @@ const initCardHover = (card: HTMLElement): void => {
     yPercent: -50,
   });
 
+  // Flag pour tracker l'état du hover (closure partagée)
+  let isHovering = false;
+
   const handleMouseMove = (e: MouseEvent): void => {
+    if (!isHovering) return;
+
     gsap.to(icon, {
       x: e.clientX,
       y: e.clientY,
       duration: 0.15,
       ease: 'power2.out',
+      overwrite: 'auto',
     });
   };
 
   const handleMouseEnter = (e: MouseEvent): void => {
-    // Position initiale au curseur
+    // Annuler toute animation en cours pour éviter les conflits
+    gsap.killTweensOf(icon);
+
+    isHovering = true;
+
+    // Position initiale au curseur + afficher immédiatement
     gsap.set(icon, {
       x: e.clientX,
       y: e.clientY,
+      display: 'flex',
     });
 
     // Cacher le curseur par défaut (card + tous les enfants)
@@ -62,8 +75,8 @@ const initCardHover = (card: HTMLElement): void => {
       el.style.cursor = 'none';
     });
 
+    // Animation d'apparition
     gsap.to(icon, {
-      display: 'flex',
       scale: 1,
       duration: 0.4,
       ease: EASINGS.backOut,
@@ -73,6 +86,11 @@ const initCardHover = (card: HTMLElement): void => {
   };
 
   const handleMouseLeave = (): void => {
+    // Annuler toute animation en cours
+    gsap.killTweensOf(icon);
+
+    isHovering = false;
+
     card.removeEventListener('mousemove', handleMouseMove);
 
     // Restaurer le curseur par défaut (card + tous les enfants)
@@ -81,12 +99,16 @@ const initCardHover = (card: HTMLElement): void => {
       el.style.cursor = '';
     });
 
+    // Animation de disparition
     gsap.to(icon, {
       scale: 0,
       duration: 0.3,
       ease: EASINGS.power2Out,
       onComplete: () => {
-        gsap.set(icon, { display: 'none' });
+        // Vérifier qu'on n'est pas revenu en hover entre temps
+        if (!isHovering) {
+          gsap.set(icon, { display: 'none' });
+        }
       },
     });
   };
@@ -94,12 +116,13 @@ const initCardHover = (card: HTMLElement): void => {
   const instance: CardHoverIconInstance = {
     card,
     icon,
-    handleMouseEnter: handleMouseEnter as () => void,
+    isHovering,
+    handleMouseEnter,
     handleMouseLeave,
     handleMouseMove,
   };
 
-  card.addEventListener('mouseenter', handleMouseEnter as EventListener);
+  card.addEventListener('mouseenter', handleMouseEnter);
   card.addEventListener('mouseleave', handleMouseLeave);
 
   cardHoverIconInstances.push(instance);
@@ -125,10 +148,13 @@ export const initCardHoverIcon = (): void => {
  */
 export const destroyCardHoverIcon = (): void => {
   cardHoverIconInstances.forEach((instance) => {
-    instance.card.removeEventListener('mouseenter', instance.handleMouseEnter as EventListener);
+    instance.card.removeEventListener('mouseenter', instance.handleMouseEnter);
     instance.card.removeEventListener('mouseleave', instance.handleMouseLeave);
     instance.card.removeEventListener('mousemove', instance.handleMouseMove);
+
+    // Annuler les animations et réinitialiser l'état
     gsap.killTweensOf(instance.icon);
+    gsap.set(instance.icon, { display: 'none', scale: 0 });
   });
 
   cardHoverIconInstances.length = 0;

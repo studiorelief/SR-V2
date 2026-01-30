@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 
+import { animateCtaTextEnter, animateCtaTextLeave } from '$utils/component/global/ctaFixed';
 import { animateGlobalHeroLeave, setupAndAnimateGlobalHero } from '$utils/swup/swupGlobalHero';
 
 /**
@@ -79,6 +80,9 @@ export const swupLeaveAnimation = (): Promise<void> => {
 
     // 3. Animation hero leave (suns descendent) - en même temps que le path
     animateGlobalHeroLeave(tl, '-=0.7');
+
+    // 4. Animation CTA text leave - en parallèle avec le début de la transition
+    animateCtaTextLeave();
 
     // 4. Logo monte du bas vers le centre
     if (logo) {
@@ -172,5 +176,10 @@ export const swupEnterAnimation = (): Promise<void> => {
 
     // 4. Setup + Animation hero (pendant que le rideau se lève)
     setupAndAnimateGlobalHero(tl, '<');
+
+    // 5. Animation CTA text enter - en même temps que le hero
+    tl.add(() => {
+      animateCtaTextEnter();
+    }, '<');
   });
 };
