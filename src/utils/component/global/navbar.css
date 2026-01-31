@@ -1,11 +1,50 @@
 /*
  *============================================================================
- * ANIMATION NAVBAR ON PC
- * GSAP gère tout sauf les hovers de liens
+ * NAVBAR ANIMATIONS
+ * Desktop: GSAP timeline + CSS hovers
+ * Mobile: GSAP click/tap interactions
  *============================================================================
  */
 
-@media (min-width: 991px) {
+/* ============================================================================
+ * MOBILE NAVBAR (<= 479px)
+ * ============================================================================ */
+
+@media (max-width: 479px) {
+  /* Hide .is-multi wrappers by default - GSAP controls visibility */
+  .nav_component .nav_menu_link-wrapper.is-multi {
+    display: none;
+  }
+
+  /* Section with children - cursor pointer */
+  .nav_menu-section:has(.nav_menu_link-wrapper.is-multi) {
+    cursor: pointer;
+  }
+
+  /* Active section styling */
+  .nav_menu-section.is-active .nav_menu_link-icon {
+    background-color: var(--_theme---background--secondary);
+  }
+
+  /* Transition for siblings opacity */
+  .nav_menu-section {
+    transition: opacity 0.3s ease-out;
+  }
+
+  .nav_menu-section:has(.nav_menu_link.w--current) .nav_menu_link-icon {
+    /* background-color: var(--_theme---text-color--accent-blue); */
+    background-color: var(--_theme---background--accent-orange);
+    /* background-color: var(--_theme---background--secondary); */
+  }
+}
+
+/* ============================================================================
+ * DESKTOP & TABLET NAVBAR (>= 480px)
+ * PC (>= 992px): hover events
+ * Tablet (480-991px): click events
+ * ============================================================================ */
+
+@media (min-width: 480px) {
   /* ==========================================
    * BASE
    * ========================================== */
