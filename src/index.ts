@@ -50,6 +50,7 @@ import {
   initNavbar,
   initNavbarCurrentState,
   initNavbarHighlight,
+  initNavbarMobile,
 } from '$utils/component/global/navbar';
 import { initScrollbar } from '$utils/component/global/scrollbar';
 import { initSocialShare } from '$utils/component/global/socialShare';
@@ -205,6 +206,7 @@ const init = () => {
   initGlobalFunctions();
   initGlobalHero();
   initNavbar();
+  initNavbarMobile();
   initCtaText();
 
   // Animations spécifiques par namespace (premier chargement)
