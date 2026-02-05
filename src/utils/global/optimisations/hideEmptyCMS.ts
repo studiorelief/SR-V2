@@ -1,15 +1,15 @@
 export function hideDynListIfEmpty() {
-  const dynLists = document.querySelectorAll('.w-dyn-list[if-empty="hide"]');
+  const elements = document.querySelectorAll('[if-empty="hide"]');
 
-  if (dynLists.length === 0) {
+  if (elements.length === 0) {
     return;
   }
 
-  dynLists.forEach((list) => {
-    const isEmpty = list.querySelector('.w-dyn-empty') !== null;
+  elements.forEach((element) => {
+    const isEmpty = element.querySelector('.w-dyn-empty') !== null;
 
-    if (isEmpty && list instanceof HTMLElement) {
-      list.style.display = 'none';
+    if (isEmpty && element instanceof HTMLElement) {
+      element.style.display = 'none';
     }
   });
 }

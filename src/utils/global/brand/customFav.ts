@@ -10,29 +10,6 @@ function injectStyle(): void {
 }
 
 /**
- * Validates and sets the favicon from the provided URL
- */
-function validateAndSetFavicon(url: string): void {
-  const testImg = new Image();
-
-  // Add timeout to prevent hanging
-  const timeout = setTimeout(() => {
-    // Timeout handled silently
-  }, 250);
-
-  testImg.onload = () => {
-    clearTimeout(timeout);
-    setFavicon(url);
-  };
-
-  testImg.onerror = () => {
-    clearTimeout(timeout);
-  };
-
-  testImg.src = url;
-}
-
-/**
  * Sets the favicon by removing existing favicon links and adding new ones
  */
 function setFavicon(url: string): void {
@@ -58,39 +35,23 @@ function setFavicon(url: string): void {
 
 /**
  * Updates the favicon from the image with custom-favicon attribute
- * Can be called multiple times (e.g., after Barba.js transitions)
+ * Can be called multiple times (e.g., after Swup transitions)
  */
 export function updateFavicon(): void {
-  // Use requestAnimationFrame to ensure DOM is ready after Barba transitions
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const img = document.querySelector<HTMLImageElement>(`img[${ATTR}]`);
+  const img = document.querySelector<HTMLImageElement>(`img[${ATTR}]`);
 
-      // If no image found, try again after a short delay
-      if (!img) {
-        setTimeout(() => {
-          const retryImg = document.querySelector<HTMLImageElement>(`img[${ATTR}]`);
-          if (retryImg) {
-            const newSrc = retryImg.src || retryImg.getAttribute('src');
-            if (newSrc) {
-              validateAndSetFavicon(newSrc);
-            }
-          }
-        }, 300);
-        return;
-      }
+  if (!img) {
+    return;
+  }
 
-      const newSrc = img.src || img.getAttribute('src');
+  const newSrc = img.src || img.getAttribute('src');
 
-      // If no valid src, exit
-      if (!newSrc) {
-        return;
-      }
+  if (!newSrc) {
+    return;
+  }
 
-      // Validate and set favicon
-      validateAndSetFavicon(newSrc);
-    });
-  });
+  // Set favicon directly for immediate update
+  setFavicon(newSrc);
 }
 
 /**
