@@ -9,7 +9,9 @@ gsap.registerPlugin(ScrollTrigger);
  * Le soleil monte vers le haut au scroll de la page
  */
 export const initSunHeroParallax = (): void => {
-  const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
+  const suns = document.querySelectorAll<HTMLElement>(
+    '[transition-trigger="hero-sun"], [transition-trigger="hero-lueurs"]'
+  );
 
   if (suns.length === 0) return;
 

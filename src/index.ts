@@ -73,7 +73,8 @@ import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lo
 import { initScrollTop } from '$utils/global/animations/scrollTop';
 import { initSunHeroParallax } from '$utils/global/animations/sunHero';
 import { initTextPath } from '$utils/global/animations/textPath';
-import { initCustomFavicon } from '$utils/global/brand/customFav';
+import { initCustomFavicon, updateFavicon } from '$utils/global/brand/customFav';
+import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
 import { hideDynListIfEmpty } from '$utils/global/optimisations/hideEmptyCMS';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
@@ -85,6 +86,12 @@ import {
 } from '$utils/global/script/loadFsAttributes';
 import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
 import {
+  destroyApprocheParallax,
+  destroyApprocheParallaxInvert,
+  initApprocheParallax,
+  initApprocheParallaxInvert,
+} from '$utils/page/hero/approcheHero';
+import {
   destroyCmsPortfolioParallax,
   initAnimateCmsPortfolioHero,
   initCmsPortfolioHero,
@@ -92,6 +99,10 @@ import {
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
 import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
+import {
+  destroyPortfolioSecondPlan,
+  initPortfolioSecondPlan,
+} from '$utils/page/hero/portfolioHero';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { initGlobalHero } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
@@ -120,6 +131,7 @@ const initGlobalFunctions = (): void => {
   // Optimisations
   hideDynListIfEmpty();
   initCmsSummaryFade();
+  initCmsCodeBlock();
   initLazyVideos();
 
   // Lottie Files
@@ -187,6 +199,26 @@ registerNamespace('cms-portfolio', {
   },
 });
 
+registerNamespace('portfolio', {
+  animate: () => {
+    initPortfolioSecondPlan();
+  },
+  init: () => {
+    initPortfolioSecondPlan();
+  },
+});
+
+registerNamespace('approche', {
+  animate: () => {
+    initApprocheParallax();
+    initApprocheParallaxInvert();
+  },
+  init: () => {
+    initApprocheParallax();
+    initApprocheParallaxInvert();
+  },
+});
+
 /*
  *==========================================
  * SWUP
@@ -209,13 +241,13 @@ const init = () => {
   initNavbarMobile();
   initCtaText();
 
-  // Animations spécifiques par namespace (premier chargement)
-  runNamespaceInit();
-
   // Animations visuelles (premier chargement)
   requestAnimationFrame(() => {
     initCtaAnimation();
     initCustomFavicon();
+
+    // Animations spécifiques par namespace (après layout stable)
+    runNamespaceInit();
   });
 
   // Initialize Swup after DOM is ready
@@ -236,6 +268,9 @@ const init = () => {
     // Kill ALL ScrollTriggers to prevent memory leaks
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
 
+    // Setup animations par namespace AVANT que le rideau se lève
+    runNamespaceSetup();
+
     destroyAllButtons();
     destroyAllCtaAnimations();
     destroyAllDraggables();
@@ -249,9 +284,12 @@ const init = () => {
     destroyMonkeyFall();
     destroyClientLoop();
     destroyCmsPortfolioParallax();
+    destroyPortfolioSecondPlan();
+    destroyApprocheParallax();
+    destroyApprocheParallaxInvert();
 
-    // Setup animations par namespace AVANT que le rideau se lève
-    runNamespaceSetup();
+    // Mettre à jour la favicon immédiatement après injection du contenu
+    updateFavicon();
   });
 
   /**
@@ -261,6 +299,10 @@ const init = () => {
   swup.hooks.on('page:view', () => {
     initGlobalFunctions();
     initNavbarCurrentState(); // Met à jour w--current sur les liens
+
+    // Animations spécifiques par namespace (dès que le contenu est injecté)
+    runNamespaceAnimate();
+
     requestAnimationFrame(() => {
       // restartWebflow();
       restartFsAttributesModules();
@@ -274,10 +316,6 @@ const init = () => {
   swup.hooks.on('visit:end', () => {
     requestAnimationFrame(() => {
       initCtaAnimation();
-      initCustomFavicon();
-
-      // Animations spécifiques par namespace (APRÈS le rideau)
-      runNamespaceAnimate();
     });
   });
 };

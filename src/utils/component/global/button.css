@@ -257,14 +257,14 @@
 
 /*
  *==========================================
- * ARIANE LINK
+ * LINK LINE
  *==========================================
  */
 
-.ariane_link .ariane_sub-line {
+.link-line_component .link-line_sub {
   transition: width 0.3s var(--ease-back-out);
 }
 
-.ariane_link:hover .ariane_sub-line {
+.link-line_component:hover .link-line_sub {
   width: 100%;
 }

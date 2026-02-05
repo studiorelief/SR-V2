@@ -20,10 +20,12 @@ export const setupAndAnimateGlobalHero = (
 ): void => {
   const sections = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-section"]');
   const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
+  const lueurs = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-lueurs"]');
   const heroTags = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-tag"]');
 
   // Si aucun élément hero, on sort
-  if (sections.length === 0 && suns.length === 0 && heroTags.length === 0) return;
+  if (sections.length === 0 && suns.length === 0 && lueurs.length === 0 && heroTags.length === 0)
+    return;
 
   // ============================================
   // 1. SUNS - Setup + Animation
@@ -48,7 +50,36 @@ export const setupAndAnimateGlobalHero = (
   }
 
   // ============================================
-  // 2 & 3. Pour chaque section : h2 SplitText + hero_content
+  // 2. LUEURS - Setup + Animation (inverse du sun, du haut vers le bas)
+  // ============================================
+  if (lueurs.length > 0) {
+    lueurs.forEach((lueur) => {
+      // Setup - position initiale en haut avec scale réduit et perspective top-center
+      gsap.set(lueur, {
+        yPercent: -25,
+        opacity: 0,
+        scale: 0.75,
+        // transformOrigin: 'top',
+      });
+
+      // Animation - descend vers position finale avec scale normal
+      parentTl.to(
+        lueur,
+        {
+          yPercent: 0,
+          opacity: 1,
+          scale: 1,
+          duration: 2,
+          ease: 'power3.out',
+          force3D: true,
+        },
+        startPosition
+      );
+    });
+  }
+
+  // ============================================
+  // 3 & 4. Pour chaque section : h2 SplitText + hero_content
   // ============================================
   sections.forEach((section) => {
     const h2 = section.querySelector('h2') as H2WithSplit | null;
@@ -87,7 +118,7 @@ export const setupAndAnimateGlobalHero = (
   });
 
   // ============================================
-  // 4. GLARE sur hero-tag (après SplitText ~1s ou immédiatement)
+  // 5. GLARE sur hero-tag (après SplitText ~1s ou immédiatement)
   // ============================================
   if (heroTags.length > 0) {
     // Si SplitText existe, attendre ~1s, sinon démarrer tout de suite
@@ -120,16 +151,29 @@ export const animateGlobalHeroLeave = (
   startPosition: string | number = 0
 ): void => {
   const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
+  const lueurs = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-lueurs"]');
 
-  if (suns.length === 0) return;
+  if (suns.length === 0 && lueurs.length === 0) return;
 
   // Utilise tl.call() pour déclencher l'animation au bon moment
   // sans l'ajouter à la timeline (ne bloque pas la transition)
   parentTl.call(
     () => {
+      // Suns - descendent
       suns.forEach((sun) => {
         gsap.to(sun, {
           yPercent: 100,
+          duration: 0.6,
+          ease: 'power2.in',
+          force3D: true,
+        });
+      });
+
+      // Lueurs - remontent avec scale (inverse de l'entrée)
+      lueurs.forEach((lueur) => {
+        gsap.to(lueur, {
+          yPercent: -100,
+          scale: 0.8,
           duration: 0.6,
           ease: 'power2.in',
           force3D: true,
