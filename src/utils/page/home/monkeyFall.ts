@@ -9,8 +9,8 @@ gsap.registerPlugin(ScrollTrigger);
  * Fonctionne sur tous les éléments ayant [trigger="home-monkey"]
  */
 export const initMonkeyFall = (): void => {
-  const monkeys = document.querySelectorAll<HTMLElement>('[trigger="home-monkey"]');
-  const monkeysWrapper = document.querySelector<HTMLElement>('[trigger="home-monkey-wrapper"]');
+  const monkeys = document.querySelectorAll<HTMLElement>('[home-portfolio="monkey"]');
+  const monkeysWrapper = document.querySelector<HTMLElement>('[home-portfolio="monkey-wrapper"]');
 
   if (monkeys.length === 0) return;
 
