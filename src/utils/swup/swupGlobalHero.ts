@@ -59,7 +59,7 @@ export const setupAndAnimateGlobalHero = (
         yPercent: -25,
         opacity: 0,
         scale: 0.75,
-        // transformOrigin: 'top',
+        transformOrigin: 'top',
       });
 
       // Animation - descend vers position finale avec scale normal

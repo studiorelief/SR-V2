@@ -34,6 +34,8 @@ gsap.registerPlugin(ScrollTrigger);
  *==========================================
  */
 
+import '$utils/swup/swupNamespaceRegistry';
+
 import { destroyCardHoverIcon, initCardHoverIcon } from '$utils/component/cards/cardHoverIcon';
 import {
   destroyCardVideoPlayer,
@@ -88,26 +90,18 @@ import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
 import {
   destroyApprocheParallax,
   destroyApprocheParallaxInvert,
-  initApprocheParallax,
-  initApprocheParallaxInvert,
 } from '$utils/page/hero/approcheHero';
 import {
   destroyCmsPortfolioParallax,
-  initAnimateCmsPortfolioHero,
-  initCmsPortfolioHero,
-  initCmsPortfolioParallax,
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
 import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
-import {
-  destroyPortfolioSecondPlan,
-  initPortfolioSecondPlan,
-} from '$utils/page/hero/portfolioHero';
+import { destroyPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
+import { destroyHomeServices, initHomeServices } from '$utils/page/home/homeServices';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { initGlobalHero } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
 import {
-  registerNamespace,
   runNamespaceAnimate,
   runNamespaceInit,
   runNamespaceSetup,
@@ -146,6 +140,7 @@ const initGlobalFunctions = (): void => {
   // Home
   initMonkeyFall();
   initHomeHero();
+  initHomeServices();
 
   // Portfolio CMS - géré par namespace dans visit:end
   initSetupCmsPortfolioHero();
@@ -179,45 +174,6 @@ const initGlobalFunctions = (): void => {
     });
   });
 };
-
-/*
- *==========================================
- * SWUP
- * ↳ NAMESPACES REGISTRY
- *==========================================
- */
-
-registerNamespace('cms-portfolio', {
-  setup: initSetupCmsPortfolioHero,
-  animate: () => {
-    initAnimateCmsPortfolioHero();
-    initCmsPortfolioParallax();
-  },
-  init: () => {
-    initCmsPortfolioHero();
-    initCmsPortfolioParallax();
-  },
-});
-
-registerNamespace('portfolio', {
-  animate: () => {
-    initPortfolioSecondPlan();
-  },
-  init: () => {
-    initPortfolioSecondPlan();
-  },
-});
-
-registerNamespace('approche', {
-  animate: () => {
-    initApprocheParallax();
-    initApprocheParallaxInvert();
-  },
-  init: () => {
-    initApprocheParallax();
-    initApprocheParallaxInvert();
-  },
-});
 
 /*
  *==========================================
@@ -281,6 +237,7 @@ const init = () => {
     destroyCardVideoPlayer();
     destroyCardHoverIcon();
     destroyHomeHero();
+    destroyHomeServices();
     destroyMonkeyFall();
     destroyClientLoop();
     destroyCmsPortfolioParallax();

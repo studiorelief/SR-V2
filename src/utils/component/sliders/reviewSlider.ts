@@ -6,6 +6,7 @@
 
 import 'swiper/css/bundle';
 
+import gsap from 'gsap';
 import Swiper from 'swiper/bundle';
 
 export function initReviewSlider() {
@@ -22,11 +23,11 @@ export function initReviewSlider() {
       centeredSlides: true,
       slidesPerView: 1,
       spaceBetween: 2 * 16,
-      speed: 500,
-      //   autoplay: {
-      //     delay: 5000,
-      //     disableOnInteraction: false,
-      //   },
+      speed: 300,
+      effect: 'fade',
+      fadeEffect: {
+        crossFade: true,
+      },
       grabCursor: true,
       allowTouchMove: true,
       keyboard: true,
@@ -37,15 +38,48 @@ export function initReviewSlider() {
         eventsTarget: 'container',
       },
       touchEventsTarget: 'wrapper',
-      //   breakpoints: {
-      //     992: {
-      //       slidesPerView: 2.5,
-      //     },
-      //     240: {
-      //       slidesPerView: 1.5,
-      //       spaceBetween: 1.5 * 16,
-      //     },
-      //   },
+    });
+
+    // Animation sur les éléments asset (left to right) & text (right to left)
+    const animateSlideIn = (slide: Element) => {
+      const assets = slide.querySelectorAll('[review-slider="asset"]');
+      const texts = slide.querySelectorAll('[review-slider="text"]');
+
+      if (assets.length > 0) {
+        gsap.fromTo(
+          assets,
+          { xPercent: -100, autoAlpha: 0 },
+          { xPercent: 0, autoAlpha: 1, duration: 0.6, ease: 'power2.out' }
+        );
+      }
+      if (texts.length > 0) {
+        gsap.fromTo(
+          texts,
+          { yPercent: 20, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 0.6, ease: 'power2.out' }
+        );
+      }
+    };
+
+    const resetSlideElements = (slide: Element) => {
+      const assets = slide.querySelectorAll('[review-slider="asset"]');
+      const texts = slide.querySelectorAll('[review-slider="text"]');
+      gsap.set(assets, { xPercent: -100, autoAlpha: 0 });
+      gsap.set(texts, { yPercent: 20, autoAlpha: 0 });
+    };
+
+    // Reset tous les slides sauf l'actif au démarrage
+    swiper.slides.forEach((slide, i) => {
+      if (i !== swiper.activeIndex) resetSlideElements(slide);
+    });
+
+    swiper.on('slideChange', () => {
+      // Reset tous les slides
+      swiper.slides.forEach((slide) => resetSlideElements(slide));
+
+      // Animer le nouveau slide actif avec un léger délai (laisser le fade démarrer)
+      const activeSlide = swiper.slides[swiper.activeIndex];
+      if (activeSlide) animateSlideIn(activeSlide);
     });
 
     // Pagination personnalisée
