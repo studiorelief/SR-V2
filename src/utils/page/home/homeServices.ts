@@ -4,13 +4,13 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 export const initHomeServices = (): void => {
-  const wrapper = document.querySelector<HTMLElement>('[home-services="cards-wrapper"]');
+  const section = document.querySelector<HTMLElement>('[home-services="cards-wrapper"]');
   const cards = document.querySelectorAll<HTMLElement>('[home-services="cards"]');
 
-  if (!wrapper || cards.length === 0) return;
+  if (!section || cards.length === 0) return;
 
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-  const topOffsets = [4 * rem, 10 * rem, 14 * rem];
+  const topOffsets = [4 * rem, 10 * rem, 16.5 * rem];
   const scaleValues = [0.8, 0.9];
 
   cards.forEach((card, index) => {
@@ -30,8 +30,8 @@ export const initHomeServices = (): void => {
         id: `home-services-card-${index}`,
         trigger: card,
         start: `top ${topOffsets[index] ?? 0}`,
-        endTrigger: wrapper,
-        end: `bottom-=${Math.round(1.5 * rem)} bottom`,
+        endTrigger: cards[cards.length - 1],
+        end: `top ${topOffsets[topOffsets.length - 1]}`,
         pin: true,
         pinSpacing: false,
         scrub: true,
