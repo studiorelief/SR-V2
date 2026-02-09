@@ -4,7 +4,8 @@
 *==========================================
 */
 
-@media (max-width: 1165px) {
+/* Caché entre 479px et 1165px, visible en dessous et au-dessus */
+@media (min-width: 479px) and (max-width: 1165px) {
   .home_hero_content .button_main_wrap {
     display: none;
   }
