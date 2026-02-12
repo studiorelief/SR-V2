@@ -15,6 +15,7 @@ let ctaScrollTriggers: ScrollTrigger[] = [];
 // Mapping des chemins vers les textes - facilement extensible
 const pageTextMap: Record<string, string> = {
   '/expertises': 'Expertises',
+  '/offres': 'Offres',
   '/portfolio': 'Portfolio',
   '/portfolio/*': 'Projet',
   '/blog': 'Blog',
@@ -58,6 +59,13 @@ const getHoverMessagesForCurrentPage = (): string[] => {
 
 // Track le dernier message affiché (pour éviter les répétitions)
 let lastHoverMessageIndex: number | null = null;
+
+// Track si un texte interactif (hover ou trigger) est actuellement affiché
+let isInteractiveTextActive = false;
+
+// Track le scroll pour bloquer le hover pendant le momentum scroll
+let isScrolling = false;
+let scrollEndTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Retourne le texte correspondant au chemin actuel
@@ -158,6 +166,11 @@ const showHoverText = (): void => {
 
   if (!textWrapper || !textElement) return;
 
+  // Bloquer le hover pendant le scroll (évite le flicker)
+  if (isScrolling) return;
+
+  isInteractiveTextActive = true;
+
   // Kill les animations en cours (page text)
   killCtaTextAnimations();
 
@@ -192,6 +205,8 @@ const hideHoverText = (): void => {
   );
 
   if (!textWrapper) return;
+
+  isInteractiveTextActive = false;
 
   // Animation de sortie du texte
   gsap.to(textWrapper, {
@@ -353,6 +368,7 @@ const hideCta = (ctaFixed: HTMLElement): void => {
 // Store hover listeners pour cleanup
 let hoverEnterHandler: (() => void) | null = null;
 let hoverLeaveHandler: (() => void) | null = null;
+let scrollHandler: (() => void) | null = null;
 
 // Store trigger listeners pour cleanup
 let triggerListeners: Array<{ el: HTMLElement; enter: () => void; leave: () => void }> = [];
@@ -368,6 +384,11 @@ const showTriggerText = (text: string): void => {
   );
 
   if (!textWrapper || !textElement) return;
+
+  // Bloquer pendant le scroll (évite le flicker)
+  if (isScrolling) return;
+
+  isInteractiveTextActive = true;
 
   // Kill les animations en cours
   killCtaTextAnimations();
@@ -403,6 +424,8 @@ const hideTriggerText = (): void => {
   );
 
   if (!textWrapper) return;
+
+  isInteractiveTextActive = false;
 
   // Animation de sortie du texte
   gsap.to(textWrapper, {
@@ -465,12 +488,29 @@ export const initCtaFixed = (): void => {
   if (hoverLeaveHandler) {
     ctaFixed.removeEventListener('mouseleave', hoverLeaveHandler);
   }
+  if (scrollHandler) {
+    window.removeEventListener('scroll', scrollHandler);
+  }
 
   // Setup hover listeners
   hoverEnterHandler = showHoverText;
   hoverLeaveHandler = hideHoverText;
   ctaFixed.addEventListener('mouseenter', hoverEnterHandler);
   ctaFixed.addEventListener('mouseleave', hoverLeaveHandler);
+
+  // Hide texte interactif (hover + trigger) on scroll + bloquer mouseenter pendant le momentum
+  scrollHandler = () => {
+    isScrolling = true;
+    if (scrollEndTimeout) clearTimeout(scrollEndTimeout);
+    scrollEndTimeout = setTimeout(() => {
+      isScrolling = false;
+    }, 150);
+    if (isInteractiveTextActive) {
+      isInteractiveTextActive = false;
+      hideHoverText();
+    }
+  };
+  window.addEventListener('scroll', scrollHandler, { passive: true });
 
   // Setup trigger listeners pour éléments avec cta-fixed-trigger
   initTriggerListeners();

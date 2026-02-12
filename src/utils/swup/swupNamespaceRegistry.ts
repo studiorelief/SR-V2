@@ -5,6 +5,7 @@ import {
   initCmsPortfolioParallax,
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
+import { initOffresMarmotte, initOffresParallax } from '$utils/page/hero/offresHero';
 import { initPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
 import { registerNamespace } from '$utils/swup/swupNamespaces';
 
@@ -33,6 +34,17 @@ registerNamespace('portfolio', {
   },
   init: () => {
     initPortfolioSecondPlan();
+  },
+});
+
+registerNamespace('offres', {
+  animate: () => {
+    initOffresParallax();
+    initOffresMarmotte();
+  },
+  init: () => {
+    initOffresParallax();
+    initOffresMarmotte();
   },
 });
 
