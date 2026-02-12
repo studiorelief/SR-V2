@@ -36,7 +36,7 @@ export const initPortfolioSecondPlan = (): void => {
     trigger: heroSection,
     start: 'top top',
     end: 'bottom top',
-    scrub: 1,
+    scrub: 0.5,
     markers: false,
     animation: tl,
   });
