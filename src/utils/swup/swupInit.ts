@@ -26,12 +26,23 @@ export const initSwup = (): Swup => {
     animationSelector: false, // On utilise SwupJsPlugin pour les animations
     containers: ['#swup'],
     cache: true,
-    // Ignorer les ancres internes (même page)
-    ignoreVisit: (_url, { el } = {}) => {
-      // Si c'est un lien avec hash sur la même page, laisser le navigateur gérer
-      if (el?.getAttribute('href')?.startsWith('#')) {
-        return true;
-      }
+    // Ignorer les liens qui ne sont pas de vraies navigations
+    ignoreVisit: (url, { el } = {}) => {
+      if (!el) return false;
+
+      const href = el.getAttribute('href');
+
+      // Ancres internes (#) — laisser le navigateur gérer
+      if (href?.startsWith('#')) return true;
+
+      // Href vide ou javascript: — boutons interactifs, pas de navigation
+      if (!href || href === '' || href.startsWith('javascript:')) return true;
+
+      // Liens "self" (même page) — éviter l'animation de transition
+      const currentPath = window.location.pathname;
+      const targetPath = new URL(url, window.location.origin).pathname;
+      if (currentPath === targetPath) return true;
+
       return false;
     },
     plugins: [

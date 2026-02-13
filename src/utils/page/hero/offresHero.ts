@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 let offresParallaxTrigger: ScrollTrigger | null = null;
+let offresParallaxBigTrigger: ScrollTrigger | null = null;
 
 /**
  * Parallax effect on offres page elements
@@ -25,11 +26,42 @@ export const initOffresParallax = (): void => {
   const tl = gsap.timeline();
 
   tl.to(parallaxElements, {
-    y: '1.5rem',
+    y: '1rem',
     ease: 'none',
   });
 
   offresParallaxTrigger = ScrollTrigger.create({
+    trigger: heroSection,
+    start: 'top top',
+    end: 'bottom top',
+    scrub: 0.5,
+    markers: false,
+    animation: tl,
+  });
+};
+
+export const initOffresParallaxBig = (): void => {
+  const parallaxBigElements = document.querySelectorAll<HTMLElement>(
+    '[offres-trigger="parallax-big"]'
+  );
+  if (parallaxBigElements.length === 0) return;
+
+  const heroSection = document.querySelector<HTMLElement>('.section_hero');
+  if (!heroSection) return;
+
+  gsap.set(parallaxBigElements, {
+    willChange: 'transform',
+    force3D: true,
+  });
+
+  const tl = gsap.timeline();
+
+  tl.to(parallaxBigElements, {
+    y: '3rem',
+    ease: 'none',
+  });
+
+  offresParallaxBigTrigger = ScrollTrigger.create({
     trigger: heroSection,
     start: 'top top',
     end: 'bottom top',
@@ -110,8 +142,20 @@ export const destroyOffresParallax = (): void => {
     offresParallaxTrigger = null;
   }
 
+  if (offresParallaxBigTrigger) {
+    offresParallaxBigTrigger.kill();
+    offresParallaxBigTrigger = null;
+  }
+
   const parallaxElements = document.querySelectorAll<HTMLElement>('[offres-trigger="parallax"]');
   if (parallaxElements.length > 0) {
     gsap.set(parallaxElements, { clearProps: 'willChange' });
+  }
+
+  const parallaxBigElements = document.querySelectorAll<HTMLElement>(
+    '[offres-trigger="parallax-big"]'
+  );
+  if (parallaxBigElements.length > 0) {
+    gsap.set(parallaxBigElements, { clearProps: 'willChange' });
   }
 };
