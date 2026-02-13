@@ -28,21 +28,14 @@ export const initSwup = (): Swup => {
     cache: true,
     // Ignorer les liens qui ne sont pas de vraies navigations
     ignoreVisit: (url, { el } = {}) => {
-      if (!el) return false;
-
-      const href = el.getAttribute('href');
-
+      const href = el?.getAttribute('href');
       // Ancres internes (#) — laisser le navigateur gérer
       if (href?.startsWith('#')) return true;
-
       // Href vide ou javascript: — boutons interactifs, pas de navigation
-      if (!href || href === '' || href.startsWith('javascript:')) return true;
-
-      // Liens "self" (même page) — éviter l'animation de transition
-      const currentPath = window.location.pathname;
+      if (href === '' || href?.startsWith('javascript:')) return true;
+      // Même pathname (self-links, pagination) — pas de transition Swup
       const targetPath = new URL(url, window.location.origin).pathname;
-      if (currentPath === targetPath) return true;
-
+      if (targetPath === window.location.pathname) return true;
       return false;
     },
     plugins: [
@@ -84,6 +77,29 @@ export const initSwup = (): Swup => {
       }),
     ],
   });
+
+  // Self-links (ex: /blog → /blog) — intercepte AVANT Swup pour smooth scroll top
+  document.addEventListener(
+    'click',
+    (e) => {
+      const el = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
+      if (!el) return;
+
+      const href = el.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
+
+      const target = new URL(href, window.location.href);
+      if (
+        target.pathname === window.location.pathname &&
+        target.search === window.location.search
+      ) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    },
+    true // capture phase — se déclenche avant le handler de Swup
+  );
 
   // Debug logs
   // swup.hooks.on('visit:start', () => console.log('[Swup] Visit started'));
