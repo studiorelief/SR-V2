@@ -53,12 +53,14 @@ export const setupAndAnimateGlobalHero = (
   // 2. LUEURS - Setup + Animation (inverse du sun, du haut vers le bas)
   // ============================================
   if (lueurs.length > 0) {
+    const isMobile = window.matchMedia('(max-width: 479px)').matches;
+
     lueurs.forEach((lueur) => {
       // Setup - position initiale en haut avec scale réduit et perspective top-center
       gsap.set(lueur, {
         yPercent: -25,
         opacity: 0,
-        scale: 0.75,
+        scale: isMobile ? 1 : 0.75,
         transformOrigin: 'top',
       });
 

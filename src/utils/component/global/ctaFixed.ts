@@ -14,11 +14,17 @@ let ctaScrollTriggers: ScrollTrigger[] = [];
 
 // Mapping des chemins vers les textes - facilement extensible
 const pageTextMap: Record<string, string> = {
-  '/expertises': 'Expertises',
-  '/offres': 'Offres',
   '/portfolio': 'Portfolio',
   '/portfolio/*': 'Projet',
+  '/expertises': 'Expertises',
+  '/produits': 'Produits',
+  '/offres': 'Offres',
   '/blog': 'Blog',
+  '/blog/*': 'Article',
+  '/labs': 'Labs',
+  '/labs/*': 'Expérience',
+  '/stack': 'Stack',
+  '/stack/*': 'Outils',
 };
 
 // Texte par défaut si la page n'est pas dans le mapping

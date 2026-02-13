@@ -710,3 +710,63 @@ export const initNavbarCurrentState = (): void => {
     }
   });
 };
+
+// ============================================================================
+// NAVBAR TRIGGERS (external elements that open the navbar)
+// ============================================================================
+
+const TRIGGER_MAP: Record<string, string> = {
+  'open-navbar-ressources': 'nav-ressources',
+  'open-navbar-solutions': 'nav-solutions',
+  'open-navbar-reperes': 'nav-reperes',
+};
+
+/**
+ * Find the .nav_menu-section matching a highlight value
+ */
+const findSectionByHighlight = (highlightValue: string): HTMLElement | null => {
+  const attr = isMobile() ? 'highlight-mobile' : 'highlight';
+  const el = document.querySelector<HTMLElement>(`[${attr}="${highlightValue}"]`);
+  if (!el) return null;
+  return el.closest<HTMLElement>('.nav_menu-section') ?? el;
+};
+
+/**
+ * Initialize external triggers that open the navbar
+ * PC (>= 992px): hover opens/closes the full navbar
+ * Mobile (<= 479px): click toggles the matching section dropdown
+ */
+export const initNavbarTriggers = (): void => {
+  Object.entries(TRIGGER_MAP).forEach(([triggerValue, highlightValue]) => {
+    const triggers = document.querySelectorAll<HTMLElement>(`[nav-trigger="${triggerValue}"]`);
+
+    triggers.forEach((trigger) => {
+      // PC: hover opens/closes navbar
+      trigger.addEventListener('mouseenter', () => {
+        if (!isDesktopHover()) return;
+        openNavbar();
+        isNavbarOpen = true;
+      });
+
+      trigger.addEventListener('mouseleave', () => {
+        if (!isDesktopHover()) return;
+        closeNavbar();
+        isNavbarOpen = false;
+      });
+
+      // Mobile: click toggles the matching section
+      trigger.addEventListener('click', () => {
+        if (!isMobile()) return;
+
+        const section = findSectionByHighlight(highlightValue);
+        if (!section) return;
+
+        const component = document.querySelector<HTMLElement>('.nav_component');
+        if (!component) return;
+
+        const allSections = [...component.querySelectorAll<HTMLElement>('.nav_menu-section')];
+        toggleMobileSection(section, allSections);
+      });
+    });
+  });
+};

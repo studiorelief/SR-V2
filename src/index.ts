@@ -53,6 +53,7 @@ import {
   initNavbarCurrentState,
   initNavbarHighlight,
   initNavbarMobile,
+  initNavbarTriggers,
 } from '$utils/component/global/navbar';
 import { initScrollbar } from '$utils/component/global/scrollbar';
 import { initSocialShare } from '$utils/component/global/socialShare';
@@ -80,6 +81,7 @@ import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
 import { hideDynListIfEmpty } from '$utils/global/optimisations/hideEmptyCMS';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
+import { mirrorClick } from '$utils/global/optimisations/mirrorClick';
 import { initPreloader } from '$utils/global/preloader/preloader';
 import {
   destroyFsAttributesScripts,
@@ -127,11 +129,13 @@ const initGlobalFunctions = (): void => {
   initCmsSummaryFade();
   initCmsCodeBlock();
   initLazyVideos();
+  mirrorClick();
 
   // Lottie Files
   initLottieFiles();
 
   // Components
+  initNavbarTriggers();
   initAiShare();
   initBeforeAfter();
   initClientLoop();

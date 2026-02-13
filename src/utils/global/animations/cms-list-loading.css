@@ -1,0 +1,7 @@
+.blog_articles_collection-item {
+  transition: transform 0.3s ease-out;
+}
+
+.is-list-starting {
+  transform: scale(0.5);
+}

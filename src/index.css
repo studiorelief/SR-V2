@@ -5,6 +5,12 @@
 */
 
 /* 
+* ↳ ANIMATIONS
+*/
+
+@import './utils/global/animations/cms-list-loading.css';
+
+/* 
 * ↳ EASINGS
 */
 
@@ -15,7 +21,7 @@
 */
 
 @import './utils/global/optimisations/cms-rt.css';
-@import './utils/global/optimisations/cmsCodeBlock.css';
+@import './utils/global/optimisations/cms-code-block.css';
 
 /* 
 *==========================================
