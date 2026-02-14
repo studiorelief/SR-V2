@@ -65,6 +65,7 @@ import {
   initCtaAnimation,
   initCtaHeading,
 } from '$utils/component/section/cta';
+import { initCategoriesSlider } from '$utils/component/sliders/categoriesSlider';
 import { initCmsCardsSlider } from '$utils/component/sliders/cmsCardsSlider';
 import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
 import { initReviewSlider } from '$utils/component/sliders/reviewSlider';
@@ -154,6 +155,7 @@ const initGlobalFunctions = (): void => {
   initInnerHighlight();
 
   // Sliders
+  initCategoriesSlider();
   initCmsCardsSlider();
   initCmsProjetsSlider();
   initReviewSlider();

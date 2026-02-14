@@ -1,5 +1,10 @@
 .swiper-pagination {
   z-index: 0 !important;
+  position: relative !important;
+}
+
+.swiper-bullet {
+  cursor: pointer !important;
 }
 
 .review_pagination-cards {
