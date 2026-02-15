@@ -1,5 +1,5 @@
-#ressources-blog:hover [data-wf--button-link--variant*='base'],
-#ressources-labs:hover [data-wf--button-link--variant*='base'],
-#ressources-formation:hover [data-wf--button-link--variant*='base'] {
+#ressources-blog:hover [data-wf--button-link--variant],
+#ressources-labs:hover [data-wf--button-link--variant],
+#ressources-formation:hover [data-wf--button-link--variant] {
   padding-left: var(--_layout---spacing--xsmall);
 }

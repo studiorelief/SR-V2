@@ -1,0 +1,101 @@
+/* 
+*==========================================
+* RADIO FORM - ANIMATION HOVER
+*==========================================
+*/
+
+[radio-form='wrapper'] {
+  transition: color 0.3s ease-out;
+}
+
+[radio-form='background'] {
+  transition:
+    width 0.3s var(--ease-back-out),
+    opacity 0.3s ease-out;
+}
+
+[radio-form='text'] {
+  transition:
+    color 0.3s ease-out,
+    background-color 0.3s ease-out,
+    border-color 0.3s ease-out;
+}
+
+[radio-form='wrapper']:hover [radio-form='background'] {
+  width: 100%;
+  opacity: 1;
+}
+
+[radio-form='wrapper']:hover {
+  color: var(--_theme---text-color--invert);
+}
+
+[radio-form='wrapper']:hover [radio-form='text'] {
+  color: var(--_theme---text-color--primary);
+  background-color: var(--_theme---background--primary);
+  border-color: var(--_theme---border-color--invert);
+}
+
+/* 
+*==========================================
+* RADIO FORM - ACTIVE STATE
+*==========================================
+*/
+
+[radio-form='wrapper'] .is-active-inputactive {
+  color: var(--_theme---text-color--invert);
+}
+
+[radio-form='wrapper'] .is-active-inputactive [radio-form='text'] {
+  color: var(--_theme---text-color--primary);
+  background-color: var(--_theme---background--primary);
+  border-color: var(--_theme---border-color--invert);
+}
+
+[radio-form='wrapper'] .is-active-inputactive + [radio-form='background'] {
+  width: 100%;
+  opacity: 1;
+}
+
+/* 
+*==========================================
+* SEARCH FORM - STATES
+*==========================================
+*/
+
+/* Hover - Eyes */
+[search-form='pupille'] {
+  transition:
+    transform 0.3s var(--ease-back-out),
+    margin-left 0.3s var(--ease-back-out);
+}
+
+[search-form='pupille'].is-animate {
+  transform: translateX(25%);
+}
+
+/* Focus - hover */
+[search-form='wrapper']:hover [search-form='pupille'] {
+  transform: translateX(-25%);
+}
+
+/* Focus - eyes */
+[search-form='input']:focus ~ [search-form='eyes'] [search-form='pupille'] {
+  transform: translateY(25%);
+  margin-left: -0.5rem;
+}
+
+/* Focus - eyes + texte */
+[search-form='wrapper'].is-active [search-form='pupille'] {
+  transform: translateY(25%);
+  margin-left: -0.5rem;
+}
+
+/* Focus - reset */
+[search-form='reset'] {
+  transition: transform 0.3s var(--ease-back-out);
+}
+
+[search-form='wrapper'].is-active [search-form='reset'] {
+  transform: translateX(-150%);
+}
