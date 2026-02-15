@@ -135,11 +135,11 @@
  *==========================================
  */
 
-[data-wf--button-main--variant='primary'] .button_main_hover::before {
+[data-wf--button-main--variant*='primary'] .button_main_hover::before {
   background-color: var(--_buttons---surface--hover);
 }
 
-[data-wf--button-main--variant='secondary'] .button_main_hover::before {
+[data-wf--button-main--variant*='secondary'] .button_main_hover::before {
   background-color: var(--_buttons---surface--default);
 }
 
@@ -149,7 +149,7 @@
  *==========================================
  */
 
-[data-wf--button-main--variant='secondary']:hover .button_main_icon {
+[data-wf--button-main--variant*='secondary']:hover .button_main_icon {
   border-color: var(--_theme---border-color--primary);
 }
 

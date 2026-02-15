@@ -38,6 +38,12 @@
 */
 
 /* 
+* ↳ FORM
+*/
+
+@import './utils/component/form/form-elements.css';
+
+/* 
 * ↳ GLOBAL
 */
 

@@ -1,7 +1,10 @@
 .blog_articles_collection-item {
-  transition: transform 0.3s ease-out;
+  transition:
+    transform 0.3s var(--ease-back-out),
+    opacity 0.3s ease-out;
 }
 
 .is-list-starting {
   transform: scale(0.5);
+  opacity: 0;
 }

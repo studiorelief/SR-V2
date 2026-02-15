@@ -41,6 +41,7 @@ import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
 } from '$utils/component/cards/cardVideoPlayer';
+import { initSearchBar } from '$utils/component/form/searchBar';
 import { initAiShare } from '$utils/component/global/aiShare';
 import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
@@ -140,6 +141,7 @@ const initGlobalFunctions = (): void => {
   initAiShare();
   initBeforeAfter();
   initClientLoop();
+  initSearchBar();
   initSocialShare();
 
   // Home
@@ -162,9 +164,7 @@ const initGlobalFunctions = (): void => {
 
   // Scripts
   initFsAttributesScripts();
-  initFsLibrairiesScripts(
-    'https://cdn.jsdelivr.net/npm/@finsweet/attributes-accordion@1/accordion.js'
-  );
+  initFsLibrairiesScripts();
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
