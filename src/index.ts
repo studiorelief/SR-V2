@@ -69,6 +69,7 @@ import {
 import { initCategoriesSlider } from '$utils/component/sliders/categoriesSlider';
 import { initCmsCardsSlider } from '$utils/component/sliders/cmsCardsSlider';
 import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
+import { initAuthorsSlider } from '$utils/component/sliders/authorsSlider';
 import { initReviewSlider } from '$utils/component/sliders/reviewSlider';
 import {
   destroyAccordionScrollTrigger,
@@ -157,6 +158,7 @@ const initGlobalFunctions = (): void => {
   initInnerHighlight();
 
   // Sliders
+  initAuthorsSlider();
   initCategoriesSlider();
   initCmsCardsSlider();
   initCmsProjetsSlider();
