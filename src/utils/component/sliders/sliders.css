@@ -19,7 +19,11 @@
   opacity: 1;
 }
 
-/*** SLIDER PAGINATION - INVERT ***/
+/*
+ *==========================================
+ * SLIDER PAGINATION - INVERT
+ *==========================================
+ */
 
 [data-wf--slider-pagination--variant='invert'] .swiper-bullet {
   border-top-color: var(--_theme---border-color--invert);
@@ -47,4 +51,14 @@
   border-right-color: var(--_theme---border-color--contrast-orange);
   border-bottom-color: var(--_theme---border-color--contrast-orange);
   border-left-color: var(--_theme---border-color--contrast-orange);
+}
+
+/*
+ *==========================================
+ * SLIDER AUTHORS
+ *==========================================
+ */
+
+.swiper.is-authors {
+  overflow: visible;
 }
