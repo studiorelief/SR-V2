@@ -5,18 +5,15 @@
 */
 
 [radio-form='wrapper'] {
-  transition: color 0.3s ease-out;
+  transition: color 0.15s ease-out;
 }
 
 [radio-form='background'] {
-  transition:
-    width 0.3s var(--ease-back-out),
-    opacity 0.3s ease-out;
+  transition: width 0.3s var(--ease-back-out);
 }
 
 [radio-form='text'] {
   transition:
-    color 0.3s ease-out,
     background-color 0.3s ease-out,
     border-color 0.3s ease-out;
 }
