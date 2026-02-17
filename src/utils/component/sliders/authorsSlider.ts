@@ -135,6 +135,33 @@ export function initAuthorsSlider() {
 
     requestAnimationFrame(() => updateSlides(swiper));
 
+    /* ── Lueurs hover animation ── */
+    swiperEl.querySelectorAll<HTMLElement>('[author-slider="card"]').forEach((card) => {
+      const allLueurs = card.querySelectorAll<HTMLElement>('[author-slider="lueurs"]');
+      if (allLueurs.length === 0) return;
+
+      card.addEventListener('mouseenter', () => {
+        gsap.to(allLueurs, {
+          x: '1rem',
+          y: '1rem',
+          scale: 1.05,
+          opacity: 0.75,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      });
+      card.addEventListener('mouseleave', () => {
+        gsap.to(allLueurs, {
+          x: '0rem',
+          y: '0rem',
+          scale: 1,
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+        });
+      });
+    });
+
     /* ── Card flip (GSAP) — synced across clones ── */
     type SlideRefs = { inner: HTMLElement; front: HTMLElement; back: HTMLElement };
     const cloneGroups = new Map<number, SlideRefs[]>();
