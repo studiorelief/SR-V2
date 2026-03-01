@@ -6,9 +6,9 @@ export function hideDynListIfEmpty() {
   }
 
   elements.forEach((element) => {
-    const isEmpty = element.querySelector('.w-dyn-empty') !== null;
+    const hasItems = element.querySelector('.w-dyn-item') !== null;
 
-    if (isEmpty && element instanceof HTMLElement) {
+    if (!hasItems && element instanceof HTMLElement) {
       element.style.display = 'none';
     }
   });
