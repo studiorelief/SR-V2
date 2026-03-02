@@ -38,7 +38,8 @@
 * ↳ ICON ANIMATIONS
 */
 
-[trigger='button-icon'] {
+[trigger='button-icon'],
+[data-wf--button-main--variant='primary-dark'] .button_main_icon {
   transition:
     transform 0.3s var(--ease-back-out),
     opacity 0.3s var(--ease-back-out);
@@ -135,8 +136,12 @@
  *==========================================
  */
 
-[data-wf--button-main--variant*='primary'] .button_main_hover::before {
+[data-wf--button-main--variant='primary-orange'] .button_main_hover::before {
   background-color: var(--_buttons---surface--hover);
+}
+
+[data-wf--button-main--variant='primary-dark'] .button_main_hover::before {
+  background-color: var(--_buttons---surface--default);
 }
 
 [data-wf--button-main--variant*='secondary'] .button_main_hover::before {

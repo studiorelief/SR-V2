@@ -24,6 +24,12 @@
 @import './utils/global/optimisations/cms-code-block.css';
 
 /* 
+* ↳ PAGE
+*/
+
+@import './utils/page/contact/contact-form.css';
+
+/* 
 *==========================================
 * RESPONSIVE
 *==========================================
@@ -53,6 +59,7 @@
 @import './utils/component/global/sticker.css';
 @import './utils/component/global/toc.css';
 @import './utils/component/global/accordion.css';
+@import './utils/component/global/tooltip.css';
 
 /* 
 * ↳ CARDS

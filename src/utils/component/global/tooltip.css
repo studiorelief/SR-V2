@@ -1,0 +1,3 @@
+.tooltip_component:hover .tooltip_icon {
+  border-color: var(--_theme---border-color--primary-active);
+}

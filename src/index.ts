@@ -59,6 +59,7 @@ import {
 import { initScrollbar } from '$utils/component/global/scrollbar';
 import { initSocialShare } from '$utils/component/global/socialShare';
 import { initSticker } from '$utils/component/global/sticker';
+import { initTooltip } from '$utils/component/global/tooltip';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { destroyClientLoop, initClientLoop } from '$utils/component/section/clientsLoop';
 import {
@@ -144,6 +145,7 @@ const initGlobalFunctions = (): void => {
   initClientLoop();
   initSearchBar();
   initSocialShare();
+  initTooltip();
 
   // Home
   initMonkeyFall();

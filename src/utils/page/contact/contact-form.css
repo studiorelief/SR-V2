@@ -1,0 +1,211 @@
+/*
+ *==========================================
+ * CONTACT FORM - SHIMMER
+ *==========================================
+ */
+
+.is-loading {
+  position: relative;
+  overflow: hidden;
+  background: none;
+}
+
+.is-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.04) 30%,
+    rgba(0, 0, 0, 0.07) 50%,
+    rgba(0, 0, 0, 0.04) 70%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ *==========================================
+ * CONTACT FORM - ARIANE FORM
+ *==========================================
+ */
+
+.f-progress-indicator-custom:has(~ .f-progress-indicator-custom.current) {
+  color: var(--_theme---text-color--primary);
+  font-weight: var(--font-weight--medium);
+}
+
+/*
+ *==========================================
+ * CONTACT FORM - STEP 1
+ *==========================================
+ */
+
+.contact-form_choice-1_radio-field.is-active-inputactive .contact-form_choice-1_radio-label {
+  border: 1px solid var(--_theme---border-color--primary);
+}
+
+.contact-form_choice-1_radio-field.is-active-inputactive .tooltip_component {
+  color: var(--_theme---text-color--primary);
+}
+
+.contact-form_choice-1_radio-field.is-active-inputactive .tooltip_icon {
+  border: 1px solid var(--_theme---border-color--primary);
+}
+
+.contact-form_choice-1_radio-field.is-starter.is-active-inputactive {
+  background-color: var(--_theme---background--accent-orange);
+}
+
+.contact-form_choice-1_radio-field.is-custom.is-active-inputactive {
+  background-color: var(--_theme---background--accent-purple);
+}
+
+/*
+ *==========================================
+ * CONTACT FORM - STEP 2
+ *==========================================
+ */
+
+.selectcustom_link.w-dropdown-link:last-child {
+  border-bottom: 0px solid transparent;
+}
+
+/*
+ *==========================================
+ * CONTACT FORM - FILE UPLOAD
+ *==========================================
+ */
+
+.form_input.is-upload {
+  cursor: pointer;
+  position: relative;
+  transition:
+    border-color 0.2s ease-out,
+    background-color 0.2s ease-out;
+}
+
+/* Invisible native input covering the full zone */
+.upload_native-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.form_input.is-upload.is-drag-over {
+  border-color: var(--_theme---border-color--primary);
+  background-color: var(--_theme---background--accent-blue-low);
+}
+
+.form_input.is-upload.has-files {
+  border-color: var(--_theme---border-color--tertiary);
+}
+
+/* File list */
+.upload_file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.upload_file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--_theme---border-color--secondary);
+  /* background-color: var(--_theme---background--secondary); */
+}
+
+.upload_file-item.is-uploading {
+  opacity: 0.5;
+}
+
+.upload_file-preview {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload_file-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload_file-icon {
+  font-size: 0.625rem;
+  font-weight: var(--font-weight--semibold);
+  color: var(--_theme---text-color--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.upload_file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.upload_file-name {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight--medium);
+  color: var(--_theme---text-color--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload_file-size {
+  font-size: 0.75rem;
+  color: var(--_theme---text-color--secondary);
+  flex-shrink: 0;
+}
+
+.upload_file-remove {
+  all: unset;
+  cursor: pointer;
+  width: 0.75rem;
+  height: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--_theme---text-color--secondary);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  transition:
+    color 0.2s ease-out,
+    transform 0.3s var(--ease-back-out);
+}
+
+.upload_file-remove:hover {
+  color: var(--_theme---text-color--primary);
+  transform: rotate(90deg);
+}
