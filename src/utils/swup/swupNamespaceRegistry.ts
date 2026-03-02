@@ -1,3 +1,5 @@
+import { initContactFileUpload } from '$utils/page/contact/contactFileUpload';
+import { initContactMultiStep } from '$utils/page/contact/contactMultiStep';
 import { initApprocheParallax, initApprocheParallaxInvert } from '$utils/page/hero/approcheHero';
 import {
   initAnimateCmsPortfolioHero,
@@ -72,5 +74,16 @@ registerNamespace('produits', {
   },
   init: () => {
     initProduitsParallax();
+  },
+});
+
+registerNamespace('contact', {
+  animate: () => {
+    initContactMultiStep();
+    initContactFileUpload();
+  },
+  init: () => {
+    initContactMultiStep();
+    initContactFileUpload();
   },
 });

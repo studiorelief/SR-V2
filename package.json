@@ -56,6 +56,7 @@
     "@lottiefiles/dotlottie-web": "^0.60.0",
     "@lottiefiles/lottie-player": "^2.0.12",
     "@marker.io/browser": "^0.20.2",
+    "@supabase/supabase-js": "^2.98.0",
     "@swup/head-plugin": "^2.2.1",
     "@swup/js-plugin": "^3.1.2",
     "@swup/preload-plugin": "^3.2.10",
