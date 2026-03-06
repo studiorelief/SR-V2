@@ -1,13 +1,23 @@
 /*
  *==========================================
  * CONTACT FORM - LOGIC
- * ↳ Summary section reacts to radio selection
+ * ↳ Offre config (starter / sur-mesure)
+ * ↳ Presets (step 2 selects, step 3 checkboxes)
+ * ↳ Summary sync (text roulette, service badges)
+ * ↳ Step 4 personal info cards
+ * ↳ Step navigation & skip logic
  *==========================================
  */
 
 import gsap from 'gsap';
 
 import { getUploadedFiles } from '$utils/page/contact/contactFileUpload';
+
+/*
+ *------------------------------------------
+ * CONSTANTS
+ *------------------------------------------
+ */
 
 const STARTER_ID = 'starter';
 const SUR_MESURE_ID = 'sur-mesure';
@@ -31,15 +41,98 @@ const OFFRE_SUR_MESURE: OffreConfig = {
 };
 
 const STARTER_BUDGET_VALUE = '4 000 €';
-const SUR_MESURE_BUDGET_VALUE = '< 5 000 €';
+const SUR_MESURE_BUDGET_VALUE = '5 000 - 10 000€';
+
+const SUR_MESURE_PRESETS: Record<string, string> = {
+  projet: 'Créer',
+  produit: 'Marketing',
+  page: '5 - 10 pages',
+  deadline: '1 - 3 mois',
+};
+
+const SUR_MESURE_CHECKBOXES: Record<string, boolean> = {
+  branding: true,
+  webdesign: true,
+  fondation: true,
+  fonctionnalite: true,
+  accompagnement: true,
+  performance: false,
+};
+
+const STARTER_PRESETS: Record<string, string> = {
+  projet: 'Créer',
+  produit: 'Marketing',
+  page: '1 - 5 pages',
+  deadline: '< 1 mois',
+};
+
+const STARTER_CHECKBOXES: Record<string, boolean> = {
+  branding: true,
+  webdesign: true,
+  fondation: true,
+  fonctionnalite: true,
+  accompagnement: true,
+  performance: false,
+};
+
+const DEFAULT_CHECKBOXES: Record<string, boolean> = {
+  branding: true,
+  webdesign: true,
+  fondation: true,
+  fonctionnalite: true,
+  accompagnement: true,
+  performance: false,
+};
+
+const SUMMARY_FIELDS = ['projet', 'produit', 'page', 'deadline', 'budget'] as const;
+
+const SERVICE_LABELS: Record<string, string> = {
+  branding: 'Branding',
+  webdesign: 'Webdesign',
+  fondation: 'Fondation',
+  fonctionnalite: 'Fonctionnalité',
+  accompagnement: 'Accompagnement',
+  performance: 'Performance',
+};
+
+const STEP4_FIELDS = ['prenom', 'nom', 'entreprise', 'telephone', 'email', 'description'] as const;
+
+const LAST_CARDS_SELECTORS = '.cards-line_component.is-last, .contact-form_cards-line.is-last';
+
+/*
+ *------------------------------------------
+ * MODULE STATE
+ *------------------------------------------
+ */
 
 let starterRadio: HTMLInputElement | null = null;
 let surMesureRadio: HTMLInputElement | null = null;
-
-// Store initial values to restore when nothing is checked
 let initialOffreWrapperShimmer: string | null = null;
 let initialOffreText = '';
 let starterBudgetOption: HTMLOptionElement | null = null;
+
+let serviceItemTemplate: HTMLElement | null = null;
+let serviceContainer: HTMLElement | null = null;
+let fieldListeners: Array<{ el: HTMLElement; handler: () => void }> = [];
+let progressListeners: Array<{ el: HTMLElement; handler: () => void }> = [];
+let stepNavListeners: Array<{ el: HTMLElement; handler: () => void }> = [];
+let step4Listeners: Array<{ el: HTMLElement; handler: () => void }> = [];
+let fileObserver: MutationObserver | null = null;
+
+let currentStepIndex = 0;
+let step1NextBtn: HTMLElement | null = null;
+
+// Cached DOM refs (set once at init, stable across the page lifecycle)
+let cachedGlobalWrapper: HTMLElement | null = null;
+let cachedSubmitBtn: HTMLElement | null = null;
+let cachedSteps: HTMLElement[] = [];
+
+/*
+ *==========================================
+ * OFFRE CONFIG
+ * ↳ Colors, text, shimmer on summary section
+ *==========================================
+ */
 
 function getElements() {
   const offreWrapper = document.querySelector<HTMLElement>('[summary="offre-wrapper"]');
@@ -51,7 +144,6 @@ function getElements() {
 
 function saveInitialState(): void {
   const { offreWrapper, offreText } = getElements();
-
   if (offreWrapper) {
     initialOffreWrapperShimmer = offreWrapper.getAttribute('shimmer-loader');
   }
@@ -79,36 +171,6 @@ function applyConfig(config: OffreConfig): void {
   }
 }
 
-function animateTextRoulette(el: HTMLElement, newText: string): void {
-  if (el.textContent === newText) return;
-
-  const parent = el.parentElement;
-  if (!parent) {
-    el.textContent = newText;
-    return;
-  }
-
-  // Ensure parent clips the overflow for the slide effect
-  parent.style.overflow = 'hidden';
-
-  // Slide current text up and out
-  gsap.to(el, {
-    yPercent: -100,
-    opacity: 0,
-    duration: 0.25,
-    ease: 'power2.in',
-    onComplete: () => {
-      el.textContent = newText;
-      // Position new text below, then slide up into view
-      gsap.fromTo(
-        el,
-        { yPercent: 100, opacity: 0 },
-        { yPercent: 0, opacity: 1, duration: 0.35, ease: 'power2.out' }
-      );
-    },
-  });
-}
-
 function resetToInitial(): void {
   const { offreWrapper, mainWrapper, bullets, offreText } = getElements();
 
@@ -130,85 +192,45 @@ function resetToInitial(): void {
   }
 }
 
-function setBudgetValue(value: string): void {
-  const budgetSelect = document.querySelector<HTMLSelectElement>('#budget');
-  if (!budgetSelect) return;
-  budgetSelect.value = value;
-  budgetSelect.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function addStarterBudget(): void {
-  const budgetSelect = document.querySelector<HTMLSelectElement>('#budget');
-  if (!budgetSelect) return;
-
-  // Only create the option once
-  if (!starterBudgetOption) {
-    starterBudgetOption = document.createElement('option');
-    starterBudgetOption.value = STARTER_BUDGET_VALUE;
-    starterBudgetOption.textContent = STARTER_BUDGET_VALUE;
-  }
-
-  // Insert the option and select it
-  budgetSelect.appendChild(starterBudgetOption);
-  budgetSelect.value = STARTER_BUDGET_VALUE;
-  budgetSelect.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function removeStarterBudget(): void {
-  const budgetSelect = document.querySelector<HTMLSelectElement>('#budget');
-  if (!budgetSelect || !starterBudgetOption) return;
-
-  // If the starter option is currently selected, reset to default
-  if (budgetSelect.value === STARTER_BUDGET_VALUE) {
-    starterBudgetOption.remove();
-    budgetSelect.value = '';
-    budgetSelect.dispatchEvent(new Event('input', { bubbles: true }));
-  } else {
-    starterBudgetOption.remove();
-  }
-}
-
 /*
  *==========================================
- * SUMMARY FIELDS SYNC
- * ↳ Step 2 selects → summary text
- * ↳ Step 3 checkboxes → service badges
+ * ANIMATIONS
+ * ↳ Text roulette (slide up/down)
+ * ↳ Container height (smooth resize)
  *==========================================
  */
 
-const SUMMARY_FIELDS = ['projet', 'produit', 'page', 'deadline', 'budget'] as const;
+function animateTextRoulette(el: HTMLElement, newText: string): void {
+  if (el.textContent === newText) return;
 
-let serviceItemTemplate: HTMLElement | null = null;
-let serviceContainer: HTMLElement | null = null;
-let fieldListeners: Array<{ el: HTMLElement; handler: () => void }> = [];
-let progressListeners: Array<{ el: HTMLElement; handler: () => void }> = [];
-
-function syncSummaryField(fieldId: string): void {
-  const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(`#${fieldId}`);
-  const summary = document.querySelector<HTMLElement>(`[summary="${fieldId}"]`);
-  if (!input || !summary) return;
-  const newValue = input.value || '';
-  if (summary.textContent !== newValue) {
-    animateTextRoulette(summary, newValue);
+  const parent = el.parentElement;
+  if (!parent) {
+    el.textContent = newText;
+    return;
   }
-}
 
-function syncAllSummaryFields(): void {
-  for (const id of SUMMARY_FIELDS) {
-    syncSummaryField(id);
-  }
-}
+  parent.style.overflow = 'hidden';
 
-function getCloneId(clone: HTMLElement): string {
-  const textEl = clone.querySelector<HTMLElement>('[summary="service-text"]');
-  return textEl?.textContent || clone.textContent || '';
+  gsap.to(el, {
+    yPercent: -100,
+    opacity: 0,
+    duration: 0.25,
+    ease: 'power2.in',
+    onComplete: () => {
+      el.textContent = newText;
+      gsap.fromTo(
+        el,
+        { yPercent: 100, opacity: 0 },
+        { yPercent: 0, opacity: 1, duration: 0.35, ease: 'power2.out' }
+      );
+    },
+  });
 }
 
 function animateContainerHeight(container: HTMLElement, callback: () => void): void {
   const startHeight = container.offsetHeight;
   callback();
 
-  // Let DOM settle, then measure new height
   requestAnimationFrame(() => {
     const endHeight = container.offsetHeight;
     if (startHeight === endHeight) return;
@@ -230,29 +252,141 @@ function animateContainerHeight(container: HTMLElement, callback: () => void): v
   });
 }
 
+/*
+ *==========================================
+ * BUDGET MANAGEMENT
+ *==========================================
+ */
+
+function setBudgetValue(value: string): void {
+  const budgetSelect = document.querySelector<HTMLSelectElement>('#budget');
+  if (!budgetSelect) return;
+  budgetSelect.value = value;
+  budgetSelect.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function addStarterBudget(): void {
+  const budgetSelect = document.querySelector<HTMLSelectElement>('#budget');
+  if (!budgetSelect) return;
+
+  if (!starterBudgetOption) {
+    starterBudgetOption = document.createElement('option');
+    starterBudgetOption.value = STARTER_BUDGET_VALUE;
+    starterBudgetOption.textContent = STARTER_BUDGET_VALUE;
+  }
+
+  budgetSelect.appendChild(starterBudgetOption);
+  budgetSelect.value = STARTER_BUDGET_VALUE;
+  budgetSelect.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function removeStarterBudget(): void {
+  const budgetSelect = document.querySelector<HTMLSelectElement>('#budget');
+  if (!budgetSelect || !starterBudgetOption) return;
+
+  if (budgetSelect.value === STARTER_BUDGET_VALUE) {
+    starterBudgetOption.remove();
+    budgetSelect.value = '';
+    budgetSelect.dispatchEvent(new Event('input', { bubbles: true }));
+  } else {
+    starterBudgetOption.remove();
+  }
+}
+
+/*
+ *==========================================
+ * PRESETS
+ * ↳ Apply / reset step 2 selects & step 3 checkboxes
+ *==========================================
+ */
+
+function applyPresets(selects: Record<string, string>, checkboxes: Record<string, boolean>): void {
+  for (const [id, value] of Object.entries(selects)) {
+    const select = document.querySelector<HTMLSelectElement>(`#${id}`);
+    if (!select) continue;
+    select.value = value;
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  for (const [id, checked] of Object.entries(checkboxes)) {
+    const cb = document.querySelector<HTMLInputElement>(`#${id}`);
+    if (!cb) continue;
+    cb.checked = checked;
+    cb.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+function resetPresets(): void {
+  const allSelectIds = new Set([
+    ...Object.keys(STARTER_PRESETS),
+    ...Object.keys(SUR_MESURE_PRESETS),
+  ]);
+  for (const id of allSelectIds) {
+    const select = document.querySelector<HTMLSelectElement>(`#${id}`);
+    if (!select) continue;
+    select.value = '';
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  for (const [id, checked] of Object.entries(DEFAULT_CHECKBOXES)) {
+    const cb = document.querySelector<HTMLInputElement>(`#${id}`);
+    if (!cb) continue;
+    cb.checked = checked;
+    cb.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+/*
+ *==========================================
+ * SUMMARY FIELDS SYNC
+ * ↳ Step 2 selects → summary text (with roulette)
+ * ↳ Step 3 checkboxes → service badges (with FLIP)
+ *==========================================
+ */
+
+function syncSummaryField(fieldId: string): void {
+  const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(`#${fieldId}`);
+  const summary = document.querySelector<HTMLElement>(`[summary="${fieldId}"]`);
+  if (!input || !summary) return;
+  const newValue = input.value || '';
+  if (summary.textContent !== newValue) {
+    if (summary.classList.contains('is-loading')) {
+      summary.textContent = newValue;
+    } else {
+      animateTextRoulette(summary, newValue);
+    }
+  }
+}
+
+function syncAllSummaryFields(): void {
+  for (const id of SUMMARY_FIELDS) {
+    syncSummaryField(id);
+  }
+}
+
+function getCloneId(clone: HTMLElement): string {
+  return clone.getAttribute('data-service-id') || '';
+}
+
 function syncServiceItems(): void {
   if (!serviceItemTemplate || !serviceContainer) return;
 
-  const steps = document.querySelectorAll<HTMLElement>('[data-form="step"]');
-  const isStep3Visible = steps[2] && steps[2].style.display !== 'none';
+  const isStep3Visible = cachedSteps[2] && cachedSteps[2].style.display !== 'none';
 
-  // Get checked IDs
   const checkedIds = new Set<string>();
   document
     .querySelectorAll<HTMLInputElement>('[step-3="checkbox"]:checked')
     .forEach((cb) => checkedIds.add(cb.id));
 
-  // Map existing clones by their service ID
   const existingClones = new Map<string, HTMLElement>();
   serviceContainer
     .querySelectorAll<HTMLElement>('[summary="service-item"]:not([data-template])')
     .forEach((clone) => existingClones.set(getCloneId(clone), clone));
 
-  // Get the wrapper for smooth height animation
   const wrapper = serviceContainer.closest<HTMLElement>('.contact-form_cards-services-w');
 
   const doSync = () => {
-    // FLIP: capture "First" positions of items that will stay
+    // FLIP: capture "First" positions of staying items
     const stayingItems: Array<{ el: HTMLElement; rect: DOMRect }> = [];
     existingClones.forEach((clone, id) => {
       if (checkedIds.has(id)) {
@@ -260,11 +394,10 @@ function syncServiceItems(): void {
       }
     });
 
-    // Remove items no longer checked
+    // Remove unchecked items
     existingClones.forEach((clone, id) => {
       if (checkedIds.has(id)) return;
       if (isStep3Visible) {
-        // Pull item out of flow at its current position
         const rect = clone.getBoundingClientRect();
         const parentRect = clone.offsetParent?.getBoundingClientRect() || { left: 0, top: 0 };
         clone.style.position = 'absolute';
@@ -290,6 +423,7 @@ function syncServiceItems(): void {
 
       const clone = serviceItemTemplate!.cloneNode(true) as HTMLElement;
       clone.removeAttribute('data-template');
+      clone.setAttribute('data-service-id', id);
       clone.style.display = '';
 
       if (isStep3Visible) {
@@ -297,10 +431,11 @@ function syncServiceItems(): void {
       }
 
       const textEl = clone.querySelector<HTMLElement>('[summary="service-text"]');
+      const label = SERVICE_LABELS[id] || id;
       if (textEl) {
-        textEl.textContent = id;
+        textEl.textContent = label;
       } else {
-        clone.textContent = id;
+        clone.textContent = label;
       }
 
       serviceContainer!.appendChild(clone);
@@ -322,7 +457,7 @@ function syncServiceItems(): void {
       }
     });
 
-    // FLIP: animate staying items from old to new positions
+    // FLIP: animate staying items to new positions
     if (isStep3Visible) {
       stayingItems.forEach(({ el, rect: oldRect }) => {
         const newRect = el.getBoundingClientRect();
@@ -335,7 +470,6 @@ function syncServiceItems(): void {
     }
   };
 
-  // Animate container height if visible, otherwise just sync
   if (isStep3Visible && wrapper) {
     animateContainerHeight(wrapper, doSync);
   } else {
@@ -344,7 +478,6 @@ function syncServiceItems(): void {
 }
 
 function bindSummaryListeners(): void {
-  // Bind change/input on step 2 fields
   for (const id of SUMMARY_FIELDS) {
     const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(`#${id}`);
     if (!input) continue;
@@ -355,7 +488,6 @@ function bindSummaryListeners(): void {
     fieldListeners.push({ el: input, handler });
   }
 
-  // Bind change on step 3 checkboxes
   const step3Checkboxes = document.querySelectorAll<HTMLInputElement>('[step-3="checkbox"]');
   step3Checkboxes.forEach((cb) => {
     const handler = () => syncServiceItems();
@@ -363,7 +495,6 @@ function bindSummaryListeners(): void {
     fieldListeners.push({ el: cb, handler });
   });
 
-  // Save template for service items
   const templateItem = document.querySelector<HTMLElement>('[summary="service-item"]');
   if (templateItem) {
     serviceContainer = templateItem.parentElement;
@@ -393,18 +524,6 @@ function unbindSummaryListeners(): void {
  *==========================================
  */
 
-const STEP4_FIELD_MAP: Record<string, string> = {
-  prenom: 'prenom',
-  nom: 'nom',
-  entreprise: 'entreprise',
-  telephone: 'telephone',
-  email: 'email',
-  description: 'description',
-};
-
-let step4Listeners: Array<{ el: HTMLElement; handler: () => void }> = [];
-let fileObserver: MutationObserver | null = null;
-
 function updateCardsWrapperEmpty(): void {
   document
     .querySelectorAll<HTMLElement>('.contact-form_cards-c-w, .cards-line_component')
@@ -416,45 +535,43 @@ function updateCardsWrapperEmpty(): void {
     });
 }
 
-function syncStep4Field(inputId: string, summaryAttr: string): void {
-  const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${inputId}`);
-  const summary = document.querySelector<HTMLElement>(`[summary="${summaryAttr}"]`);
+function toggleCardVisibility(card: HTMLElement, hasContent: boolean, wasHidden: boolean): void {
+  const applyChange = () => {
+    if (hasContent) {
+      card.style.display = 'flex';
+      if (wasHidden) {
+        gsap.fromTo(card, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+      }
+    } else {
+      card.style.display = 'none';
+    }
+    updateCardsWrapperEmpty();
+  };
+
+  const visibilityChanges = (wasHidden && hasContent) || (!wasHidden && !hasContent);
+  if (visibilityChanges && cachedGlobalWrapper) {
+    animateContainerHeight(cachedGlobalWrapper, applyChange);
+  } else {
+    applyChange();
+  }
+}
+
+function syncStep4Field(fieldId: string): void {
+  const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${fieldId}`);
+  const summary = document.querySelector<HTMLElement>(`[summary="${fieldId}"]`);
   if (!summary) return;
 
   const value = input?.value || '';
   summary.textContent = value;
 
-  // Show/hide parent .contact-form_cards-c based on input value
   const card = summary.closest<HTMLElement>('.contact-form_cards-c');
   if (card) {
     const wasHidden = card.style.display === 'none';
-    const globalWrapper = document.querySelector<HTMLElement>('.contact-form_cards');
-
-    const applyChange = () => {
-      if (value.trim()) {
-        card.style.display = 'flex';
-        if (wasHidden) {
-          gsap.fromTo(card, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power1.out' });
-        }
-      } else {
-        card.style.display = 'none';
-      }
-      updateCardsWrapperEmpty();
-    };
-
-    // Animate global wrapper height if visibility changes
-    if ((wasHidden && value.trim()) || (!wasHidden && !value.trim())) {
-      if (globalWrapper) {
-        animateContainerHeight(globalWrapper, applyChange);
-      } else {
-        applyChange();
-      }
-    } else {
-      applyChange();
-    }
+    toggleCardVisibility(card, !!value.trim(), wasHidden);
   } else {
     updateCardsWrapperEmpty();
   }
+  validateStep4Submit();
 }
 
 function syncStep4Files(): void {
@@ -467,53 +584,30 @@ function syncStep4Files(): void {
   const card = summary.closest<HTMLElement>('.contact-form_cards-c');
   if (card) {
     const wasHidden = card.style.display === 'none';
-    const globalWrapper = document.querySelector<HTMLElement>('.contact-form_cards');
-
-    const applyChange = () => {
-      if (files.length > 0) {
-        card.style.display = 'flex';
-        if (wasHidden) {
-          gsap.fromTo(card, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power1.out' });
-        }
-      } else {
-        card.style.display = 'none';
-      }
-      updateCardsWrapperEmpty();
-    };
-
-    if ((wasHidden && files.length > 0) || (!wasHidden && files.length === 0)) {
-      if (globalWrapper) {
-        animateContainerHeight(globalWrapper, applyChange);
-      } else {
-        applyChange();
-      }
-    } else {
-      applyChange();
-    }
+    toggleCardVisibility(card, files.length > 0, wasHidden);
   } else {
     updateCardsWrapperEmpty();
   }
 }
 
 function syncAllStep4Fields(): void {
-  for (const [inputId, summaryAttr] of Object.entries(STEP4_FIELD_MAP)) {
-    syncStep4Field(inputId, summaryAttr);
+  for (const fieldId of STEP4_FIELDS) {
+    syncStep4Field(fieldId);
   }
   syncStep4Files();
 }
 
 function bindStep4Listeners(): void {
-  for (const [inputId, summaryAttr] of Object.entries(STEP4_FIELD_MAP)) {
-    const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${inputId}`);
+  for (const fieldId of STEP4_FIELDS) {
+    const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${fieldId}`);
     if (!input) continue;
 
-    const handler = () => syncStep4Field(inputId, summaryAttr);
+    const handler = () => syncStep4Field(fieldId);
     input.addEventListener('input', handler);
     input.addEventListener('change', handler);
     step4Listeners.push({ el: input, handler });
   }
 
-  // Observe file list changes to sync summary=files
   const fileListParent = document.querySelector<HTMLElement>('.form_field-wrapper:has(.is-upload)');
   if (fileListParent) {
     fileObserver = new MutationObserver(() => syncStep4Files());
@@ -535,28 +629,20 @@ function unbindStep4Listeners(): void {
 
 /*
  *==========================================
- * STEP NAVIGATION SKIP
- * ↳ Starter → skip to step 4
- * ↳ Sur-mesure → normal flow (step 2)
+ * STEP NAVIGATION
+ * ↳ Loading/reveal states per step
+ * ↳ Starter skip → step 4
+ * ↳ Submit validation for starter flow
  *==========================================
  */
 
-let currentStepIndex = 0;
-
-let step1NextBtn: HTMLElement | null = null;
-let step2BackBtn: HTMLElement | null = null;
-let step2NextBtn: HTMLElement | null = null;
-let step3BackBtn: HTMLElement | null = null;
-let step3NextBtn: HTMLElement | null = null;
-let step4BackBtn: HTMLElement | null = null;
-
-const LOADING_FIELDS = ['projet', 'produit', 'page', 'deadline', 'budget'] as const;
-
 function revealSummaryFields(animate = true): void {
-  LOADING_FIELDS.forEach((id) => {
+  SUMMARY_FIELDS.forEach((id) => {
     const el = document.querySelector<HTMLElement>(`[summary="${id}"]`);
     if (!el) return;
+    gsap.killTweensOf(el);
     el.classList.remove('is-loading');
+    gsap.set(el, { clearProps: 'all' });
     if (animate) {
       gsap.fromTo(
         el,
@@ -568,7 +654,7 @@ function revealSummaryFields(animate = true): void {
 }
 
 function hideSummaryFields(): void {
-  LOADING_FIELDS.forEach((id) => {
+  SUMMARY_FIELDS.forEach((id) => {
     const el = document.querySelector<HTMLElement>(`[summary="${id}"]`);
     if (!el) return;
     el.classList.add('is-loading');
@@ -580,7 +666,9 @@ function revealServiceItems(animate = true): void {
   document
     .querySelectorAll<HTMLElement>('[summary="service-item"]:not([data-template])')
     .forEach((el) => {
+      gsap.killTweensOf(el);
       el.classList.remove('is-loading');
+      gsap.set(el, { clearProps: 'all' });
       if (animate) {
         gsap.fromTo(
           el,
@@ -631,10 +719,7 @@ function applyStepState(stepIndex: number): void {
   currentStepIndex = stepIndex;
 }
 
-const LAST_CARDS_SELECTORS = '.cards-line_component.is-last, .contact-form_cards-line.is-last';
-
 function showLastCards(): void {
-  const globalWrapper = document.querySelector<HTMLElement>('.contact-form_cards');
   const doShow = () => {
     document.querySelectorAll<HTMLElement>(LAST_CARDS_SELECTORS).forEach((el) => {
       el.style.display = 'flex';
@@ -645,15 +730,14 @@ function showLastCards(): void {
       );
     });
   };
-  if (globalWrapper) {
-    animateContainerHeight(globalWrapper, doShow);
+  if (cachedGlobalWrapper) {
+    animateContainerHeight(cachedGlobalWrapper, doShow);
   } else {
     doShow();
   }
 }
 
 function hideLastCards(): void {
-  const globalWrapper = document.querySelector<HTMLElement>('.contact-form_cards');
   const doHide = () => {
     document.querySelectorAll<HTMLElement>(LAST_CARDS_SELECTORS).forEach((el) => {
       gsap.killTweensOf(el);
@@ -661,20 +745,35 @@ function hideLastCards(): void {
       gsap.set(el, { clearProps: 'opacity,yPercent' });
     });
   };
-  if (globalWrapper) {
-    animateContainerHeight(globalWrapper, doHide);
+  if (cachedGlobalWrapper) {
+    animateContainerHeight(cachedGlobalWrapper, doHide);
   } else {
     doHide();
   }
 }
 
+function validateStep4Submit(): void {
+  if (!cachedSubmitBtn) return;
+
+  const step4 = cachedSteps[3];
+  if (!step4 || step4.style.display === 'none') return;
+
+  const requiredFields = step4.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+    'input[required], textarea[required], select[required]'
+  );
+  const allFilled = Array.from(requiredFields).every((f) => f.value.trim() !== '');
+
+  cachedSubmitBtn.classList.toggle('disabled', !allFilled);
+  cachedSubmitBtn.style.pointerEvents = allFilled ? '' : 'none';
+  cachedSubmitBtn.style.opacity = allFilled ? '' : '0.5';
+}
+
 function goToStep(stepIndex: number): void {
-  const steps = document.querySelectorAll<HTMLElement>('[data-form="step"]');
   const progressItems = document.querySelectorAll<HTMLElement>(
     '[data-form="custom-progress-indicator"]'
   );
 
-  steps.forEach((step, i) => {
+  cachedSteps.forEach((step, i) => {
     step.style.display = i === stepIndex ? '' : 'none';
   });
 
@@ -685,23 +784,18 @@ function goToStep(stepIndex: number): void {
     }
   });
 
-  // Show submit button & hide next button on last step
-  const isLastStep = stepIndex === steps.length - 1;
-  const submitBtn = document.querySelector<HTMLElement>('[data-form="submit-btn"]');
-  const nextBtns = document.querySelectorAll<HTMLElement>('[data-form="next-btn"]');
+  const isLastStep = stepIndex === cachedSteps.length - 1;
 
-  if (submitBtn) {
-    submitBtn.style.display = isLastStep ? '' : 'none';
+  if (cachedSubmitBtn) {
+    cachedSubmitBtn.style.display = isLastStep ? '' : 'none';
   }
-  nextBtns.forEach((btn) => {
+  document.querySelectorAll<HTMLElement>('[data-form="next-btn"]').forEach((btn) => {
     btn.style.display = isLastStep ? 'none' : '';
   });
 
-  // Animate new step elements
-  const targetStep = steps[stepIndex];
+  const targetStep = cachedSteps[stepIndex];
   if (targetStep) {
-    const targets = targetStep.querySelectorAll<HTMLElement>('[step-form]');
-    targets.forEach((el) => {
+    targetStep.querySelectorAll<HTMLElement>('[step-form]').forEach((el) => {
       gsap.fromTo(
         el,
         { xPercent: -50, opacity: 0 },
@@ -714,25 +808,40 @@ function goToStep(stepIndex: number): void {
 function handleStep1Next(e: Event): void {
   if (!starterRadio?.checked) return;
 
-  // Starter: skip steps 2 & 3, go directly to step 4 (index 3)
   e.preventDefault();
   e.stopImmediatePropagation();
   goToStep(3);
-  showLastCards();
+  applyStepState(3);
+  validateStep4Submit();
 }
 
 function handleRadioChange(): void {
   if (starterRadio?.checked) {
     applyConfig(OFFRE_STARTER);
     addStarterBudget();
+    applyPresets(STARTER_PRESETS, STARTER_CHECKBOXES);
   } else if (surMesureRadio?.checked) {
     applyConfig(OFFRE_SUR_MESURE);
     removeStarterBudget();
+    applyPresets(SUR_MESURE_PRESETS, SUR_MESURE_CHECKBOXES);
     setBudgetValue(SUR_MESURE_BUDGET_VALUE);
   } else {
     resetToInitial();
     removeStarterBudget();
+    resetPresets();
   }
+}
+
+/*
+ *==========================================
+ * INIT / DESTROY
+ *==========================================
+ */
+
+function addStepNavListener(el: HTMLElement | null, handler: () => void): void {
+  if (!el) return;
+  el.addEventListener('click', handler);
+  stepNavListeners.push({ el, handler });
 }
 
 export function initContactLogic(): void {
@@ -741,53 +850,57 @@ export function initContactLogic(): void {
 
   if (!starterRadio || !surMesureRadio) return;
 
+  // Cache stable DOM refs
+  cachedGlobalWrapper = document.querySelector<HTMLElement>('.contact-form_cards');
+  cachedSubmitBtn = document.querySelector<HTMLElement>('[data-form="submit-btn"]');
+  cachedSteps = Array.from(document.querySelectorAll<HTMLElement>('[data-form="step"]'));
+
   saveInitialState();
 
   starterRadio.addEventListener('change', handleRadioChange);
   surMesureRadio.addEventListener('change', handleRadioChange);
 
-  // Bind summary sync listeners
+  // Summary sync
   bindSummaryListeners();
   syncAllSummaryFields();
   syncServiceItems();
 
-  // Bind step 4 personal info sync
+  // Step 4 personal info sync
   bindStep4Listeners();
   syncAllStep4Fields();
 
-  // Ensure all service items start with .is-loading (step 1)
-  document.querySelectorAll<HTMLElement>('[summary="service-item"]').forEach((el) => {
-    el.classList.add('is-loading');
-  });
-
-  // Hide last cards initially (only visible in step 4)
+  // Hide last cards initially
   hideLastCards();
 
-  // Bind skip logic on the next button of step 1
-  const steps = document.querySelectorAll<HTMLElement>('[data-form="step"]');
-  if (steps[0]) {
-    step1NextBtn = steps[0].querySelector<HTMLElement>('[data-form="next-btn"]');
+  // Step navigation listeners (named refs for proper cleanup)
+  if (cachedSteps[0]) {
+    step1NextBtn = cachedSteps[0].querySelector<HTMLElement>('[data-form="next-btn"]');
     step1NextBtn?.addEventListener('click', handleStep1Next, true);
-    step1NextBtn?.addEventListener('click', () => applyStepState(1));
+    addStepNavListener(step1NextBtn, () => applyStepState(1));
   }
-  if (steps[1]) {
-    step2BackBtn = steps[1].querySelector<HTMLElement>('[data-form="back-btn"]');
-    step2BackBtn?.addEventListener('click', () => applyStepState(0));
-    step2NextBtn = steps[1].querySelector<HTMLElement>('[data-form="next-btn"]');
-    step2NextBtn?.addEventListener('click', () => applyStepState(2));
+  if (cachedSteps[1]) {
+    addStepNavListener(cachedSteps[1].querySelector('[data-form="back-btn"]'), () =>
+      applyStepState(0)
+    );
+    addStepNavListener(cachedSteps[1].querySelector('[data-form="next-btn"]'), () =>
+      applyStepState(2)
+    );
   }
-  if (steps[2]) {
-    step3BackBtn = steps[2].querySelector<HTMLElement>('[data-form="back-btn"]');
-    step3BackBtn?.addEventListener('click', () => applyStepState(1));
-    step3NextBtn = steps[2].querySelector<HTMLElement>('[data-form="next-btn"]');
-    step3NextBtn?.addEventListener('click', () => applyStepState(3));
+  if (cachedSteps[2]) {
+    addStepNavListener(cachedSteps[2].querySelector('[data-form="back-btn"]'), () =>
+      applyStepState(1)
+    );
+    addStepNavListener(cachedSteps[2].querySelector('[data-form="next-btn"]'), () =>
+      applyStepState(3)
+    );
   }
-  if (steps[3]) {
-    step4BackBtn = steps[3].querySelector<HTMLElement>('[data-form="back-btn"]');
-    step4BackBtn?.addEventListener('click', () => applyStepState(2));
+  if (cachedSteps[3]) {
+    addStepNavListener(cachedSteps[3].querySelector('[data-form="back-btn"]'), () =>
+      applyStepState(2)
+    );
   }
 
-  // Bind progress indicators to apply correct state per step
+  // Progress indicators
   const progressIndicators = document.querySelectorAll<HTMLElement>(
     '[data-form="custom-progress-indicator"]'
   );
@@ -797,8 +910,13 @@ export function initContactLogic(): void {
     progressListeners.push({ el: indicator, handler });
   });
 
-  // Apply state in case a radio is already checked on load
+  // Apply presets if a radio is already checked on load
   handleRadioChange();
+
+  // Ensure all service items have .is-loading after presets (step 1)
+  document.querySelectorAll<HTMLElement>('[summary="service-item"]').forEach((el) => {
+    el.classList.add('is-loading');
+  });
 }
 
 export function destroyContactLogic(): void {
@@ -806,20 +924,24 @@ export function destroyContactLogic(): void {
   surMesureRadio?.removeEventListener('change', handleRadioChange);
   step1NextBtn?.removeEventListener('click', handleStep1Next, true);
 
-  // Unbind progress indicator listeners
   for (const { el, handler } of progressListeners) {
     el.removeEventListener('click', handler);
   }
   progressListeners = [];
 
-  step2BackBtn = null;
-  step2NextBtn = null;
-  step3BackBtn = null;
-  step3NextBtn = null;
-  step4BackBtn = null;
+  for (const { el, handler } of stepNavListeners) {
+    el.removeEventListener('click', handler);
+  }
+  stepNavListeners = [];
+
   unbindSummaryListeners();
   unbindStep4Listeners();
+
   starterRadio = null;
   surMesureRadio = null;
   step1NextBtn = null;
+  cachedGlobalWrapper = null;
+  cachedSubmitBtn = null;
+  cachedSteps = [];
+  currentStepIndex = 0;
 }

@@ -55,15 +55,13 @@
   background-color: var(--_theme---background--accent-blue);
 }
 
-contact-form_progress-custom
-
 /*
  *==========================================
  * CONTACT FORM - STEP 1
  *==========================================
  */
 
- .contact-form_choice-1_radio-field .contact-form_choice-1_radio-label {
+.contact-form_choice-1_radio-field .contact-form_choice-1_radio-label {
   border: 1px solid transparent;
   transition: border-color 0.3s ease-out;
 }
