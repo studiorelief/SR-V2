@@ -1,4 +1,5 @@
 import { initContactFileUpload } from '$utils/page/contact/contactFileUpload';
+import { initContactLogic } from '$utils/page/contact/contactLogic';
 import { initContactMultiStep } from '$utils/page/contact/contactMultiStep';
 import { initApprocheParallax, initApprocheParallaxInvert } from '$utils/page/hero/approcheHero';
 import {
@@ -81,9 +82,11 @@ registerNamespace('contact', {
   animate: () => {
     initContactMultiStep();
     initContactFileUpload();
+    initContactLogic();
   },
   init: () => {
     initContactMultiStep();
     initContactFileUpload();
+    initContactLogic();
   },
 });

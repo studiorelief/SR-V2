@@ -1,44 +1,5 @@
 /* 
 *==========================================
-* GLOBAL
-*==========================================
-*/
-
-/* 
-* ↳ ANIMATIONS
-*/
-
-@import './utils/global/animations/cms-list-loading.css';
-
-/* 
-* ↳ EASINGS
-*/
-
-@import './utils/global/easings/easings.css';
-
-/* 
-* ↳ OPTIMISATIONS
-*/
-
-@import './utils/global/optimisations/cms-rt.css';
-@import './utils/global/optimisations/cms-code-block.css';
-
-/* 
-* ↳ PAGE
-*/
-
-@import './utils/page/contact/contact-form.css';
-
-/* 
-*==========================================
-* RESPONSIVE
-*==========================================
-*/
-
-@import './utils/responsive/breakpoints.css';
-
-/* 
-*==========================================
 * COMPONENTS
 *==========================================
 */
@@ -76,8 +37,51 @@
 
 /* 
 *==========================================
-* HOME
+* GLOBAL
 *==========================================
 */
 
+/* 
+* ↳ ANIMATIONS
+*/
+
+@import './utils/global/animations/cms-list-loading.css';
+
+/* 
+* ↳ EASINGS
+*/
+
+@import './utils/global/easings/easings.css';
+
+/* 
+* ↳ OPTIMISATIONS
+*/
+
+@import './utils/global/optimisations/cms-rt.css';
+@import './utils/global/optimisations/cms-code-block.css';
+
+/* 
+*==========================================
+* PAGE
+*==========================================
+*/
+
+/* 
+* ↳ Home
+*/
+
 @import './utils/page/home/ressources.css';
+
+/* 
+* ↳ Contact
+*/
+
+@import './utils/page/contact/contact-form.css';
+
+/* 
+*==========================================
+* RESPONSIVE
+*==========================================
+*/
+
+@import './utils/responsive/breakpoints.css';

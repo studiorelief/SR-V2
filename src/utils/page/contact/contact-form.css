@@ -41,16 +41,32 @@
  *==========================================
  */
 
-.f-progress-indicator-custom:has(~ .f-progress-indicator-custom.current) {
+.contact-form_progress-custom:has(~ .contact-form_progress-custom.current) {
   color: var(--_theme---text-color--primary);
   font-weight: var(--font-weight--medium);
 }
+
+.contact-form_progress-custom.disabled:has(~ .contact-form_progress-custom.current) {
+  color: var(--_theme---text-color--secondary);
+  font-weight: var(--font-weight--regular);
+}
+
+.contact-form_progress-custom.current .contact-form_progress-custom-text {
+  background-color: var(--_theme---background--accent-blue);
+}
+
+contact-form_progress-custom
 
 /*
  *==========================================
  * CONTACT FORM - STEP 1
  *==========================================
  */
+
+ .contact-form_choice-1_radio-field .contact-form_choice-1_radio-label {
+  border: 1px solid transparent;
+  transition: border-color 0.3s ease-out;
+}
 
 .contact-form_choice-1_radio-field.is-active-inputactive .contact-form_choice-1_radio-label {
   border: 1px solid var(--_theme---border-color--primary);
@@ -70,6 +86,37 @@
 
 .contact-form_choice-1_radio-field.is-custom.is-active-inputactive {
   background-color: var(--_theme---background--accent-purple);
+}
+
+/*
+ *==========================================
+ * CONTACT FORM - SUMMARY TRANSITIONS
+ *==========================================
+ */
+
+[summary='offre-wrapper'],
+[summary='main-wrapper'],
+[summary='bullet'] {
+  transition:
+    color 0.3s ease-out,
+    background 0.3s ease-out,
+    background-color 0.3s ease-out;
+}
+
+.contact-form_cards-c-w,
+.cards-line_component {
+  transition: margin-bottom 0.3s ease-out;
+}
+
+.contact-form_cards-c-w.is-empty,
+.cards-line_component.is-empty {
+  margin-bottom: 0 !important;
+}
+
+.contact-form_cards-c .contact-form_cards-text {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
 }
 
 /*
