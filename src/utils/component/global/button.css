@@ -144,6 +144,10 @@
   background-color: var(--_buttons---surface--default);
 }
 
+[data-wf--button-main--variant='primary-white'] .button_main_hover::before {
+  background-color: var(--_buttons---surface--hover);
+}
+
 [data-wf--button-main--variant*='secondary'] .button_main_hover::before {
   background-color: var(--_buttons---surface--default);
 }
@@ -258,6 +262,24 @@
 
 [trigger='accordion-icon-w']:hover [trigger='accordion-sub'] {
   transform: translateY(100%);
+}
+
+/*
+ *==========================================
+ * FORM MULTI-STEP SERVICES
+ *==========================================
+ */
+
+[trigger='accordion-header'].is-active-inputactive [trigger='accordion-plus'] {
+  scale: 0;
+  height: 0%;
+  width: 0%;
+}
+
+[trigger='accordion-header'].is-active-inputactive [trigger='accordion-sub'] {
+  scale: 1;
+  height: 100%;
+  width: 100%;
 }
 
 /*

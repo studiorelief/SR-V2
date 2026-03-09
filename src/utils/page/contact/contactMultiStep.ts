@@ -36,10 +36,20 @@ function bindStepAnimations(): void {
   backBtn.forEach((btn) => btn.addEventListener('click', handleNav));
   progressIndicators.forEach((btn) => btn.addEventListener('click', handleNav));
 
+  const submitBtn = document.querySelector<HTMLElement>('[data-form="submit-btn"]');
+  const handleSubmit = () => {
+    submitBtn?.classList.add('is-waiting');
+    setTimeout(() => {
+      document.querySelector('#projet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  };
+  submitBtn?.addEventListener('click', handleSubmit);
+
   cleanupFn = () => {
     nextBtn.forEach((btn) => btn.removeEventListener('click', handleNav));
     backBtn.forEach((btn) => btn.removeEventListener('click', handleNav));
     progressIndicators.forEach((btn) => btn.removeEventListener('click', handleNav));
+    submitBtn?.removeEventListener('click', handleSubmit);
   };
 }
 

@@ -254,3 +254,16 @@
   color: var(--_theme---text-color--primary);
   transform: rotate(90deg);
 }
+
+/*
+ *==========================================
+ * CONTACT FORM - SUBMIT BUTTON (waiting state)
+ *==========================================
+ */
+
+[data-form='submit-btn'].is-waiting {
+  color: var(--_theme---text-color--invert);
+  height: 3.25rem;
+  padding-right: var(--_layout---spacing--xxlarge);
+  pointer-events: none;
+}
