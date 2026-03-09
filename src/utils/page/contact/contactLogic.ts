@@ -127,6 +127,10 @@ let cachedGlobalWrapper: HTMLElement | null = null;
 let cachedSubmitBtn: HTMLElement | null = null;
 let cachedSteps: HTMLElement[] = [];
 
+// Batched height animation — coalesces rapid card visibility changes into a single resize
+let pendingCardChanges: Array<() => void> = [];
+let batchRAF: number | null = null;
+
 /*
  *==========================================
  * OFFRE CONFIG
@@ -228,6 +232,8 @@ function animateTextRoulette(el: HTMLElement, newText: string): void {
 }
 
 function animateContainerHeight(container: HTMLElement, callback: () => void): void {
+  // Kill any in-flight height tween to avoid onComplete conflicts
+  gsap.killTweensOf(container, 'height');
   const startHeight = container.offsetHeight;
   callback();
 
@@ -550,7 +556,17 @@ function toggleCardVisibility(card: HTMLElement, hasContent: boolean, wasHidden:
 
   const visibilityChanges = (wasHidden && hasContent) || (!wasHidden && !hasContent);
   if (visibilityChanges && cachedGlobalWrapper) {
-    animateContainerHeight(cachedGlobalWrapper, applyChange);
+    // Batch rapid card changes (e.g. browser autofill) into a single height animation
+    pendingCardChanges.push(applyChange);
+    if (batchRAF) cancelAnimationFrame(batchRAF);
+    batchRAF = requestAnimationFrame(() => {
+      const changes = [...pendingCardChanges];
+      pendingCardChanges = [];
+      batchRAF = null;
+      animateContainerHeight(cachedGlobalWrapper!, () => {
+        changes.forEach((fn) => fn());
+      });
+    });
   } else {
     applyChange();
   }
