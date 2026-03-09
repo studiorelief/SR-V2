@@ -1,8 +1,8 @@
+import { initCal } from '$utils/global/script/loadCal';
 import { initContactFileUpload } from '$utils/page/contact/contactFileUpload';
 import { initContactLogic } from '$utils/page/contact/contactLogic';
 import { initContactMultiStep } from '$utils/page/contact/contactMultiStep';
 import { initContactSuccess } from '$utils/page/contact/contactSuccess';
-import { initCal } from '$utils/global/script/loadCal';
 import { initApprocheParallax, initApprocheParallaxInvert } from '$utils/page/hero/approcheHero';
 import {
   initAnimateCmsPortfolioHero,
