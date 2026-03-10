@@ -306,13 +306,43 @@ function removeStarterBudget(): void {
  *==========================================
  */
 
+/**
+ * Sync Finsweet selectcustom UI (w--current + toggle text) to match native select value.
+ * Call AFTER setting select.value so the visual dropdown matches.
+ */
+function syncFinsweetUI(selectId: string, value: string): void {
+  const select = document.querySelector<HTMLSelectElement>(`select#${selectId}`);
+  if (!select) return;
+
+  const wrapper =
+    select.closest('.w-dropdown') || select.parentElement?.querySelector('.w-dropdown');
+  if (!wrapper) return;
+
+  const links = wrapper.querySelectorAll<HTMLElement>('.w-dropdown-link');
+  links.forEach((link) => {
+    link.classList.toggle('w--current', link.textContent?.trim() === value);
+  });
+
+  const toggleText = wrapper.querySelector<HTMLElement>(
+    '.selectcustom_text, [fs-selectcustom-element="text"]'
+  );
+  if (toggleText) toggleText.textContent = value;
+}
+
 function applyPresets(selects: Record<string, string>, checkboxes: Record<string, boolean>): void {
   for (const [id, value] of Object.entries(selects)) {
-    const select = document.querySelector<HTMLSelectElement>(`#${id}`);
+    const select = document.querySelector<HTMLSelectElement>(`select#${id}`);
     if (!select) continue;
     select.value = value;
     select.dispatchEvent(new Event('input', { bubbles: true }));
   }
+
+  // Sync Finsweet UI after current call stack to avoid conflicts with Finsweet internals
+  requestAnimationFrame(() => {
+    for (const [id, value] of Object.entries(selects)) {
+      syncFinsweetUI(id, value);
+    }
+  });
 
   for (const [id, checked] of Object.entries(checkboxes)) {
     const cb = document.querySelector<HTMLInputElement>(`#${id}`);
@@ -328,11 +358,17 @@ function resetPresets(): void {
     ...Object.keys(SUR_MESURE_PRESETS),
   ]);
   for (const id of allSelectIds) {
-    const select = document.querySelector<HTMLSelectElement>(`#${id}`);
+    const select = document.querySelector<HTMLSelectElement>(`select#${id}`);
     if (!select) continue;
     select.value = '';
     select.dispatchEvent(new Event('input', { bubbles: true }));
   }
+
+  requestAnimationFrame(() => {
+    for (const id of allSelectIds) {
+      syncFinsweetUI(id, '');
+    }
+  });
 
   for (const [id, checked] of Object.entries(DEFAULT_CHECKBOXES)) {
     const cb = document.querySelector<HTMLInputElement>(`#${id}`);
@@ -351,7 +387,9 @@ function resetPresets(): void {
  */
 
 function syncSummaryField(fieldId: string): void {
-  const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(`#${fieldId}`);
+  const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(
+    `select#${fieldId}, input#${fieldId}`
+  );
   const summary = document.querySelector<HTMLElement>(`[summary="${fieldId}"]`);
   if (!input || !summary) return;
   const newValue = input.value || '';
@@ -485,7 +523,9 @@ function syncServiceItems(): void {
 
 function bindSummaryListeners(): void {
   for (const id of SUMMARY_FIELDS) {
-    const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(`#${id}`);
+    const input = document.querySelector<HTMLInputElement | HTMLSelectElement>(
+      `select#${id}, input#${id}`
+    );
     if (!input) continue;
 
     const handler = () => syncSummaryField(id);

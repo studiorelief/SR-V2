@@ -129,7 +129,29 @@
 
 /*
  *==========================================
- * CONTACT FORM - FILE UPLOAD
+ * CONTACT FORM - STEP 4
+ *==========================================
+ */
+
+.form_input {
+  font-weight: var(--font-weight--normal);
+  border-color: var(--_theme---border-color--secondary);
+}
+
+/* Quand l'utilisateur a tapé du texte : 500 */
+.form_input:not(:placeholder-shown) {
+  font-weight: var(--font-weight--bold);
+  border-color: var(--_theme---border-color--primary);
+}
+
+.form_input.is-upload:not(:placeholder-shown) {
+  font-weight: var(--font-weight--regular);
+  border-color: var(--_theme---border-color--secondary);
+}
+
+/*
+ *==========================================
+ * ↳ CONTACT FORM - FILE UPLOAD
  *==========================================
  */
 
@@ -154,7 +176,7 @@
 
 .form_input.is-upload.is-drag-over {
   border-color: var(--_theme---border-color--primary);
-  background-color: var(--_theme---background--accent-blue-low);
+  background-color: var(--_theme---background--primary);
 }
 
 .form_input.is-upload.has-files {
@@ -257,7 +279,7 @@
 
 /*
  *==========================================
- * CONTACT FORM - SUBMIT BUTTON (waiting state)
+  * ↳  CONTACT FORM - SUBMIT BUTTON (waiting state)
  *==========================================
  */
 
