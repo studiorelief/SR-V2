@@ -62,3 +62,13 @@
 .swiper.is-authors {
   overflow: visible;
 }
+
+/*
+ *==========================================
+ * SLIDER CAL — ROLODEX
+ *==========================================
+ */
+
+.contact-team_cards-main-wrapper {
+  overflow: visible;
+}

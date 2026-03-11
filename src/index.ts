@@ -68,6 +68,7 @@ import {
   initCtaHeading,
 } from '$utils/component/section/cta';
 import { initAuthorsSlider } from '$utils/component/sliders/authorsSlider';
+import { initCalSlider } from '$utils/component/sliders/calSlider';
 import { initCategoriesSlider } from '$utils/component/sliders/categoriesSlider';
 import { initCmsCardsSlider } from '$utils/component/sliders/cmsCardsSlider';
 import { initCmsProjetsSlider } from '$utils/component/sliders/cmsProjetsSlider';
@@ -161,6 +162,7 @@ const initGlobalFunctions = (): void => {
 
   // Sliders
   initAuthorsSlider();
+  initCalSlider();
   initCategoriesSlider();
   initCmsCardsSlider();
   initCmsProjetsSlider();
