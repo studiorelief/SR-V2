@@ -322,6 +322,9 @@
 .swiper.is-authors {
   overflow: visible;
 }
+.contact-team_cards-main-wrapper {
+  overflow: visible;
+}
 
 /* src/utils/global/animations/cms-list-loading.css */
 .blog_articles_collection-item {
