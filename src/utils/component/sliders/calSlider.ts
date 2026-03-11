@@ -191,7 +191,7 @@ export function initCalSlider() {
         0
       );
 
-      // Shift remaining cards to new positions
+      // Shift remaining cards to new positions (starts at half-flip)
       cards.forEach((card, i) => {
         if (i === oldIdx) return;
         const rel = relPos(i, active, total);
@@ -200,10 +200,10 @@ export function initCalSlider() {
           {
             ...cardProps(rel),
             transformPerspective: PERSPECTIVE,
-            duration: DURATION,
+            duration: DURATION / 2,
             ease: 'power2.out',
           },
-          0
+          DURATION / 2
         );
       });
 
