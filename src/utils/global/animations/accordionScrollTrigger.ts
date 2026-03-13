@@ -18,7 +18,7 @@ const refreshScrollTriggerDebounced = (): void => {
   refreshTimeout = setTimeout(() => {
     ScrollTrigger.refresh();
     refreshTimeout = null;
-  }, 350); // 300ms transition + 50ms buffer
+  }, 500); // 300ms transition + 50ms buffer
 };
 
 /**

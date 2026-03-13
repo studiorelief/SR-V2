@@ -1,4 +1,5 @@
-.blog_articles_collection-item {
+.blog_articles_collection-item,
+.stack_tools_collection-item {
   transition:
     transform 0.3s var(--ease-back-out),
     opacity 0.3s ease-out;

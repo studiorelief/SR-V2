@@ -96,3 +96,79 @@
 [search-form='wrapper'].is-active [search-form='reset'] {
   transform: translateX(-150%);
 }
+
+/* 
+*==========================================
+* CHECKBOX FORM - ACCORDION
+*==========================================
+*/
+
+.form_filters_accordion-checkbox-field:hover .form_filters_accordion-checkbox {
+  background-color: var(--_theme---background--primary);
+}
+
+.form_filters_accordion-checkbox-field.is-active-inputactive .form_filters_accordion-checkbox {
+  background-color: transparent;
+}
+
+/* 
+*==========================================
+* FILTER TAGS
+*==========================================
+*/
+
+.filter_tags_remove {
+  transition: transform 0.3s var(--ease-back-out);
+}
+
+.filter_tags_remove:hover {
+  transform: rotateZ(90deg);
+}
+
+/*
+* ==========================================
+* ACCORDION FILTERS - Dropdown Checkbox
+* ========================================== 
+*/
+
+.form_filters_accordion-collection-list
+  .form_filters_accordion-collection-item:last-child
+  .form_filters_accordion-divider {
+  display: none;
+}
+
+/*
+* ==========================================
+* ACCORDION FILTERS - Dropdown Header Active State
+* ========================================== 
+*/
+
+.form_filters_accordion-header-active {
+  transform: scale(0);
+  transition:
+    transform 0.3s var(--ease-back-out),
+    opacity 0.3s ease-out,
+    background-color 0.3s ease-out;
+}
+
+[fs-accordion-element='accordion']:has(.is-active-inputactive)
+  .form_filters_accordion-header-active {
+  transform: scale(1);
+  opacity: 1;
+}
+
+[fs-accordion-element='accordion']:has(.is-active-inputactive)
+  .form_filters_accordion-header.is-active-accordion
+  .form_filters_accordion-header-active {
+  transform: scale(1);
+  opacity: 1;
+  background-color: var(--_theme---background--primary);
+}
+
+/* Checked state */
+.form_filters_accordion-checkbox-field.is-active-inputactive .form_filters_accordion-checkbox {
+  background-color: var(--_theme---background--transparent);
+  background-image: url('https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69b2ddc92a3846b7a2283bbf_icon-checked.svg');
+  background-position: 50% 50%;
+  background-size: contain;
+}

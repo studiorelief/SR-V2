@@ -1,28 +1,36 @@
 /* 
 *==========================================
-* IMAGE - ANIMATION HOVER
+* PORTFOLIO
 *==========================================
 */
 
-.cms_cards#animation-photo .cms_cards_cover,
-.cms_cards#animation-photo .cms_cards_hover-image-w {
+/* 
+* ↳ IMAGE - ANIMATION HOVER
+*/
+
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-photo .cms_cards_cover,
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-photo
+  .cms_cards_hover-image-w {
   transition: opacity 0.3s ease-out;
 }
 
-.cms_cards#animation-photo:hover .cms_cards_cover {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-photo:hover
+  .cms_cards_cover {
   opacity: 0;
 }
 
-.cms_cards#animation-photo:hover .cms_cards_hover-image-w {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-photo:hover
+  .cms_cards_hover-image-w {
   opacity: 1;
 }
 
-.cms_cards_cover-hover-logo {
+[data-wf--card-cms--cards-cards-variant='portfolio'] .cms_cards_cover-hover-logo {
   transform: translateY(var(--_layout---spacing--huge));
   transition: transform 0.6s var(--ease-back-out);
 }
 
-.cms_cards#animation-photo:hover .cms_cards_cover-hover-logo {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-photo:hover
+  .cms_cards_cover-hover-logo {
   transform: translateY(var(--_layout---spacing--none));
 }
 
@@ -32,26 +40,44 @@
 *==========================================
 */
 
-.cms_cards#animation-video .cms_cards_cover,
-.cms_cards#animation-video .cms_cards_hover-video-w {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-video .cms_cards_cover,
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-video
+  .cms_cards_hover-video-w {
   transition: opacity 0.3s ease-out;
 }
 
-.cms_cards#animation-video:hover .cms_cards_cover {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-video:hover
+  .cms_cards_cover {
   opacity: 0;
 }
 
-.cms_cards#animation-video:hover .cms_cards_hover-video-w {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-video:hover
+  .cms_cards_hover-video-w {
   opacity: 1;
 }
 
-.cms_cards_cover-hover-logo {
+[data-wf--card-cms--cards-cards-variant='portfolio'] .cms_cards_cover-hover-logo {
   transform: translateY(var(--_layout---spacing--huge));
   transition: transform 0.6s var(--ease-back-out);
 }
 
-.cms_cards#animation-video:hover .cms_cards_cover-hover-logo {
+[data-wf--card-cms--cards-cards-variant='portfolio'].cms_cards#animation-video:hover
+  .cms_cards_cover-hover-logo {
   transform: translateY(var(--_layout---spacing--none));
+}
+
+/* 
+* ↳ RADIUS
+*/
+
+.cms_cards_asset,
+.cms_cards_hover {
+  transition: border-radius 0.3s var(--ease-back-out);
+}
+
+[data-wf--card-cms--cards-cards-variant='portfolio']:hover .cms_cards_asset,
+[data-wf--card-cms--cards-cards-variant='portfolio']:hover .cms_cards_hover {
+  border-radius: var(--_sizes---border-radius--xlarge);
 }
 
 /* 
@@ -127,23 +153,7 @@
 
 /* 
 *==========================================
-* RADIUS
-*==========================================
-*/
-
-.porfolio_card_asset,
-.cms_cards_hover {
-  transition: border-radius 0.3s var(--ease-back-out);
-}
-
-.porfolio_card#animation-photo:hover .porfolio_card_asset,
-.porfolio_card#animation-photo:hover .cms_cards_hover {
-  border-radius: var(--_sizes---border-radius--xlarge);
-}
-
-/* 
-*==========================================
-* RESPONSIVE
+* BLOG
 *==========================================
 */
 
@@ -153,4 +163,30 @@
   line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+/* 
+*==========================================
+* STACK
+*==========================================
+*/
+/* 
+* ↳ Hover animation
+*/
+
+[data-wf--card-cms--cards-cards-variant*='stack']:hover .cms_cards_asset,
+[data-wf--card-cms--cards-cards-variant*='stack']:hover .cms_cards_hover {
+  border-radius: var(--_sizes---border-radius--xlarge);
+}
+
+[data-wf--card-cms--cards-cards-variant*='stack'] .cms_cards_bottom-icon {
+  transition:
+    transform 0.15s var(--ease-back-out),
+    opacity 0.15s ease-out;
+  transform: translateX(-1.5rem);
+}
+
+[data-wf--card-cms--cards-cards-variant*='stack']:hover .cms_cards_bottom-icon {
+  transform: translateX(0rem);
+  opacity: 1;
 }

@@ -4,6 +4,7 @@ const FS_LIBRAIRIES_SRCS = [
   'https://cdn.jsdelivr.net/npm/@finsweet/attributes-accordion@1/accordion.js',
   'https://cdn.jsdelivr.net/npm/@finsweet/attributes-inputactive@1/inputactive.js',
   'https://cdn.jsdelivr.net/npm/@finsweet/attributes-selectcustom@1/selectcustom.js',
+  // 'https://cdn.jsdelivr.net/npm/@finsweet/attributes-cmsselect@1/cmsselect.js',
 ];
 
 function loadScript(src: string) {
