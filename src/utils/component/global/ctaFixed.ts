@@ -25,6 +25,8 @@ const pageTextMap: Record<string, string> = {
   '/labs/*': 'Expérience',
   '/stack': 'Stack',
   '/stack/*': 'Outils',
+  '/studio': 'Studio',
+  '/contact': 'Contact',
 };
 
 // Texte par défaut si la page n'est pas dans le mapping

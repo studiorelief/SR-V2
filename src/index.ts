@@ -20,7 +20,7 @@
 
 import './index.css';
 
-// import { restartWebflow } from '@finsweet/ts-utils';
+import { restartWebflow } from '@finsweet/ts-utils';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -77,6 +77,7 @@ import {
   destroyAccordionScrollTrigger,
   initAccordionScrollTrigger,
 } from '$utils/global/animations/accordionScrollTrigger';
+import { destroyCountAnimation, initCountAnimation } from '$utils/global/animations/countAnimation';
 import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lottieFiles';
 import { initScrollTop } from '$utils/global/animations/scrollTop';
 import { initSunHeroParallax } from '$utils/global/animations/sunHero';
@@ -84,6 +85,7 @@ import { initTextPath } from '$utils/global/animations/textPath';
 import { initCustomFavicon, updateFavicon } from '$utils/global/brand/customFav';
 import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
+import { initDropdownFiltersClickOutside } from '$utils/global/optimisations/dropdownFilters';
 import { hideDynListIfEmpty } from '$utils/global/optimisations/hideEmptyCMS';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
 import { mirrorClick } from '$utils/global/optimisations/mirrorClick';
@@ -121,6 +123,10 @@ import {
  */
 
 const initGlobalFunctions = (): void => {
+  // Scripts
+  initFsAttributesScripts();
+  initFsLibrairiesScripts();
+
   // Global Animations
   initScrollTop();
   initFooter();
@@ -138,6 +144,9 @@ const initGlobalFunctions = (): void => {
 
   // Lottie Files
   initLottieFiles();
+
+  // Count Animation
+  initCountAnimation();
 
   // Components
   initNavbarTriggers();
@@ -167,10 +176,6 @@ const initGlobalFunctions = (): void => {
   initCmsCardsSlider();
   initCmsProjetsSlider();
   initReviewSlider();
-
-  // Scripts
-  initFsAttributesScripts();
-  initFsLibrairiesScripts();
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -208,6 +213,7 @@ const init = () => {
   initNavbar();
   initNavbarMobile();
   initCtaText();
+  initDropdownFiltersClickOutside();
 
   // Animations visuelles (premier chargement)
   requestAnimationFrame(() => {
@@ -241,6 +247,7 @@ const init = () => {
 
     destroyAllButtons();
     destroyAllCtaAnimations();
+    destroyCountAnimation();
     destroyAllDraggables();
     destroyLottieFiles();
     destroyLazyVideos();
@@ -273,7 +280,7 @@ const init = () => {
     runNamespaceAnimate();
 
     requestAnimationFrame(() => {
-      // restartWebflow();
+      restartWebflow();
       restartFsAttributesModules();
     });
   });

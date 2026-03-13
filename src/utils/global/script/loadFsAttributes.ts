@@ -178,7 +178,7 @@ export function restartFsAttributesModules(retryCount = 0): void {
     if (retryCount < 3) {
       setTimeout(() => {
         restartFsAttributesModules(retryCount + 1);
-      }, 100);
+      }, 0);
     }
     return;
   }
