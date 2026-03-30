@@ -72,7 +72,13 @@
 
 @import './utils/page/home/ressources.css';
 
-/* 
+/*
+* ↳ Stack
+*/
+
+@import './utils/page/stack/stack-mea-cards.css';
+
+/*
 * ↳ Contact
 */
 

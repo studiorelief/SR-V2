@@ -1,0 +1,7 @@
+.stack_mea_cards-logo {
+  transition: transform 0.3s var(--ease-back-out);
+}
+
+.stack_mea_cards:hover .stack_mea_cards-logo {
+  transform: scale(1.2);
+}
