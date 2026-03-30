@@ -108,6 +108,7 @@ import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
 import { destroyPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
 import { destroyHomeServices, initHomeServices } from '$utils/page/home/homeServices';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
+import { destroyPortfolioBaseline } from '$utils/page/portfolio/portfolioBaseline';
 import { initGlobalHero } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
 import {
@@ -261,6 +262,7 @@ const init = () => {
     destroyClientLoop();
     destroyCmsPortfolioParallax();
     destroyPortfolioSecondPlan();
+    destroyPortfolioBaseline();
     destroyApprocheParallax();
     destroyApprocheParallaxInvert();
 

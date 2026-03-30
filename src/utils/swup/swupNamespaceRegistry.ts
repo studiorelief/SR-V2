@@ -17,6 +17,10 @@ import {
 } from '$utils/page/hero/offresHero';
 import { initPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
 import { initProduitsParallax } from '$utils/page/hero/produitsHero';
+import {
+  destroyPortfolioBaseline,
+  initPortfolioBaseline,
+} from '$utils/page/portfolio/portfolioBaseline';
 import { registerNamespace } from '$utils/swup/swupNamespaces';
 
 /*
@@ -39,11 +43,16 @@ registerNamespace('cms-portfolio', {
 });
 
 registerNamespace('portfolio', {
+  setup: () => {
+    destroyPortfolioBaseline();
+  },
   animate: () => {
     initPortfolioSecondPlan();
+    initPortfolioBaseline();
   },
   init: () => {
     initPortfolioSecondPlan();
+    initPortfolioBaseline();
   },
 });
 

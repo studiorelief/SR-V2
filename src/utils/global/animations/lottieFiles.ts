@@ -159,7 +159,7 @@ export const initLottieFiles = (): void => {
   if (lottieMascotteFooter) {
     const footerLottieUrl =
       lottieMascotteFooter.dataset.lottieSrc ||
-      'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-footer.lottie';
+      'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/footer_mascotte-lottie-optimized_03.26.lottie';
 
     const dotLottieFooter = initLottieWithFadeIn(lottieMascotteFooter, footerLottieUrl);
 
@@ -186,7 +186,7 @@ export const initLottieFiles = (): void => {
     if (!alreadyInitialized) {
       const homeHeroLottieUrl =
         lottieMascotteHomeHero.dataset.lottieSrc ||
-        'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-home-hero.lottie';
+        'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
 
       const dotLottieHomeHero = initLottieWithFadeIn(lottieMascotteHomeHero, homeHeroLottieUrl);
 

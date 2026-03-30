@@ -170,6 +170,7 @@
 * STACK
 *==========================================
 */
+
 /* 
 * ↳ Hover animation
 */
@@ -189,4 +190,30 @@
 [data-wf--card-cms--cards-cards-variant*='stack']:hover .cms_cards_bottom-icon {
   transform: translateX(0rem);
   opacity: 1;
+}
+
+.cms_cards_tag-light {
+  scale: 1;
+  transition: transform 0.3s var(--ease-back-out);
+  transform: translateX(-33%);
+}
+
+[data-wf--card-cms--cards-cards-variant*='stack']:hover .cms_cards_tag-light {
+  transform: translateX(33%);
+}
+
+/* 
+* ↳ Tag BG Color Component
+*/
+
+[data-bg-color='#ffe1c7'] {
+  background-color: var(--_theme---background--accent-orange);
+}
+
+[data-bg-color='#7ac9d7'] {
+  background-color: var(--_theme---background--accent-blue);
+}
+
+[data-bg-color='#d8a5dc'] {
+  background-color: var(--_theme---background--accent-purple);
 }

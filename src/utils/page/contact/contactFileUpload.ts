@@ -11,7 +11,7 @@ import { supabase } from '$utils/global/supabase/supabaseClient';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MO
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 const ALLOWED_EXTENSIONS = '.pdf,.jpg,.jpeg,.png';
-const BUCKET_NAME = 'contact-uploads';
+const BUCKET_NAME = 'SR_contact-uploads';
 const FORM_SELECTOR = '#wf-form-contact-form';
 
 interface UploadedFile {
