@@ -80,7 +80,7 @@ const initPreloaderLottie = (): void => {
     // Initialiser le Lottie hero tôt
     const heroLottieUrl =
       heroLottieCanvas.dataset.lottieSrc ||
-      'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-home-hero.lottie';
+      'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
 
     preloaderLottie = new DotLottie({
       autoplay: true,
@@ -115,7 +115,7 @@ const initPreloaderLottie = (): void => {
 
   const lottieUrl =
     lottieCanvas.dataset.lottieSrc ||
-    'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/Assets/Studio%20Relief%20-%20V2/lottie_mascotte-home-hero.lottie';
+    'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
 
   preloaderLottie = new DotLottie({
     autoplay: true,
