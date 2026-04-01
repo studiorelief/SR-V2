@@ -9,3 +9,20 @@
   transform: scale(0.5);
   opacity: 0;
 }
+
+.is-list-sorting .portfolio_collection-item {
+  transition:
+    transform 0s var(--ease-back-out),
+    opacity 0s ease-out;
+}
+
+.portfolio_collection-item {
+  transition:
+    transform 0.3s var(--ease-back-out),
+    opacity 0.3s ease-out;
+}
+
+.is-list-sorting .portfolio_collection-item {
+  transform: scale(0);
+  opacity: 0;
+}

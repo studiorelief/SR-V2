@@ -33,6 +33,40 @@
   border-color: var(--_theme---border-color--invert);
 }
 
+[radio-form='wrapper']:hover {
+  color: var(--_theme---text-color--invert);
+}
+
+[radio-form='wrapper']:hover [radio-form='text'] {
+  color: var(--_theme---text-color--primary);
+  background-color: var(--_theme---background--primary);
+  border-color: var(--_theme---border-color--invert);
+}
+
+/* 
+* ↳ INVERT
+*/
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper']:hover {
+  color: var(--_theme---text-color--primary);
+}
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper']:hover [radio-form='text'] {
+  color: var(--_theme---text-color--invert);
+  background-color: var(--_theme---background--secondary);
+  border-color: var(--_theme---border-color--primary);
+}
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper']:hover {
+  color: var(--_theme---text-color--primary);
+}
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper']:hover [radio-form='text'] {
+  color: var(--_theme---text-color--invert);
+  background-color: var(--_theme---background--secondary);
+  border-color: var(--_theme---border-color--primary);
+}
+
 /* 
 *==========================================
 * RADIO FORM - ACTIVE STATE
@@ -50,6 +84,29 @@
 }
 
 [radio-form='wrapper'] .is-active-inputactive + [radio-form='background'] {
+  width: 100%;
+  opacity: 1;
+}
+
+/* 
+* ↳ INVERT
+*/
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper'] .is-active-inputactive {
+  color: var(--_theme---text-color--primary);
+}
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper']
+  .is-active-inputactive
+  [radio-form='text'] {
+  color: var(--_theme---text-color--invert);
+  background-color: var(--_theme---background--secondary);
+  border-color: var(--_theme---border-color--primary);
+}
+
+[data-wf--form-radio-field--variant='alternate'][radio-form='wrapper']
+  .is-active-inputactive
+  + [radio-form='background'] {
   width: 100%;
   opacity: 1;
 }
