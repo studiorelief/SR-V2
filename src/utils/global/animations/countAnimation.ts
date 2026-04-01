@@ -9,7 +9,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const SELECTOR = '[fs-list-element="items-count"]';
+const SELECTOR = 'stack_tools_heading-number [fs-list-element="items-count"]';
 const DURATION = 1.5;
 const DEBOUNCE_MS = 400;
 
@@ -18,8 +18,10 @@ interface ElementState {
   target: number;
   pendingValue: number;
   hasPlayed: boolean;
+  isAnimating: boolean;
   scrollTrigger?: ScrollTrigger;
   timer?: ReturnType<typeof setTimeout>;
+  fallbackTimer?: ReturnType<typeof setTimeout>;
 }
 
 const states = new WeakMap<HTMLElement, ElementState>();
@@ -29,9 +31,7 @@ function animateCount(el: HTMLElement, state: ElementState, to: number): void {
   gsap.killTweensOf(el);
   state.target = to;
   state.hasPlayed = true;
-
-  // Déconnecter l'observer pendant toute la durée du tween
-  state.observer.disconnect();
+  state.isAnimating = true;
 
   // Fade in + count-up simultanés
   const obj = { value: 0 };
@@ -46,8 +46,7 @@ function animateCount(el: HTMLElement, state: ElementState, to: number): void {
       el.textContent = Math.round(obj.value).toString();
     },
     onComplete() {
-      // Reconnecter l'observer pour capter les futurs changements Finsweet
-      state.observer.observe(el, { childList: true, characterData: true, subtree: true });
+      state.isAnimating = false;
     },
   });
 }
@@ -71,12 +70,23 @@ function handleElement(el: HTMLElement): void {
     target: 0,
     pendingValue: 0,
     hasPlayed: false,
+    isAnimating: false,
     observer: null!,
   };
+
+  // Fallback : si aucune valeur n'arrive après un délai raisonnable, montrer le placeholder
+  state.fallbackTimer = setTimeout(() => {
+    if (state.target === 0 && state.pendingValue === 0) {
+      gsap.to(el, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+    }
+  }, 2500);
 
   const observer = new MutationObserver(() => {
     const text = el.textContent?.trim() ?? '';
     const parsed = parseInt(text, 10);
+
+    // Ignorer les mises à jour de GSAP (valeurs intermédiaires 0..target pendant l'animation)
+    if (state.isAnimating && parsed <= state.target) return;
 
     if (!isNaN(parsed) && parsed > 0 && parsed !== state.target) {
       // Debounce : attendre que Finsweet ait fini de paginer
@@ -134,6 +144,7 @@ export function destroyCountAnimation(): void {
   elements.forEach((el) => {
     const state = states.get(el);
     if (state?.timer) clearTimeout(state.timer);
+    if (state?.fallbackTimer) clearTimeout(state.fallbackTimer);
     state?.scrollTrigger?.kill();
     gsap.killTweensOf(el);
   });
