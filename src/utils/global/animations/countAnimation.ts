@@ -9,7 +9,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const SELECTOR = 'stack_tools_heading-number [fs-list-element="items-count"]';
+const SELECTOR = '.stack_tools_heading-number [fs-list-element="items-count"]';
 const DURATION = 1.5;
 const DEBOUNCE_MS = 400;
 

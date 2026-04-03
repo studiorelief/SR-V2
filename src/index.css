@@ -85,6 +85,12 @@
 @import './utils/page/contact/contact-form.css';
 
 /* 
+* ↳ Portfolio
+*/
+
+@import './utils/page/portfolio/portfolio-listing.css';
+
+/* 
 *==========================================
 * RESPONSIVE
 *==========================================
