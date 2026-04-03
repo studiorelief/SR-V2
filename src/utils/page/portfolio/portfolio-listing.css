@@ -1,0 +1,9 @@
+/* 
+portfolio-listing=cards
+portfolio-listing=asset
+portfolio-listing=button
+*/
+
+.portfolio-listing_cards-collection-list .portfolio-listing_cards-collection-item {
+  opacity: 0;
+}
