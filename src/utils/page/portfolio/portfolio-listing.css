@@ -1,9 +1,101 @@
 /* 
+*==========================================
+* PORTFOLIO LISTING ANIMATIONS
+*==========================================
+*/
+/* 
 portfolio-listing=cards
 portfolio-listing=asset
 portfolio-listing=button
 */
 
-.portfolio-listing_cards-collection-list .portfolio-listing_cards-collection-item {
+/* 
+* ↳ Bullet
+*/
+
+.portfolio-listing_cards-collection-list
+  .portfolio-listing_cards-collection-item:last-child
+  .divider_component {
+  display: none;
+}
+
+/* 
+* ↳ Assets
+*/
+
+[portfolio-listing='asset'] {
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s var(--ease-back-out);
+  transform: scale(0.5) translateY(25%);
+}
+
+[portfolio-listing='cards']:hover .portfolio-listing_cards-asset {
+  opacity: 1;
+  transform: scale(1) translateY(25%);
+}
+
+/* 
+* ↳ Button
+*/
+
+[portfolio-listing='button'] {
+  transition:
+    opacity 0.3s ease-out,
+    width 0.3s ease-out;
   opacity: 0;
+  width: 0%;
+}
+
+.portfolio-listing_cards-collection-list-wrapper {
+  transition: opacity 0.3s ease-out;
+}
+
+[portfolio-listing='cards']:hover [portfolio-listing='button'] {
+  opacity: 1;
+  width: auto;
+}
+
+[portfolio-listing='cards']:has([portfolio-listing='button']):hover
+  .portfolio-listing_cards-collection-list-wrapper {
+  opacity: 0;
+  transition: opacity 0s ease-out;
+}
+
+/* 
+* ↳ Hover Color
+*/
+
+[portfolio-listing='cards'] {
+  transition: background-color 0.3s ease-out;
+}
+
+.portfolio-listing_collection-list [portfolio-listing='cards']:nth-child(3n + 1):hover {
+  background-color: var(--_theme---background--accent-blue-low);
+}
+
+.portfolio-listing_collection-list
+  [portfolio-listing='cards']:nth-child(3n + 1):hover
+  .button_link_icon-w {
+  background-color: var(--_theme---background--accent-blue);
+}
+
+.portfolio-listing_collection-list [portfolio-listing='cards']:nth-child(3n + 2):hover {
+  background-color: var(--_theme---background--accent-purple-low);
+}
+
+.portfolio-listing_collection-list
+  [portfolio-listing='cards']:nth-child(3n + 2):hover
+  .button_link_icon-w {
+  background-color: var(--_theme---background--accent-purple);
+}
+
+.portfolio-listing_collection-list [portfolio-listing='cards']:nth-child(3n + 3):hover {
+  background-color: var(--_theme---background--accent-orange-low);
+}
+
+.portfolio-listing_collection-list
+  [portfolio-listing='cards']:nth-child(3n + 3):hover
+  .button_link_icon-w {
+  background-color: var(--_theme---background--accent-orange);
 }
