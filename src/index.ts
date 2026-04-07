@@ -67,6 +67,7 @@ import {
   initCtaAnimation,
   initCtaHeading,
 } from '$utils/component/section/cta';
+import { destroyRessourcesLabs, initRessourcesLabs } from '$utils/component/section/ressources';
 import { initAuthorsSlider } from '$utils/component/sliders/authorsSlider';
 import { initCalSlider } from '$utils/component/sliders/calSlider';
 import { initCategoriesSlider } from '$utils/component/sliders/categoriesSlider';
@@ -219,6 +220,7 @@ const init = () => {
   // Animations visuelles (premier chargement)
   requestAnimationFrame(() => {
     initCtaAnimation();
+    initRessourcesLabs();
     initCustomFavicon();
 
     // Animations spécifiques par namespace (après layout stable)
@@ -260,6 +262,7 @@ const init = () => {
     destroyHomeServices();
     destroyMonkeyFall();
     destroyClientLoop();
+    destroyRessourcesLabs();
     destroyCmsPortfolioParallax();
     destroyPortfolioSecondPlan();
     destroyPortfolioBaseline();
@@ -294,6 +297,7 @@ const init = () => {
   swup.hooks.on('visit:end', () => {
     requestAnimationFrame(() => {
       initCtaAnimation();
+      initRessourcesLabs();
     });
   });
 };
