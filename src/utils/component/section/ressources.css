@@ -1,0 +1,32 @@
+/* 
+* ↳ BUTTON
+*/
+
+#ressources-blog:hover [data-wf--button-link--variant],
+#ressources-labs:hover [data-wf--button-link--variant],
+#ressources-formation:hover [data-wf--button-link--variant] {
+  padding-left: var(--_layout---spacing--xsmall);
+}
+
+/* 
+* ↳ LABS ANIMATION
+*/
+
+#ressources-labs:hover .is-base-bat {
+  opacity: 0;
+  transition-delay: 0.25s;
+}
+
+#ressources-labs:hover .is-hover-bat {
+  opacity: 1;
+  transition-delay: 0.25s;
+}
+
+/* 
+* ↳ FORMATION ANIMATION
+*/
+
+#ressources-formation .heading-component,
+#ressources-formation .ressources_cards-content {
+  opacity: 0.5;
+}
