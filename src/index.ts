@@ -67,7 +67,14 @@ import {
   initCtaAnimation,
   initCtaHeading,
 } from '$utils/component/section/cta';
-import { destroyRessourcesLabs, initRessourcesLabs } from '$utils/component/section/ressources';
+import {
+  destroyRessourcesBlog,
+  destroyRessourcesLabs,
+  destroyRessourcesStack,
+  initRessourcesBlog,
+  initRessourcesLabs,
+  initRessourcesStack,
+} from '$utils/component/section/ressources';
 import { initAuthorsSlider } from '$utils/component/sliders/authorsSlider';
 import { initCalSlider } from '$utils/component/sliders/calSlider';
 import { initCategoriesSlider } from '$utils/component/sliders/categoriesSlider';
@@ -221,6 +228,8 @@ const init = () => {
   requestAnimationFrame(() => {
     initCtaAnimation();
     initRessourcesLabs();
+    initRessourcesBlog();
+    initRessourcesStack();
     initCustomFavicon();
 
     // Animations spécifiques par namespace (après layout stable)
@@ -263,6 +272,8 @@ const init = () => {
     destroyMonkeyFall();
     destroyClientLoop();
     destroyRessourcesLabs();
+    destroyRessourcesBlog();
+    destroyRessourcesStack();
     destroyCmsPortfolioParallax();
     destroyPortfolioSecondPlan();
     destroyPortfolioBaseline();
@@ -298,6 +309,8 @@ const init = () => {
     requestAnimationFrame(() => {
       initCtaAnimation();
       initRessourcesLabs();
+      initRessourcesBlog();
+      initRessourcesStack();
     });
   });
 };

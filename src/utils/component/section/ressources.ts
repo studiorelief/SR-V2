@@ -181,3 +181,204 @@ export const destroyRessourcesLabs = (): void => {
 
   labsInstance = null;
 };
+
+/*
+ *==========================================
+ * RESSOURCES BLOG
+ * ↳ Eagle, cloud & lunettes hover animation
+ *==========================================
+ */
+
+let blogInstance: {
+  container: HTMLElement;
+  handleMouseEnter: () => void;
+  handleMouseLeave: () => void;
+  timeline: gsap.core.Timeline | null;
+} | null = null;
+
+/**
+ * Initialise l'animation hover pour #ressources-blog
+ */
+export const initRessourcesBlog = (): void => {
+  destroyRessourcesBlog();
+
+  const container = document.querySelector<HTMLElement>('#ressources-blog');
+  if (!container) return;
+
+  const eagle = container.querySelector<HTMLElement>('.is-eagle');
+  const cloud = container.querySelector<HTMLElement>('.is-cloud');
+  const lunettes = container.querySelector<HTMLElement>('.is-glass');
+
+  if (!eagle && !cloud && !lunettes) return;
+
+  // État initial
+  if (lunettes) gsap.set(lunettes, { yPercent: 100, opacity: 0 });
+
+  let tl: gsap.core.Timeline | null = null;
+
+  const handleMouseEnter = (): void => {
+    if (tl) tl.kill();
+
+    tl = gsap.timeline();
+
+    // Lunettes d'abord
+    if (lunettes) {
+      tl.to(lunettes, { opacity: 1, yPercent: 0, duration: 0.4, ease: 'power2.out' });
+    }
+
+    // Eagle & cloud à 50% de l'animation lunettes (0.2s)
+    if (eagle) {
+      tl.to(eagle, { scale: 1.75, x: 16 * 2, y: 16, duration: 0.5, ease: 'power2.out' }, 0.15);
+    }
+
+    if (cloud) {
+      tl.to(cloud, { scale: 1.5, yPercent: 25, duration: 0.5, ease: 'power2.out' }, 0.15);
+    }
+  };
+
+  const handleMouseLeave = (): void => {
+    if (tl) tl.kill();
+
+    tl = gsap.timeline();
+
+    // Tout en même temps
+    if (lunettes) {
+      tl.to(lunettes, { opacity: 0, yPercent: 100, duration: 0.3, ease: 'power2.in' }, 0);
+    }
+
+    if (eagle) {
+      tl.to(eagle, { scale: 1, x: 0, y: 0, duration: 0.3, ease: 'power2.in' }, 0);
+    }
+
+    if (cloud) {
+      tl.to(cloud, { scale: 1, yPercent: 0, duration: 0.3, ease: 'power2.in' }, 0);
+    }
+  };
+
+  container.addEventListener('mouseenter', handleMouseEnter);
+  container.addEventListener('mouseleave', handleMouseLeave);
+
+  blogInstance = {
+    container,
+    handleMouseEnter,
+    handleMouseLeave,
+    timeline: tl,
+  };
+};
+
+/**
+ * Détruit l'animation ressources blog
+ */
+export const destroyRessourcesBlog = (): void => {
+  if (!blogInstance) return;
+
+  const { container, handleMouseEnter, handleMouseLeave, timeline } = blogInstance;
+
+  if (timeline) timeline.kill();
+
+  container.removeEventListener('mouseenter', handleMouseEnter);
+  container.removeEventListener('mouseleave', handleMouseLeave);
+
+  const eagle = container.querySelector<HTMLElement>('.is-eagle');
+  const cloud = container.querySelector<HTMLElement>('.is-cloud');
+  const lunettes = container.querySelector<HTMLElement>('.is-glass');
+
+  const els = [eagle, cloud, lunettes].filter(Boolean) as HTMLElement[];
+  gsap.killTweensOf(els);
+  els.forEach((el) => gsap.set(el, { clearProps: 'all' }));
+
+  blogInstance = null;
+};
+
+/*
+ *==========================================
+ * RESSOURCES STACK
+ * ↳ Corde hover animation
+ *==========================================
+ */
+
+let stackInstance: {
+  container: HTMLElement;
+  handleMouseEnter: () => void;
+  handleMouseLeave: () => void;
+  timeline: gsap.core.Timeline | null;
+} | null = null;
+
+/**
+ * Initialise l'animation hover pour #ressources-stack
+ */
+export const initRessourcesStack = (): void => {
+  destroyRessourcesStack();
+
+  const container = document.querySelector<HTMLElement>('#ressources-stack');
+  if (!container) return;
+
+  const corde = container.querySelector<HTMLElement>('.is-corde');
+  if (!corde) return;
+
+  // État initial — clipPath masque par le haut, transformOrigin en haut
+  gsap.set(corde, { clipPath: 'inset(0 0 100% 0)', opacity: 1 });
+
+  let tl: gsap.core.Timeline | null = null;
+  let swingTween: gsap.core.Tween | null = null;
+
+  const handleMouseEnter = (): void => {
+    if (tl) tl.kill();
+    if (swingTween) swingTween.kill();
+
+    tl = gsap.timeline();
+
+    // Déroulement + balancement pendant l'animation
+    tl.to(corde, { clipPath: 'inset(0 0 0% 0)', opacity: 1, duration: 0.5, ease: 'power2.out' });
+    tl.to(corde, { x: -2, duration: 0.15, ease: 'sine.inOut', yoyo: true, repeat: 3 }, 0);
+  };
+
+  const handleMouseLeave = (): void => {
+    if (tl) tl.kill();
+    if (swingTween) {
+      swingTween.kill();
+      swingTween = null;
+    }
+
+    tl = gsap.timeline();
+    tl.to(corde, {
+      clipPath: 'inset(0 0 100% 0)',
+      opacity: 1,
+      x: 0,
+      duration: 0.4,
+      ease: 'power2.in',
+    });
+  };
+
+  container.addEventListener('mouseenter', handleMouseEnter);
+  container.addEventListener('mouseleave', handleMouseLeave);
+
+  stackInstance = {
+    container,
+    handleMouseEnter,
+    handleMouseLeave,
+    timeline: tl,
+  };
+};
+
+/**
+ * Détruit l'animation ressources stack
+ */
+export const destroyRessourcesStack = (): void => {
+  if (!stackInstance) return;
+
+  const { container, handleMouseEnter, handleMouseLeave, timeline } = stackInstance;
+
+  if (timeline) timeline.kill();
+
+  container.removeEventListener('mouseenter', handleMouseEnter);
+  container.removeEventListener('mouseleave', handleMouseLeave);
+
+  const corde = container.querySelector<HTMLElement>('.is-corde');
+  if (corde) {
+    gsap.killTweensOf(corde);
+    gsap.set(corde, { clearProps: 'all' });
+  }
+
+  stackInstance = null;
+};
