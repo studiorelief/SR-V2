@@ -19,6 +19,7 @@ const pageTextMap: Record<string, string> = {
   '/expertises': 'Expertises',
   '/produits': 'Produits',
   '/offres': 'Offres',
+  '/approche': 'Approche',
   '/blog': 'Blog',
   '/blog/*': 'Article',
   '/labs': 'Labs',
@@ -34,6 +35,101 @@ const defaultText = '';
 
 // Pages où animateCtaTextEnter ne s'affiche pas
 const excludedPagesForCtaText: string[] = ['/'];
+
+/*
+ *============================================================================
+ * CTA MASCOTTE - PAGE MAPPING
+ *============================================================================
+ */
+
+const MASCOTTE_HOME =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/6936df71566a08e4e044c5b4_cta-fix_asset.svg';
+const MASCOTTE_APPROCHE =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69e20bf758d93c50c7065985_cta-fix_asset-approche.svg';
+const MASCOTTE_RESSOURCES =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69e20bf78feae0fcd54f495a_cta-fix_asset-ressources.svg';
+const MASCOTTE_PORTFOLIO =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69e214e0dfbb18514ea1ea15_cta-fix_asset-portfolio.svg';
+const MASCOTTE_CONTACT =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69e214e0c93a39405c1ec5ef_cta-fix_asset-contact.svg';
+const MASCOTTE_SOLUTIONS =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69e214e0a652af1c8a830460_cta-fix_asset-solutions.svg';
+const MASCOTTE_STUDIO =
+  'https://cdn.prod.website-files.com/6918e7a57f6632f08bcbfc2e/69e2155a62d9cb29fa92b835_cta-fix_asset-studio.svg';
+
+// Mapping des chemins vers les mascottes - supporte les wildcards (/stack/*)
+const pageMascotteMap: Record<string, string> = {
+  '/': MASCOTTE_HOME,
+  '/approche': MASCOTTE_APPROCHE,
+  '/stack': MASCOTTE_RESSOURCES,
+  '/stack/*': MASCOTTE_RESSOURCES,
+  '/blog': MASCOTTE_RESSOURCES,
+  '/blog/*': MASCOTTE_RESSOURCES,
+  '/labs': MASCOTTE_RESSOURCES,
+  '/labs/*': MASCOTTE_RESSOURCES,
+  '/portfolio': MASCOTTE_PORTFOLIO,
+  '/portfolio/*': MASCOTTE_PORTFOLIO,
+  '/contact': MASCOTTE_CONTACT,
+  '/expertises': MASCOTTE_SOLUTIONS,
+  '/produits': MASCOTTE_SOLUTIONS,
+  '/offres': MASCOTTE_SOLUTIONS,
+  '/studio': MASCOTTE_STUDIO,
+};
+
+// Mascotte par défaut si la page n'est pas dans le mapping
+const defaultMascotte = MASCOTTE_HOME;
+
+/**
+ * Retourne l'URL de la mascotte pour le chemin actuel
+ * Supporte les wildcards: '/stack/*' matche '/stack/webflow'
+ */
+const getMascotteForCurrentPage = (): string => {
+  const path = window.location.pathname;
+
+  if (pageMascotteMap[path]) {
+    return pageMascotteMap[path];
+  }
+
+  for (const [pattern, src] of Object.entries(pageMascotteMap)) {
+    if (pattern.endsWith('/*')) {
+      const basePath = pattern.slice(0, -2);
+      if (path.startsWith(basePath + '/')) {
+        return src;
+      }
+    }
+  }
+
+  return defaultMascotte;
+};
+
+/**
+ * Met à jour l'image de la mascotte selon la page actuelle
+ * Appelé pendant le Leave Swup (rideau couvrant) pour un swap invisible
+ */
+export const updateCtaMascotte = (): void => {
+  const mascotte = document.querySelector<HTMLImageElement>('.cta-fixed_mascotte');
+  if (!mascotte) return;
+
+  const newSrc = getMascotteForCurrentPage();
+  if (mascotte.src !== newSrc) {
+    mascotte.src = newSrc;
+  }
+};
+
+/**
+ * Préchargement des mascottes + set initial au premier chargement
+ * Évite tout flash de chargement lors des transitions
+ */
+export const initCtaMascotte = (): void => {
+  const uniqueSources = new Set(Object.values(pageMascotteMap));
+  uniqueSources.add(defaultMascotte);
+  uniqueSources.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+
+  updateCtaMascotte();
+};
 
 /*
  *============================================================================

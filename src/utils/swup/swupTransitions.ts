@@ -1,6 +1,10 @@
 import gsap from 'gsap';
 
-import { animateCtaTextEnter, animateCtaTextLeave } from '$utils/component/global/ctaFixed';
+import {
+  animateCtaTextEnter,
+  animateCtaTextLeave,
+  updateCtaMascotte,
+} from '$utils/component/global/ctaFixed';
 import { animateGlobalHeroLeave, setupAndAnimateGlobalHero } from '$utils/swup/swupGlobalHero';
 
 /**
@@ -130,6 +134,9 @@ export const swupEnterAnimation = (): Promise<void> => {
 
     // 1. Swap Path (Invisible car les deux sont plein écran)
     tl.set(path, { attr: { d: enter_start } });
+
+    // Swap mascotte sous le rideau (invisible, pathname déjà à jour)
+    updateCtaMascotte();
 
     // 2. Logo animations (démarrent ensemble après 0.2s pause)
     if (logo) {
