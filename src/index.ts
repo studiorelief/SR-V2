@@ -45,7 +45,7 @@ import { initSearchBar } from '$utils/component/form/searchBar';
 import { initAiShare } from '$utils/component/global/aiShare';
 import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
-import { initCtaFixed, initCtaText } from '$utils/component/global/ctaFixed';
+import { initCtaFixed, initCtaMascotte, initCtaText } from '$utils/component/global/ctaFixed';
 import { destroyAllDraggables, initDraggable } from '$utils/component/global/draggable';
 import { initFooter } from '$utils/component/global/footer';
 import {
@@ -104,6 +104,10 @@ import {
   restartFsAttributesModules,
 } from '$utils/global/script/loadFsAttributes';
 import { initFsLibrairiesScripts } from '$utils/global/script/loadFsLibrairies';
+import {
+  destroyApprocheGrotteScroll,
+  destroyApprocheHeroScroll,
+} from '$utils/page/approche/approcheScrollAnimations';
 import {
   destroyApprocheParallax,
   destroyApprocheParallaxInvert,
@@ -222,6 +226,7 @@ const init = () => {
   initNavbar();
   initNavbarMobile();
   initCtaText();
+  initCtaMascotte();
   initDropdownFiltersClickOutside();
 
   // Animations visuelles (premier chargement)
@@ -279,6 +284,8 @@ const init = () => {
     destroyPortfolioBaseline();
     destroyApprocheParallax();
     destroyApprocheParallaxInvert();
+    destroyApprocheHeroScroll();
+    destroyApprocheGrotteScroll();
 
     // Mettre à jour la favicon immédiatement après injection du contenu
     updateFavicon();
