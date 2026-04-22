@@ -176,7 +176,7 @@ export const initApprocheStepScale = (): void => {
     });
 
     const trigger = ScrollTrigger.create({
-      markers: true,
+      // markers: true,
       trigger: wrapper,
       start: 'top 50%',
       end: 'bottom top',
