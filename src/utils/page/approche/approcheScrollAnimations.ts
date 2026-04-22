@@ -22,7 +22,7 @@ export const initApprocheHeroScroll = (): void => {
   if (!heroSection) return;
 
   gsap.set(heroSection, {
-    willChange: 'transform, opacity',
+    willChange: 'transform',
     force3D: true,
   });
 
@@ -33,7 +33,6 @@ export const initApprocheHeroScroll = (): void => {
     scrub: 0.15,
     invalidateOnRefresh: true,
     animation: gsap.to(heroSection, {
-      opacity: 0,
       y: '75svh',
       ease: 'none',
     }),
