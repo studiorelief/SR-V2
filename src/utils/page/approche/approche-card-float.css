@@ -1,0 +1,46 @@
+/* Floating loop animation on approche cards
+ * Pure CSS keyframes — runs on the compositor thread, does not interfere
+ * with GSAP ScrollTrigger scrubbing on the main thread.
+ * Left and right are desynchronized via different durations + negative delay.
+ */
+
+@keyframes approche-card-float-up {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes approche-card-float-down {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 14px, 0);
+  }
+}
+
+[approche-card='left'] {
+  animation: approche-card-float-up 3.4s ease-in-out infinite;
+}
+
+[approche-card='right'] {
+  animation: approche-card-float-down 4.1s ease-in-out infinite;
+  animation-delay: -0.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [approche-card='left'],
+  [approche-card='right'] {
+    animation: none;
+  }
+}
+
+.approche_process_decorative-mousqueton.is-top {
+  position: relative;
+  z-index: 100;
+}

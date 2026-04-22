@@ -90,6 +90,12 @@
 
 @import './utils/page/portfolio/portfolio-listing.css';
 
+/*
+* ↳ Approche
+*/
+
+@import './utils/page/approche/approche-card-float.css';
+
 /* 
 *==========================================
 * RESPONSIVE

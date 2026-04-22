@@ -2,6 +2,9 @@ import { initCal } from '$utils/global/script/loadCal';
 import {
   initApprocheGrotteScroll,
   initApprocheHeroScroll,
+  initApprocheLampAnimations,
+  initApprocheProcessParallax,
+  initApprocheStepScale,
 } from '$utils/page/approche/approcheScrollAnimations';
 import { initContactFileUpload } from '$utils/page/contact/contactFileUpload';
 import { initContactLogic } from '$utils/page/contact/contactLogic';
@@ -79,12 +82,18 @@ registerNamespace('approche', {
     initApprocheParallaxInvert();
     initApprocheHeroScroll();
     initApprocheGrotteScroll();
+    initApprocheProcessParallax();
+    initApprocheStepScale();
+    initApprocheLampAnimations();
   },
   init: () => {
     initApprocheParallax();
     initApprocheParallaxInvert();
     initApprocheHeroScroll();
     initApprocheGrotteScroll();
+    initApprocheProcessParallax();
+    initApprocheStepScale();
+    initApprocheLampAnimations();
   },
 });
 
