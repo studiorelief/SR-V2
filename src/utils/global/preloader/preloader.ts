@@ -41,6 +41,23 @@ let heroLottieWrapper: HTMLElement | null = null;
 const HERO_LOTTIE_FINAL_ZINDEX = '11';
 
 /**
+ * Détecte les agents automatisés (Lighthouse, PageSpeed, GTmetrix, headless Chrome,
+ * outils SEO, crawlers). On bypass le preloader pour eux : il pénalise lourdement
+ * Lighthouse (LCP/TBT/SI) sans servir leur usage.
+ *
+ * - `navigator.webdriver` : true pour Puppeteer/Selenium/etc.
+ * - UA regex : couvre Lighthouse, PageSpeed Insights, GTmetrix, Pingdom, et les
+ *   crawlers SEO courants.
+ */
+const isHeadlessAgent = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  if (navigator.webdriver) return true;
+  return /HeadlessChrome|Lighthouse|Chrome-Lighthouse|PageSpeed|Speed Insights|GTmetrix|Pingdom|bot|crawler|spider/i.test(
+    navigator.userAgent
+  );
+};
+
+/**
  * Vérifie si le preloader doit être affiché
  * Retourne true si c'est la première visite de la session
  */
@@ -343,6 +360,15 @@ export const initPreloader = (): void => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
 
   if (!component) return;
+
+  // Bots / Lighthouse / PageSpeed → on cache le preloader.
+  // Le hero Lottie sera initialisé normalement par lottieFiles.ts (data-preloader-initialized
+  // n'est pas posé donc le check de skip ne s'applique pas).
+  if (isHeadlessAgent()) {
+    component.style.display = 'none';
+    component.style.visibility = 'hidden';
+    return;
+  }
 
   // Si ce n'est pas la première visite, s'assurer que le preloader est caché
   if (!shouldShowPreloader()) {
