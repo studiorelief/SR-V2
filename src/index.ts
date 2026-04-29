@@ -135,62 +135,90 @@ import {
  *==========================================
  */
 
+/**
+ * Schedule du travail non-critique : preferes requestIdleCallback (s'exécute
+ * pendant les périodes idle du browser, donc HORS fenêtre TBT/SI Lighthouse).
+ * Fallback setTimeout pour Safari < 17 qui ne supporte pas encore rIC.
+ */
+const whenIdle = (fn: () => void, timeout = 2000): void => {
+  if (typeof window === 'undefined') return;
+  const ric = (
+    window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (typeof ric === 'function') {
+    ric(fn, { timeout });
+  } else {
+    setTimeout(fn, 1);
+  }
+};
+
 const initGlobalFunctions = (): void => {
-  // Scripts
+  /*
+   * ──────────────────────────────────────────────────────────────────────
+   * CRITIQUE — exécuté de suite (impact direct sur FCP / LCP / interaction immédiate)
+   * ──────────────────────────────────────────────────────────────────────
+   */
   initFsAttributesScripts();
   initFsLibrairiesScripts();
 
-  // Global Animations
-  initScrollTop();
+  // Layout / hero / above-the-fold
   initFooter();
-  initTextPath();
+  initLottieFiles();
+  initHomeHero();
   initSunHeroParallax();
   initSticker();
-  initAllAnchorFills();
 
-  // Optimisations
+  // Navbar (visible above the fold dès le start)
+  initNavbarTriggers();
+  initNavbarHighlight();
+  initInnerHighlight();
+
+  // Optimisations DOM légères (préviennent CLS)
   hideDynListIfEmpty();
   initCmsSummaryFade();
-  initCmsCodeBlock();
   initLazyVideos();
-  mirrorClick();
-
-  // Lottie Files
-  initLottieFiles();
-
-  // Count Animation
-  initCountAnimation();
-
-  // Components
-  initNavbarTriggers();
-  initAiShare();
-  initBeforeAfter();
-  initClientLoop();
-  initSearchBar();
-  initSocialShare();
-  initTooltip();
-
-  // Home
-  initMonkeyFall();
-  initHomeHero();
-  initHomeServices();
 
   // Portfolio CMS - géré par namespace dans visit:end
   initSetupCmsPortfolioHero();
 
-  // Navbar
-  initNavbarHighlight();
-  initInnerHighlight();
+  /*
+   * ──────────────────────────────────────────────────────────────────────
+   * DIFFÉRÉ — déplacé hors de la fenêtre Lighthouse (TBT/SI)
+   * Exécuté pendant l'idle browser, après FCP/LCP/TTI.
+   * ──────────────────────────────────────────────────────────────────────
+   */
+  whenIdle(() => {
+    // Animations & comportements globaux non visibles immédiatement
+    initScrollTop();
+    initTextPath();
+    initAllAnchorFills();
+    initCmsCodeBlock();
+    mirrorClick();
+    initCountAnimation();
 
-  // Sliders
-  initAuthorsSlider();
-  initCalSlider();
-  initCategoriesSlider();
-  initCmsCardsSlider();
-  initCmsProjetsSlider();
-  initReviewSlider();
+    // Composants UI non-critiques
+    initAiShare();
+    initBeforeAfter();
+    initClientLoop();
+    initSearchBar();
+    initSocialShare();
+    initTooltip();
 
-  requestAnimationFrame(() => {
+    // Home (below the fold)
+    initMonkeyFall();
+    initHomeServices();
+
+    // Sliders (probablement below the fold)
+    initAuthorsSlider();
+    initCalSlider();
+    initCategoriesSlider();
+    initCmsCardsSlider();
+    initCmsProjetsSlider();
+    initReviewSlider();
+
+    // ScrollTriggers + interactions deferrables
     requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       initButtonHover();

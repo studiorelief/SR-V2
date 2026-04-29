@@ -25,8 +25,8 @@ const loadDotLottie = () => import('@lottiefiles/dotlottie-web').then((m) => m.D
 const PRELOADER_SHOWN_KEY = 'sr-preloader-shown';
 
 // Auto-pause des Lotties après ce délai (cohérent avec lottieFiles.ts).
-// 8s = animation perçue + main thread libre pour Lighthouse + économie batterie.
-const AUTO_PAUSE_AFTER_MS = 8000;
+// 3 s = animation perçue + main thread libre avant la mesure TBT/SI Lighthouse.
+const AUTO_PAUSE_AFTER_MS = 3000;
 const autoPauseLottie = (instance: DotLottie): void => {
   if (AUTO_PAUSE_AFTER_MS <= 0) return;
   setTimeout(() => {

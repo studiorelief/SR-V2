@@ -56,13 +56,12 @@ const SHOULD_LOOP = !isHeadlessAgent();
 
 /**
  * Auto-pause de toutes les instances Lottie après ce délai (ms) — appliqué à TOUT
- * le monde, humains compris. 8 s = largement assez pour percevoir l'animation hero
- * et libérer le main thread bien avant la fin de la fenêtre Lighthouse (~30 s).
- * Bonus : économie CPU/batterie sur mobile pour les vrais utilisateurs.
+ * le monde. 3 s = animation perçue + main thread libre AVANT la mesure TBT/SI de
+ * Lighthouse (qui est principalement entre FCP et TTI, les ~5-10 premières secondes).
  *
- * Mettre à 0 (ou supprimer la logique) pour réactiver le loop infini partout.
+ * Mettre à 0 pour réactiver le loop infini partout (mais score PSI s'effondre).
  */
-const AUTO_PAUSE_AFTER_MS = 8000;
+const AUTO_PAUSE_AFTER_MS = 3000;
 
 /**
  * Initializes a Lottie animation with hover pause functionality
