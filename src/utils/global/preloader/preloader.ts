@@ -24,10 +24,12 @@ const loadDotLottie = () => import('@lottiefiles/dotlottie-web').then((m) => m.D
 // Clé sessionStorage pour tracker la visite
 const PRELOADER_SHOWN_KEY = 'sr-preloader-shown';
 
-// Auto-pause des Lotties après ce délai (cohérent avec lottieFiles.ts).
-// 3 s = animation perçue + main thread libre avant la mesure TBT/SI Lighthouse.
-const AUTO_PAUSE_AFTER_MS = 3000;
-const autoPauseLottie = (instance: DotLottie): void => {
+// Auto-pause des Lotties non-hero. Le hero reste en loop infini pour les humains.
+// (Cohérent avec lottieFiles.ts.)
+const AUTO_PAUSE_AFTER_MS = 5000;
+const HERO_LOTTIE_IDS = new Set(['lottie-home-hero', 'lottie-home-hero-bg']);
+const autoPauseLottie = (instance: DotLottie, canvas: HTMLCanvasElement): void => {
+  if (HERO_LOTTIE_IDS.has(canvas.id)) return; // hero exempté
   if (AUTO_PAUSE_AFTER_MS <= 0) return;
   setTimeout(() => {
     try {
@@ -146,7 +148,7 @@ const initPreloaderLottie = async (): Promise<void> => {
       });
     });
 
-    autoPauseLottie(preloaderLottie);
+    autoPauseLottie(preloaderLottie, heroLottieCanvas);
 
     return;
   }
@@ -177,7 +179,7 @@ const initPreloaderLottie = async (): Promise<void> => {
     });
   });
 
-  autoPauseLottie(preloaderLottie);
+  autoPauseLottie(preloaderLottie, lottieCanvas);
 };
 
 /**

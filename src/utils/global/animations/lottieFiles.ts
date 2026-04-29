@@ -52,16 +52,25 @@ const isHeadlessAgent = (): boolean => {
     navigator.userAgent
   );
 };
-const SHOULD_LOOP = !isHeadlessAgent();
+const IS_HEADLESS = isHeadlessAgent();
 
 /**
- * Auto-pause de toutes les instances Lottie après ce délai (ms) — appliqué à TOUT
- * le monde. 3 s = animation perçue + main thread libre AVANT la mesure TBT/SI de
- * Lighthouse (qui est principalement entre FCP et TTI, les ~5-10 premières secondes).
- *
- * Mettre à 0 pour réactiver le loop infini partout (mais score PSI s'effondre).
+ * IDs des Lotties hero (animation principale du site, doit boucler en infini
+ * pour les humains). Pour ces Lotties :
+ *   - Humains : loop = true, pas d'auto-pause (animation continue, brand-critical)
+ *   - Bots détectés (navigator.webdriver) : loop = false → joue 1× puis stop
+ *   - Bots non détectés (PSI nouveau headless) : loop = true, score PSI affecté
+ *     mais on accepte ce trade-off pour préserver l'UX.
  */
-const AUTO_PAUSE_AFTER_MS = 3000;
+const HERO_LOTTIE_IDS = new Set(['lottie-home-hero', 'lottie-home-hero-bg']);
+const isHeroLottie = (canvas: HTMLCanvasElement): boolean => HERO_LOTTIE_IDS.has(canvas.id);
+
+/**
+ * Auto-pause des Lotties NON-hero (footer, sections, etc.) après ce délai.
+ * Le hero est exempté pour préserver l'animation infinie.
+ * 5 s = animation perçue + main thread libre.
+ */
+const AUTO_PAUSE_AFTER_MS = 5000;
 
 /**
  * Initializes a Lottie animation with hover pause functionality
@@ -197,12 +206,19 @@ const initLottieWithFadeIn = (canvas: HTMLCanvasElement, url: string): DotLottie
     throw new Error('[lottieFiles] DotLottie ctor non chargé. Appeler loadDotLottie() avant.');
   }
 
+  const isHero = isHeroLottie(canvas);
+
+  // Hero : loop infini pour les humains (brand-critical), une seule passe pour les
+  // bots détectés. Non-hero : loop pour les humains, une passe pour les bots — ET
+  // auto-pause après quelques secondes (sécurité Lighthouse).
+  const shouldLoop = !IS_HEADLESS;
+
   // Cacher le canvas initialement
   gsap.set(canvas, { opacity: 0 });
 
   const dotLottie = new DotLottieCtor({
     autoplay: true,
-    loop: SHOULD_LOOP,
+    loop: shouldLoop,
     canvas,
     src: url,
     useFrameInterpolation: false,
@@ -218,9 +234,9 @@ const initLottieWithFadeIn = (canvas: HTMLCanvasElement, url: string): DotLottie
     });
   });
 
-  // Auto-pause après AUTO_PAUSE_AFTER_MS pour libérer le main thread
-  // (gain perf pour humains + Lighthouse, indépendamment de la détection bot).
-  if (AUTO_PAUSE_AFTER_MS > 0) {
+  // Auto-pause UNIQUEMENT pour les Lotties non-hero. Le hero reste libre de
+  // tourner en infini chez les humains pour préserver le branding.
+  if (!isHero && AUTO_PAUSE_AFTER_MS > 0) {
     setTimeout(() => {
       try {
         dotLottie.pause();
