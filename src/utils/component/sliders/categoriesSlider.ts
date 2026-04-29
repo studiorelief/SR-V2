@@ -4,9 +4,7 @@
  *============================================================================
  */
 
-import 'swiper/css/bundle';
-
-import Swiper from 'swiper/bundle';
+import Swiper from './_swiperSetup';
 
 export function initCategoriesSlider() {
   const swipers = document.querySelectorAll('.swiper.is-categories');

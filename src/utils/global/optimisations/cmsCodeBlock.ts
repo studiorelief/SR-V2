@@ -1,10 +1,13 @@
 import gsap from 'gsap';
-import { codeToHtml } from 'shiki';
 
 /**
  * Initialise le syntax highlighting sur les blocs de code CMS
  * Cible les éléments avec l'attribut [code-block="highlight"]
  * Ajoute automatiquement un bouton de copie
+ *
+ * Shiki est chargé dynamiquement (import()) uniquement si au moins un bloc
+ * existe dans le DOM → esbuild génère un chunk séparé qui n'est jamais
+ * téléchargé sur les pages sans code (homepage, etc.).
  */
 export async function initCmsCodeBlock() {
   const codeBlocks = document.querySelectorAll<HTMLElement>('[code-block="highlight"]');
@@ -13,24 +16,58 @@ export async function initCmsCodeBlock() {
     return;
   }
 
+  // Imports dynamiques : Shiki core + engine JS (beaucoup plus léger que le WASM
+  // Oniguruma) + uniquement les 6 langs réellement utilisés + 1 seul thème.
+  // On passe via les sous-chemins `shiki/...` car @shikijs/* n'est pas hoisté
+  // par pnpm (transitive dep). Shiki re-exporte chaque lang/thème individuellement.
+  const [
+    { createHighlighterCore },
+    { createJavaScriptRegexEngine },
+    themeMaterial,
+    langJson,
+    langHtml,
+    langCss,
+    langJs,
+    langTs,
+    langTsx,
+  ] = await Promise.all([
+    import('shiki/core'),
+    import('shiki/engine/javascript'),
+    import('shiki/themes/material-theme-darker.mjs'),
+    import('shiki/langs/json.mjs'),
+    import('shiki/langs/html.mjs'),
+    import('shiki/langs/css.mjs'),
+    import('shiki/langs/javascript.mjs'),
+    import('shiki/langs/typescript.mjs'),
+    import('shiki/langs/tsx.mjs'),
+  ]);
+
+  const highlighter = await createHighlighterCore({
+    themes: [themeMaterial.default],
+    langs: [
+      langJson.default,
+      langHtml.default,
+      langCss.default,
+      langJs.default,
+      langTs.default,
+      langTsx.default,
+    ],
+    engine: createJavaScriptRegexEngine(),
+  });
+
   for (const block of codeBlocks) {
     const codeElement = block.querySelector('code');
     if (!codeElement) continue;
 
-    // Récupère le code brut (décode les entités HTML)
     const rawCode = decodeHtmlEntities(codeElement.textContent || '');
-
-    // Détecte le langage depuis l'attribut ou par défaut
     const lang = block.getAttribute('code-lang') || detectLanguage(rawCode);
 
     try {
-      // Génère le HTML avec syntax highlighting
-      const highlightedHtml = await codeToHtml(rawCode, {
+      const highlightedHtml = highlighter.codeToHtml(rawCode, {
         lang,
         theme: 'material-theme-darker',
       });
 
-      // Crée le wrapper avec le bouton de copie
       const wrapper = document.createElement('div');
       wrapper.className = 'code-block-wrapper';
       wrapper.innerHTML = `
@@ -47,11 +84,9 @@ export async function initCmsCodeBlock() {
         <div class="code-block-content">${highlightedHtml}</div>
       `;
 
-      // Ajoute l'event listener pour la copie
       const copyButton = wrapper.querySelector('.code-block-copy');
       const copyText = wrapper.querySelector('.code-block-copy-text') as HTMLElement;
 
-      // État initial du texte (caché à droite)
       if (copyText) {
         gsap.set(copyText, {
           opacity: 0,
@@ -61,7 +96,6 @@ export async function initCmsCodeBlock() {
 
       copyButton?.addEventListener('click', () => handleCopy(rawCode, copyText));
 
-      // Remplace le bloc original
       block.innerHTML = '';
       block.appendChild(wrapper);
     } catch (error) {
@@ -70,14 +104,10 @@ export async function initCmsCodeBlock() {
   }
 }
 
-/**
- * Gère la copie du code dans le presse-papier
- */
 async function handleCopy(code: string, copyText: HTMLElement | null) {
   try {
     await navigator.clipboard.writeText(code);
 
-    // Animation du texte "Code copié" par la droite
     if (copyText) {
       gsap.to(copyText, {
         opacity: 1,
@@ -99,18 +129,12 @@ async function handleCopy(code: string, copyText: HTMLElement | null) {
   }
 }
 
-/**
- * Décode les entités HTML (&lt; &gt; etc.)
- */
 function decodeHtmlEntities(text: string): string {
   const textarea = document.createElement('textarea');
   textarea.innerHTML = text;
   return textarea.value;
 }
 
-/**
- * Détecte le langage du code (basique)
- */
 function detectLanguage(code: string): string {
   if (code.includes('application/ld+json') || code.includes('@context')) {
     return 'json';
@@ -118,7 +142,6 @@ function detectLanguage(code: string): string {
   if (code.includes('<script') || code.includes('</script>')) {
     return 'html';
   }
-  // TypeScript (avant JavaScript car plus spécifique)
   if (
     code.includes(': string') ||
     code.includes(': number') ||
@@ -127,7 +150,6 @@ function detectLanguage(code: string): string {
   ) {
     return 'typescript';
   }
-  // React/TSX/JSX
   if (
     code.includes('useState') ||
     code.includes('useEffect') ||
@@ -136,7 +158,6 @@ function detectLanguage(code: string): string {
   ) {
     return 'tsx';
   }
-  // CSS
   if (
     code.includes('{') &&
     (code.includes('color:') ||

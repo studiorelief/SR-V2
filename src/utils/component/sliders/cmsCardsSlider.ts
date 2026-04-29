@@ -4,9 +4,7 @@
  *============================================================================
  */
 
-import 'swiper/css/bundle';
-
-import Swiper from 'swiper/bundle';
+import Swiper from './_swiperSetup';
 
 export function initCmsCardsSlider() {
   const swipers = document.querySelectorAll('.swiper.is-cms-cards-slider');

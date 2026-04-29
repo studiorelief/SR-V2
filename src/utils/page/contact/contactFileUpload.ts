@@ -6,7 +6,16 @@
  *==========================================
  */
 
-import { supabase } from '$utils/global/supabase/supabaseClient';
+// Supabase est chargé dynamiquement uniquement lors du premier upload réel.
+// → exclut ~150 KB du bundle initial (Supabase n'est utilisé que sur /contact).
+type SupabaseModule = typeof import('$utils/global/supabase/supabaseClient');
+let supabasePromise: Promise<SupabaseModule> | null = null;
+const loadSupabase = (): Promise<SupabaseModule> => {
+  if (!supabasePromise) {
+    supabasePromise = import('$utils/global/supabase/supabaseClient');
+  }
+  return supabasePromise;
+};
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MO
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
@@ -54,6 +63,8 @@ function validateFile(file: File): string | null {
  */
 
 async function uploadFileToSupabase(uploaded: UploadedFile): Promise<void> {
+  const { supabase } = await loadSupabase();
+
   const timestamp = Date.now();
   const safeName = uploaded.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const path = `${timestamp}_${uploaded.id}_${safeName}`;

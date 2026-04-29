@@ -1,5 +1,22 @@
-import { DotLottie } from '@lottiefiles/dotlottie-web';
+import type { DotLottie as DotLottieType } from '@lottiefiles/dotlottie-web';
 import gsap from 'gsap';
+
+// DotLottie est chargé dynamiquement (~556 KB). Le chunk n'est téléchargé
+// que sur les pages avec au moins un canvas Lottie, et partagé entre
+// preloader.ts et ce module via le code-splitting esbuild.
+type DotLottie = DotLottieType;
+type DotLottieCtor = typeof DotLottieType;
+let dotLottiePromise: Promise<DotLottieCtor> | null = null;
+let DotLottieCtor: DotLottieCtor | null = null;
+const loadDotLottie = (): Promise<DotLottieCtor> => {
+  if (!dotLottiePromise) {
+    dotLottiePromise = import('@lottiefiles/dotlottie-web').then((m) => {
+      DotLottieCtor = m.DotLottie;
+      return m.DotLottie;
+    });
+  }
+  return dotLottiePromise;
+};
 
 /**
  * Interface pour stocker les instances Lottie et leurs listeners
@@ -149,13 +166,18 @@ const LOTTIE_RENDER_CONFIG = {
 } as const;
 
 /**
- * Initialise un Lottie avec fade-in une fois chargé
+ * Initialise un Lottie avec fade-in une fois chargé.
+ * Pré-requis : `loadDotLottie()` doit avoir résolu (DotLottieCtor non null).
  */
 const initLottieWithFadeIn = (canvas: HTMLCanvasElement, url: string): DotLottie => {
+  if (!DotLottieCtor) {
+    throw new Error('[lottieFiles] DotLottie ctor non chargé. Appeler loadDotLottie() avant.');
+  }
+
   // Cacher le canvas initialement
   gsap.set(canvas, { opacity: 0 });
 
-  const dotLottie = new DotLottie({
+  const dotLottie = new DotLottieCtor({
     autoplay: true,
     loop: true,
     canvas,
@@ -221,7 +243,17 @@ const lazyInitInstance = (canvas: HTMLCanvasElement, url: string): void => {
   lottieObservers.push(observer);
 };
 
-export const initLottieFiles = (): void => {
+export const initLottieFiles = async (): Promise<void> => {
+  // Early-exit : si aucun canvas Lottie sur la page, on ne charge pas le SDK.
+  const hasAnyLottie =
+    document.querySelector(
+      '#lottie-footer, #lottie-home-hero, #lottie-home-hero-bg, [trigger="hover-pause-lottie"]'
+    ) !== null;
+  if (!hasAnyLottie) return;
+
+  // Charger le SDK DotLottie (chunk dédié) avant toute instanciation.
+  await loadDotLottie();
+
   // Footer Mascotte → lazy : init seulement quand on approche du footer au scroll
   const lottieMascotteFooter = document.querySelector<HTMLCanvasElement>('#lottie-footer');
   if (lottieMascotteFooter) {
