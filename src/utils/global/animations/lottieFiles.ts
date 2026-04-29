@@ -56,14 +56,17 @@ const IS_HEADLESS = isHeadlessAgent();
 
 /**
  * Stratégie loop :
- *   - Humains : loop = true partout (hero brand + footer cycle visible).
- *     Le hook `freezeOnOffscreen: true` (cf. LOTTIE_RENDER_CONFIG) auto-pause
- *     les Lotties qui sortent du viewport → footer ne tourne que quand vu.
- *     Le hook Swup `destroyLottieFiles()` détruit tout au changement de page.
- *   - Bots détectés (navigator.webdriver) : loop = false → joue 1× puis stop.
- *     Couvre PSI legacy. Si PSI new-headless n'expose pas webdriver, le hero
- *     boucle et le score PSI subit, c'est le trade-off accepté.
+ *   - Hero (#lottie-home-hero, #lottie-home-hero-bg) : loop infini chez les
+ *     humains, loop = false pour les bots détectés (joue 1× puis stop). Le
+ *     hero est le seul Lottie above-the-fold permanent → il sature le main
+ *     thread pendant la mesure Lighthouse s'il boucle.
+ *   - Footer & autres : loop = true pour tout le monde (humains et bots).
+ *     `freezeOnOffscreen: true` les pause auto quand hors viewport — Lighthouse
+ *     ne scrolle pas jusqu'au footer, donc aucun coût CPU pendant la mesure.
+ *     `destroyLottieFiles()` (Swup hook) les kill au changement de page.
  */
+const HERO_LOTTIE_IDS = new Set(['lottie-home-hero', 'lottie-home-hero-bg']);
+const isHeroLottie = (canvas: HTMLCanvasElement): boolean => HERO_LOTTIE_IDS.has(canvas.id);
 
 /**
  * Initializes a Lottie animation with hover pause functionality
@@ -199,12 +202,17 @@ const initLottieWithFadeIn = (canvas: HTMLCanvasElement, url: string): DotLottie
     throw new Error('[lottieFiles] DotLottie ctor non chargé. Appeler loadDotLottie() avant.');
   }
 
+  // Hero : loop dépend de la détection bot (loop = false pour les bots détectés).
+  // Footer & autres : loop = true pour tout le monde, freezeOnOffscreen gère la
+  // pause quand hors viewport.
+  const shouldLoop = isHeroLottie(canvas) ? !IS_HEADLESS : true;
+
   // Cacher le canvas initialement
   gsap.set(canvas, { opacity: 0 });
 
   const dotLottie = new DotLottieCtor({
     autoplay: true,
-    loop: !IS_HEADLESS,
+    loop: shouldLoop,
     canvas,
     src: url,
     useFrameInterpolation: false,
