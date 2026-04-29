@@ -42,8 +42,8 @@ const LAZY_ROOT_MARGIN = '200px';
 
 /**
  * Détecte les agents automatisés (Lighthouse, PageSpeed, GTmetrix, headless Chrome…).
- * Pour eux, on désactive le loop des Lotties → l'animation joue une fois puis se met
- * en pause. Le main thread est libre après ~5s au lieu de rendre 60 fps en permanence.
+ * NB: Google PSI injecte un UA Chrome standard, donc UA-matching seul ne suffit pas.
+ * On cumule plusieurs signaux + un fallback timer-based pause (cf. AUTO_PAUSE_AFTER_MS).
  */
 const isHeadlessAgent = (): boolean => {
   if (typeof navigator === 'undefined') return false;
@@ -53,6 +53,16 @@ const isHeadlessAgent = (): boolean => {
   );
 };
 const SHOULD_LOOP = !isHeadlessAgent();
+
+/**
+ * Auto-pause de toutes les instances Lottie après ce délai (ms) — appliqué à TOUT
+ * le monde, humains compris. 8 s = largement assez pour percevoir l'animation hero
+ * et libérer le main thread bien avant la fin de la fenêtre Lighthouse (~30 s).
+ * Bonus : économie CPU/batterie sur mobile pour les vrais utilisateurs.
+ *
+ * Mettre à 0 (ou supprimer la logique) pour réactiver le loop infini partout.
+ */
+const AUTO_PAUSE_AFTER_MS = 8000;
 
 /**
  * Initializes a Lottie animation with hover pause functionality
@@ -208,6 +218,18 @@ const initLottieWithFadeIn = (canvas: HTMLCanvasElement, url: string): DotLottie
       ease: 'power2.out',
     });
   });
+
+  // Auto-pause après AUTO_PAUSE_AFTER_MS pour libérer le main thread
+  // (gain perf pour humains + Lighthouse, indépendamment de la détection bot).
+  if (AUTO_PAUSE_AFTER_MS > 0) {
+    setTimeout(() => {
+      try {
+        dotLottie.pause();
+      } catch {
+        // instance peut avoir été détruite (changement de page Swup) — ignorer
+      }
+    }, AUTO_PAUSE_AFTER_MS);
+  }
 
   return dotLottie;
 };
