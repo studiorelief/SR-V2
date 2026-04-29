@@ -24,22 +24,6 @@ const loadDotLottie = () => import('@lottiefiles/dotlottie-web').then((m) => m.D
 // Clé sessionStorage pour tracker la visite
 const PRELOADER_SHOWN_KEY = 'sr-preloader-shown';
 
-// Auto-pause des Lotties non-hero. Le hero reste en loop infini pour les humains.
-// (Cohérent avec lottieFiles.ts.)
-const AUTO_PAUSE_AFTER_MS = 5000;
-const HERO_LOTTIE_IDS = new Set(['lottie-home-hero', 'lottie-home-hero-bg']);
-const autoPauseLottie = (instance: DotLottie, canvas: HTMLCanvasElement): void => {
-  if (HERO_LOTTIE_IDS.has(canvas.id)) return; // hero exempté
-  if (AUTO_PAUSE_AFTER_MS <= 0) return;
-  setTimeout(() => {
-    try {
-      instance.pause();
-    } catch {
-      /* instance peut avoir été détruite */
-    }
-  }, AUTO_PAUSE_AFTER_MS);
-};
-
 // Instance Lottie pour pouvoir la détruire
 let preloaderLottie: DotLottie | null = null;
 
@@ -128,6 +112,8 @@ const initPreloaderLottie = async (): Promise<void> => {
       heroLottieCanvas.dataset.lottieSrc ||
       'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
 
+    // Loop = true : sur la home, cette instance vit AU-DELÀ du preloader et
+    // devient l'animation hero permanente.
     preloaderLottie = new DotLottie({
       autoplay: true,
       loop: true,
@@ -148,8 +134,6 @@ const initPreloaderLottie = async (): Promise<void> => {
       });
     });
 
-    autoPauseLottie(preloaderLottie, heroLottieCanvas);
-
     return;
   }
 
@@ -159,9 +143,11 @@ const initPreloaderLottie = async (): Promise<void> => {
     lottieCanvas.dataset.lottieSrc ||
     'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
 
+  // Loop = false : pages autres que la home — cette instance ne dure que le temps
+  // du preloader (puis détruite dans animatePreloaderOut). Pas besoin de boucler.
   preloaderLottie = new DotLottie({
     autoplay: true,
-    loop: true,
+    loop: false,
     canvas: lottieCanvas,
     src: lottieUrl,
     useFrameInterpolation: false,
@@ -178,8 +164,6 @@ const initPreloaderLottie = async (): Promise<void> => {
       ease: 'power2.out',
     });
   });
-
-  autoPauseLottie(preloaderLottie, lottieCanvas);
 };
 
 /**
