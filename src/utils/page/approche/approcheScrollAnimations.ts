@@ -30,10 +30,9 @@ export const initApprocheHeroScroll = (): void => {
     trigger: heroSection,
     start: 'top top',
     end: 'bottom top',
-    scrub: 0,
+    scrub: 0.15,
     invalidateOnRefresh: true,
     animation: gsap.to(heroSection, {
-      opacity: 0,
       y: '75svh',
       ease: 'none',
     }),
@@ -73,7 +72,7 @@ export const initApprocheGrotteScroll = (): void => {
     trigger: grotteSection,
     start: 'bottom bottom',
     end: 'bottom+=75% top',
-    scrub: 0,
+    scrub: 0.15,
     invalidateOnRefresh: true,
     animation: gsap.to(grotteSection, {
       y: '-50vh',

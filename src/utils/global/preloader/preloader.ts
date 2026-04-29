@@ -87,6 +87,11 @@ const initPreloaderLottie = (): void => {
       loop: true,
       canvas: heroLottieCanvas,
       src: heroLottieUrl,
+      useFrameInterpolation: false,
+      renderConfig: {
+        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+        freezeOnOffscreen: true,
+      },
     });
 
     // Fade-in une fois le Lottie chargé
@@ -122,6 +127,11 @@ const initPreloaderLottie = (): void => {
     loop: true,
     canvas: lottieCanvas,
     src: lottieUrl,
+    useFrameInterpolation: false,
+    renderConfig: {
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+      freezeOnOffscreen: true,
+    },
   });
 
   // Fade-in une fois le Lottie chargé

@@ -1,107 +1,245 @@
 /**
- * Lazy Video Loading
- * Defers video loading until the video is near the viewport
- * Uses Intersection Observer for performance
+ *==========================================
+ * LAZY VIDEO
+ * ↳ Charge & joue les vidéos uniquement quand visibles
+ *==========================================
  *
- * Usage in Webflow:
- * - Add attribute `data-lazy-video="true"` to <video> elements
- * - The video src will be moved to data-src and loaded when near viewport
+ * Modes pilotés par l'attribut `data-lazy-video` côté Webflow :
+ *  - "true"  → load + play quand visible dans le viewport, pause quand sort
+ *  - "hover" → load au 1er hover du parent (desktop) / fallback viewport (mobile)
+ *
+ * Optimisations :
+ *  - Skip strip-src si la vidéo est déjà in-viewport au load (préserve le LCP du hero)
+ *  - Vérif visibilité réelle (display, visibility, dimensions) avant load
+ *  - IntersectionObserver unique partagé entre toutes les vidéos
+ *  - `fetchpriority="low"` sur les lazy
+ *  - `prefers-reduced-motion` → pas d'autoplay
+ *  - Connexion 2g/slow-2g → pas de chargement auto
  */
 
-interface LazyVideoInstance {
-  video: HTMLVideoElement;
-  observer: IntersectionObserver;
+const ROOT_MARGIN = '200px';
+const SELECTOR = '[data-lazy-video]';
+
+interface NetworkInformation {
+  effectiveType?: string;
+  saveData?: boolean;
+}
+interface NavigatorWithConnection extends Navigator {
+  connection?: NetworkInformation;
 }
 
-const instances: LazyVideoInstance[] = [];
+interface LazyVideoState {
+  video: HTMLVideoElement;
+  mode: 'viewport' | 'hover';
+  loaded: boolean;
+  hoverTarget: HTMLElement | null;
+  handleEnter: (() => void) | null;
+  handleLeave: (() => void) | null;
+}
 
-/**
- * Initialize lazy loading for a single video
- */
-const initLazyVideo = (video: HTMLVideoElement): LazyVideoInstance | null => {
-  // Skip if already initialized
-  if (video.hasAttribute('data-lazy-initialized')) return null;
-  video.setAttribute('data-lazy-initialized', 'true');
+const states = new Map<HTMLVideoElement, LazyVideoState>();
+let observer: IntersectionObserver | null = null;
 
-  // Get src from video or source element
-  let originalSrc = video.getAttribute('src');
-  const sourceEl = video.querySelector('source');
+const prefersReducedMotion = (): boolean =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (!originalSrc && sourceEl) {
-    originalSrc = sourceEl.getAttribute('src');
-  }
+const isTouchOnly = (): boolean => window.matchMedia('(hover: none)').matches;
 
-  if (!originalSrc) return null;
-
-  // Store original src and remove it
-  video.setAttribute('data-src', originalSrc);
-  video.removeAttribute('src');
-  if (sourceEl) {
-    sourceEl.removeAttribute('src');
-  }
-
-  // Set preload to none
-  video.preload = 'none';
-
-  // Create observer with rootMargin to start loading before video enters viewport
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const target = entry.target as HTMLVideoElement;
-          const src = target.getAttribute('data-src');
-
-          if (src) {
-            // Restore src
-            const source = target.querySelector('source');
-            if (source) {
-              source.setAttribute('src', src);
-            } else {
-              target.setAttribute('src', src);
-            }
-
-            // Load the video
-            target.load();
-
-            // Stop observing
-            observer.unobserve(target);
-          }
-        }
-      });
-    },
-    {
-      rootMargin: '200px 0px', // Start loading 200px before entering viewport
-      threshold: 0,
-    }
-  );
-
-  observer.observe(video);
-
-  return { video, observer };
+const isSlowConnection = (): boolean => {
+  const conn = (navigator as NavigatorWithConnection).connection;
+  if (!conn) return false;
+  if (conn.saveData) return true;
+  return conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g';
 };
 
 /**
- * Initialize lazy loading for all videos with data-lazy-video attribute
+ * Vérifie qu'une vidéo est *réellement* affichée (pas juste dans le DOM/viewport).
+ * Couvre display:none, visibility:hidden, opacity:0 et dimensions nulles.
+ */
+const isActuallyVisible = (el: HTMLElement): boolean => {
+  if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') return false;
+  const style = getComputedStyle(el);
+  if (style.visibility === 'hidden' || style.display === 'none') return false;
+  if (parseFloat(style.opacity) === 0) return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+};
+
+const isInInitialViewport = (el: HTMLElement): boolean => {
+  const rect = el.getBoundingClientRect();
+  return rect.top < window.innerHeight && rect.bottom > 0;
+};
+
+const stripSrc = (video: HTMLVideoElement): void => {
+  const src = video.getAttribute('src');
+  if (src && !video.hasAttribute('data-src')) {
+    video.setAttribute('data-src', src);
+    video.removeAttribute('src');
+    video.load();
+  }
+  const source = video.querySelector('source');
+  if (source) {
+    const sourceSrc = source.getAttribute('src');
+    if (sourceSrc && !source.hasAttribute('data-src')) {
+      source.setAttribute('data-src', sourceSrc);
+      source.removeAttribute('src');
+    }
+  }
+};
+
+const restoreSrc = (video: HTMLVideoElement): boolean => {
+  const dataSrc = video.getAttribute('data-src');
+  let restored = false;
+
+  if (dataSrc && video.getAttribute('src') !== dataSrc) {
+    video.setAttribute('src', dataSrc);
+    restored = true;
+  }
+
+  const source = video.querySelector('source');
+  if (source) {
+    const sourceData = source.getAttribute('data-src');
+    if (sourceData && source.getAttribute('src') !== sourceData) {
+      source.setAttribute('src', sourceData);
+      restored = true;
+    }
+  }
+
+  if (restored) video.load();
+  return restored;
+};
+
+const tryPlay = (video: HTMLVideoElement): void => {
+  if (prefersReducedMotion()) return;
+  video.play().catch(() => {
+    /* autoplay bloqué par le navigateur — silencieux */
+  });
+};
+
+const loadAndPlay = (state: LazyVideoState): void => {
+  const { video } = state;
+  if (!isActuallyVisible(video)) return;
+
+  if (!state.loaded) {
+    restoreSrc(video);
+    state.loaded = true;
+  }
+  tryPlay(video);
+};
+
+const handleIntersection: IntersectionObserverCallback = (entries) => {
+  for (const entry of entries) {
+    const video = entry.target as HTMLVideoElement;
+    const state = states.get(video);
+    if (!state) continue;
+
+    if (entry.isIntersecting) {
+      loadAndPlay(state);
+    } else if (state.loaded) {
+      video.pause();
+    }
+  }
+};
+
+const getObserver = (): IntersectionObserver => {
+  if (!observer) {
+    observer = new IntersectionObserver(handleIntersection, {
+      rootMargin: ROOT_MARGIN,
+      threshold: 0,
+    });
+  }
+  return observer;
+};
+
+const setupHoverMode = (state: LazyVideoState): void => {
+  const target = state.video.closest<HTMLElement>('#animation-video') ?? state.video.parentElement;
+  if (!target) return;
+
+  state.hoverTarget = target;
+
+  state.handleEnter = () => {
+    if (!isActuallyVisible(state.video)) return;
+    if (!state.loaded) {
+      restoreSrc(state.video);
+      state.loaded = true;
+    }
+    state.video.play().catch(() => {
+      /* silencieux */
+    });
+  };
+
+  state.handleLeave = () => {
+    state.video.pause();
+  };
+
+  target.addEventListener('mouseenter', state.handleEnter);
+  target.addEventListener('mouseleave', state.handleLeave);
+};
+
+/**
+ * Initialise le lazy load pour toutes les vidéos avec `data-lazy-video`.
  */
 export const initLazyVideos = (): void => {
-  const videos = document.querySelectorAll<HTMLVideoElement>('[data-lazy-video="true"]');
+  const videos = document.querySelectorAll<HTMLVideoElement>(SELECTOR);
+  if (!videos.length) return;
 
-  videos.forEach((video) => {
-    const instance = initLazyVideo(video);
-    if (instance) {
-      instances.push(instance);
+  const slow = isSlowConnection();
+  const touch = isTouchOnly();
+
+  for (const video of videos) {
+    if (states.has(video)) continue;
+
+    const attr = video.getAttribute('data-lazy-video');
+    const wantsHover = attr === 'hover';
+    // Sur mobile (pas de hover), on bascule les vidéos hover en mode viewport.
+    const mode: 'viewport' | 'hover' = wantsHover && !touch ? 'hover' : 'viewport';
+
+    const state: LazyVideoState = {
+      video,
+      mode,
+      loaded: false,
+      hoverTarget: null,
+      handleEnter: null,
+      handleLeave: null,
+    };
+    states.set(video, state);
+
+    video.setAttribute('fetchpriority', 'low');
+
+    // Hero / déjà visible au chargement : on laisse le src intact pour préserver le LCP.
+    // On observe quand même pour gérer pause/play si la vidéo sort du viewport.
+    const inInitialViewport = mode === 'viewport' && isInInitialViewport(video);
+
+    if (!inInitialViewport) {
+      video.preload = 'none';
+      if (!slow) stripSrc(video);
+    } else {
+      state.loaded = true;
     }
-  });
+
+    if (mode === 'hover') {
+      setupHoverMode(state);
+    } else {
+      getObserver().observe(video);
+    }
+  }
 };
 
 /**
- * Destroy all lazy video observers
+ * Cleanup complet — appelé sur `swup content:replace`.
  */
 export const destroyLazyVideos = (): void => {
-  instances.forEach(({ observer, video }) => {
-    observer.unobserve(video);
+  for (const state of states.values()) {
+    if (state.hoverTarget && state.handleEnter && state.handleLeave) {
+      state.hoverTarget.removeEventListener('mouseenter', state.handleEnter);
+      state.hoverTarget.removeEventListener('mouseleave', state.handleLeave);
+    }
+    state.video.pause();
+  }
+  states.clear();
+
+  if (observer) {
     observer.disconnect();
-    video.removeAttribute('data-lazy-initialized');
-  });
-  instances.length = 0;
+    observer = null;
+  }
 };
