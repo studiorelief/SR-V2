@@ -40,7 +40,7 @@ const OFFRE_SUR_MESURE: OffreConfig = {
   text: 'Offre Sur-mesure',
 };
 
-const STARTER_BUDGET_VALUE = '4 000 €';
+const STARTER_BUDGET_VALUE = '5 000 €';
 const SUR_MESURE_BUDGET_VALUE = '5 000 - 10 000€';
 
 const SUR_MESURE_PRESETS: Record<string, string> = {
