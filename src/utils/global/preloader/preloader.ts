@@ -24,6 +24,20 @@ const loadDotLottie = () => import('@lottiefiles/dotlottie-web').then((m) => m.D
 // Clé sessionStorage pour tracker la visite
 const PRELOADER_SHOWN_KEY = 'sr-preloader-shown';
 
+// Auto-pause des Lotties après ce délai (cohérent avec lottieFiles.ts).
+// 8s = animation perçue + main thread libre pour Lighthouse + économie batterie.
+const AUTO_PAUSE_AFTER_MS = 8000;
+const autoPauseLottie = (instance: DotLottie): void => {
+  if (AUTO_PAUSE_AFTER_MS <= 0) return;
+  setTimeout(() => {
+    try {
+      instance.pause();
+    } catch {
+      /* instance peut avoir été détruite */
+    }
+  }, AUTO_PAUSE_AFTER_MS);
+};
+
 // Instance Lottie pour pouvoir la détruire
 let preloaderLottie: DotLottie | null = null;
 
@@ -132,6 +146,8 @@ const initPreloaderLottie = async (): Promise<void> => {
       });
     });
 
+    autoPauseLottie(preloaderLottie);
+
     return;
   }
 
@@ -160,6 +176,8 @@ const initPreloaderLottie = async (): Promise<void> => {
       ease: 'power2.out',
     });
   });
+
+  autoPauseLottie(preloaderLottie);
 };
 
 /**
