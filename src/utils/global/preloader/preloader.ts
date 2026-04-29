@@ -14,8 +14,12 @@
  * - preloader="loading-line" : ligne de progression visuelle
  */
 
-import { DotLottie } from '@lottiefiles/dotlottie-web';
+import type { DotLottie as DotLottieType } from '@lottiefiles/dotlottie-web';
 import gsap from 'gsap';
+
+// DotLottie est chargé dynamiquement (chunk partagé avec lottieFiles.ts).
+type DotLottie = DotLottieType;
+const loadDotLottie = () => import('@lottiefiles/dotlottie-web').then((m) => m.DotLottie);
 
 // Clé sessionStorage pour tracker la visite
 const PRELOADER_SHOWN_KEY = 'sr-preloader-shown';
@@ -56,28 +60,37 @@ const markPreloaderAsShown = (): void => {
  * Initialise l'animation Lottie du preloader avec fade-in une fois chargé
  * Sur la home : utilise #lottie-home-hero (même Lottie que le hero)
  * Sur les autres pages : utilise #lottie-preloader
+ *
+ * Async : attend le chargement dynamique du SDK DotLottie. Pendant ce temps
+ * l'overlay du preloader est déjà visible (CSS) et la progression simulée tourne.
  */
-const initPreloaderLottie = (): void => {
+const initPreloaderLottie = async (): Promise<void> => {
   // Vérifier si on est sur la home (présence du Lottie hero)
   const heroLottieCanvas = document.querySelector<HTMLCanvasElement>('#lottie-home-hero');
+  const lottieCanvas = heroLottieCanvas
+    ? null
+    : document.querySelector<HTMLCanvasElement>('#lottie-preloader');
 
+  // Si aucun canvas Lottie cible, on ne charge pas le SDK
+  if (!heroLottieCanvas && !lottieCanvas) return;
+
+  // Préparer le DOM avant le fetch async (évite un flash)
   if (heroLottieCanvas) {
-    // HOME PAGE : Utiliser le Lottie du hero
     isHomePage = true;
-
-    // Trouver le wrapper du Lottie hero pour gérer le z-index
     heroLottieWrapper = heroLottieCanvas.parentElement;
-
     if (heroLottieWrapper) {
-      // Mettre le wrapper au premier plan (au-dessus du preloader background)
-      // Ne pas toucher à position pour ne pas casser le layout
       heroLottieWrapper.style.zIndex = '10000';
     }
-
-    // Cacher le canvas initialement pour le fade-in
     gsap.set(heroLottieCanvas, { opacity: 0 });
+    heroLottieCanvas.setAttribute('data-preloader-initialized', 'true');
+  } else {
+    isHomePage = false;
+    if (lottieCanvas) gsap.set(lottieCanvas, { opacity: 0 });
+  }
 
-    // Initialiser le Lottie hero tôt
+  const DotLottie = await loadDotLottie();
+
+  if (heroLottieCanvas) {
     const heroLottieUrl =
       heroLottieCanvas.dataset.lottieSrc ||
       'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
@@ -94,7 +107,6 @@ const initPreloaderLottie = (): void => {
       },
     });
 
-    // Fade-in une fois le Lottie chargé
     preloaderLottie.addEventListener('load', () => {
       gsap.to(heroLottieCanvas, {
         opacity: 1,
@@ -103,20 +115,10 @@ const initPreloaderLottie = (): void => {
       });
     });
 
-    // Marquer comme déjà initialisé pour que lottieFiles.ts ne le réinitialise pas
-    heroLottieCanvas.setAttribute('data-preloader-initialized', 'true');
-
     return;
   }
 
-  // AUTRES PAGES : Utiliser le Lottie du preloader
-  isHomePage = false;
-  const lottieCanvas = document.querySelector<HTMLCanvasElement>('#lottie-preloader');
-
   if (!lottieCanvas) return;
-
-  // Cacher le canvas initialement pour le fade-in
-  gsap.set(lottieCanvas, { opacity: 0 });
 
   const lottieUrl =
     lottieCanvas.dataset.lottieSrc ||
@@ -134,7 +136,6 @@ const initPreloaderLottie = (): void => {
     },
   });
 
-  // Fade-in une fois le Lottie chargé
   preloaderLottie.addEventListener('load', () => {
     gsap.to(lottieCanvas, {
       opacity: 1,

@@ -26,6 +26,12 @@ const context = await esbuild.context({
   define: {
     SERVE_ORIGIN: JSON.stringify(SERVE_ORIGIN),
   },
+  // Code-splitting : les `import()` dynamiques deviennent des chunks séparés
+  // (Shiki, DotLottie, Supabase, Marker) téléchargés uniquement quand utilisés.
+  // Requiert format: 'esm' → le tag <script> doit utiliser type="module".
+  splitting: true,
+  format: 'esm',
+  chunkNames: 'chunks/[name]-[hash]',
 });
 
 // Build files in prod
@@ -69,16 +75,20 @@ function logServedFiles() {
     .map((file) => {
       if (file.endsWith('.map')) return;
 
+      // Skip chunks — they're loaded automatically by the ESM entry point.
+      if (file.includes(`${sep}chunks${sep}`)) return;
+
       // Normalize path and create file location
       const paths = file.split(sep);
       paths[0] = SERVE_ORIGIN;
 
       const location = paths.join('/');
 
-      // Create import suggestion
+      // Create import suggestion. JS entry uses type="module" because the
+      // build is ESM with code-splitting (dynamic imports require it).
       const tag = location.endsWith('.css')
         ? `<link href="${location}" rel="stylesheet" type="text/css"/>`
-        : `<script defer src="${location}"></script>`;
+        : `<script type="module" src="${location}"></script>`;
 
       return {
         'File Location': location,

@@ -4,10 +4,9 @@
  *============================================================================
  */
 
-import 'swiper/css/bundle';
-
 import gsap from 'gsap';
-import Swiper from 'swiper/bundle';
+
+import Swiper from './_swiperSetup';
 
 export function initReviewSlider() {
   const swipers = document.querySelectorAll('.swiper.is-review');

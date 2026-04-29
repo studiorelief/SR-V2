@@ -4,10 +4,9 @@
  *============================================================================
  */
 
-import 'swiper/css/bundle';
-
 import gsap from 'gsap';
-import Swiper from 'swiper/bundle';
+
+import Swiper from './_swiperSetup';
 
 /*
  * Clothesline curve — maps Swiper slide.progress to visual properties.
