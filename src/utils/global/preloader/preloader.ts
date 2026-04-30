@@ -157,10 +157,36 @@ const animatePreloaderOut = (): void => {
   const logo = document.querySelector<HTMLElement>('[preloader="logo"]');
   const countElement = document.querySelector<HTMLElement>('[preloader="loading-count"]');
   const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
-  const video = document.querySelector<HTMLElement>('#lottie-preloader');
+  const video = document.querySelector<HTMLVideoElement>('#lottie-preloader');
+  // On fade le wrapper plutôt que la <video> elle-même : la classe Webflow
+  // `.video-component` applique une `transition: opacity` CSS qui s'ajoute au
+  // tween GSAP et fait persister la mascotte ~0.5s de plus que le reste.
+  const videoWrapper = document.querySelector<HTMLElement>('[preloader="mascotte"]');
+
+  // Sur la home uniquement : on recycle la <video> du preloader pour remplacer
+  // celle du hero mascotte (mêmes URL Supabase). 1 download, 1 décodeur, et la
+  // lecture n'est jamais interrompue. Selector home-spécifique pour ne pas
+  // déplacer la vidéo dans la mascotte d'autres pages (Approche, etc.) qui
+  // utilisent aussi [asset="mascotte"] sur d'autres types de wrappers.
+  const heroMascotteContainer = document.querySelector<HTMLElement>(
+    '.home_hero_background-asset.is-mascotte'
+  );
+  const reuseVideoForHero = video !== null && heroMascotteContainer !== null;
 
   const tl = gsap.timeline({
     onComplete: () => {
+      if (reuseVideoForHero && video) {
+        // La <video> originale du hero a déjà été retirée dans initPreloader()
+        // pour éviter le double download. On déplace AVANT `display:none` pour
+        // que le navigateur ne la blanchisse pas pendant le re-parent.
+        video.removeAttribute('id');
+        heroMascotteContainer.appendChild(video);
+      } else if (video) {
+        // Pages hors home : libérer le décodeur (la vidéo continuait de tourner
+        // sous le `display:none` du component, gaspillant CPU/GPU).
+        video.pause();
+      }
+
       component.style.display = 'none';
       component.style.visibility = 'hidden';
       markPreloaderAsShown();
@@ -188,15 +214,22 @@ const animatePreloaderOut = (): void => {
     );
   }
 
-  if (video) {
-    tl.to(video, { opacity: 0, duration: 0.4, ease: 'power2.out' }, 0.2);
+  // Wrapper de la vidéo + background : sync parfait (mêmes position, durée, ease)
+  // pour que la mascotte disparaisse exactement en même temps que le fond.
+  // Sur la home on saute (la vidéo doit rester visible pour le swap dans le hero).
+  if (videoWrapper && !reuseVideoForHero) {
+    tl.to(videoWrapper, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.3);
   }
 
   if (background) {
     tl.to(background, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.3);
   }
 
-  tl.set(component, { autoAlpha: 0 });
+  // Sur la home on évite l'autoAlpha (qui masquerait la vidéo via héritage CSS
+  // avant qu'on la déplace dans le hero). `display:none` dans onComplete suffit.
+  if (!reuseVideoForHero) {
+    tl.set(component, { autoAlpha: 0 });
+  }
 };
 
 export const initPreloader = (): void => {
@@ -206,10 +239,24 @@ export const initPreloader = (): void => {
   // Bots / Lighthouse / PageSpeed → on cache le preloader (pénalise le score sans
   // servir leur usage).
   if (isHeadlessAgent() || !shouldShowPreloader()) {
+    // Pas de preloader affiché : on retire sa <video> pour qu'elle n'utilise pas
+    // de bande passante en arrière-plan (preload="auto" + display:none ne stoppe
+    // pas toujours le download selon les browsers).
+    document.querySelector('#lottie-preloader')?.remove();
     component.style.display = 'none';
     component.style.visibility = 'hidden';
     return;
   }
+
+  // Sur la home : la <video> du hero mascotte a la MÊME URL Supabase que celle
+  // du preloader. Si on la laisse, le browser télécharge le fichier 2× en
+  // parallèle (les deux <video preload="auto"> partent en même temps). On la
+  // retire dès maintenant — la requête en cours est annulée par le browser, et
+  // à la fin du preloader on déplacera la vidéo du preloader à sa place
+  // (cf. animatePreloaderOut).
+  // NB: selector ciblé sur la classe home-spécifique — d'autres pages ont aussi
+  // un wrapper [asset="mascotte"] (page Approche par ex.) qu'on ne doit PAS toucher.
+  document.querySelector('.home_hero_background-asset.is-mascotte video')?.remove();
 
   component.style.display = 'flex';
   component.style.visibility = 'visible';
