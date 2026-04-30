@@ -9,59 +9,33 @@
  * Éléments Webflow requis :
  * - preloader="component" : wrapper principal
  * - preloader="logo" : logo du studio
- * - #lottie-preloader : canvas pour l'animation Lottie
+ * - #lottie-preloader : <video> qui se joue 1× au démarrage
  * - preloader="loading-count" : texte affichant le % de chargement
  * - preloader="loading-line" : ligne de progression visuelle
+ *
+ * Sortie déclenchée quand les 2 conditions sont remplies :
+ *   - window load terminé
+ *   - durée minimum atteinte (2.5s)
+ *
+ * La vidéo boucle pendant toute la durée du preloader (loop forcé en JS).
  */
 
-import type { DotLottie as DotLottieType } from '@lottiefiles/dotlottie-web';
 import gsap from 'gsap';
 
-// DotLottie est chargé dynamiquement (chunk partagé avec lottieFiles.ts).
-type DotLottie = DotLottieType;
-const loadDotLottie = () => import('@lottiefiles/dotlottie-web').then((m) => m.DotLottie);
-
-// Clé sessionStorage pour tracker la visite
 const PRELOADER_SHOWN_KEY = 'sr-preloader-shown';
+const MINIMUM_PRELOADER_DURATION = 2500;
 
-// Auto-pause des Lotties après ce délai (cohérent avec lottieFiles.ts).
-// 8s = animation perçue + main thread libre pour Lighthouse + économie batterie.
-const AUTO_PAUSE_AFTER_MS = 8000;
-const autoPauseLottie = (instance: DotLottie): void => {
-  if (AUTO_PAUSE_AFTER_MS <= 0) return;
-  setTimeout(() => {
-    try {
-      instance.pause();
-    } catch {
-      /* instance peut avoir été détruite */
-    }
-  }, AUTO_PAUSE_AFTER_MS);
-};
-
-// Instance Lottie pour pouvoir la détruire
-let preloaderLottie: DotLottie | null = null;
-
-// État du chargement
 let loadProgress = 0;
-let isLoadComplete = false;
 let preloaderStartTime = 0;
-const MINIMUM_PRELOADER_DURATION = 3000; // 3 secondes minimum
+let progressTween: gsap.core.Tween | null = null;
 
-// Flag pour savoir si on est sur la home (utilise le Lottie hero)
-let isHomePage = false;
-
-// Référence au wrapper du Lottie hero pour restaurer le z-index
-let heroLottieWrapper: HTMLElement | null = null;
-const HERO_LOTTIE_FINAL_ZINDEX = '11';
+let windowLoaded = false;
+let exitTriggered = false;
 
 /**
  * Détecte les agents automatisés (Lighthouse, PageSpeed, GTmetrix, headless Chrome,
  * outils SEO, crawlers). On bypass le preloader pour eux : il pénalise lourdement
  * Lighthouse (LCP/TBT/SI) sans servir leur usage.
- *
- * - `navigator.webdriver` : true pour Puppeteer/Selenium/etc.
- * - UA regex : couvre Lighthouse, PageSpeed Insights, GTmetrix, Pingdom, et les
- *   crawlers SEO courants.
  */
 const isHeadlessAgent = (): boolean => {
   if (typeof navigator === 'undefined') return false;
@@ -71,118 +45,34 @@ const isHeadlessAgent = (): boolean => {
   );
 };
 
-/**
- * Vérifie si le preloader doit être affiché
- * Retourne true si c'est la première visite de la session
- */
-export const shouldShowPreloader = (): boolean => {
-  const hasSeenPreloader = sessionStorage.getItem(PRELOADER_SHOWN_KEY);
-  return !hasSeenPreloader;
-};
+const shouldShowPreloader = (): boolean => !sessionStorage.getItem(PRELOADER_SHOWN_KEY);
 
-/**
- * Marque le preloader comme déjà vu pour cette session
- */
 const markPreloaderAsShown = (): void => {
   sessionStorage.setItem(PRELOADER_SHOWN_KEY, 'true');
 };
 
 /**
- * Initialise l'animation Lottie du preloader avec fade-in une fois chargé
- * Sur la home : utilise #lottie-home-hero (même Lottie que le hero)
- * Sur les autres pages : utilise #lottie-preloader
- *
- * Async : attend le chargement dynamique du SDK DotLottie. Pendant ce temps
- * l'overlay du preloader est déjà visible (CSS) et la progression simulée tourne.
+ * Lance la lecture de la <video> du preloader en boucle.
+ * - Retire `data-lazy-video` pour empêcher Webflow de différer le play.
+ * - Force `loop = true` (Webflow n'a pas l'attribut posé) pour que la vidéo
+ *   tourne tout le temps que le preloader est visible.
+ * - Force `play()` ; si bloqué, le poster reste affiché — pas bloquant pour la sortie.
  */
-const initPreloaderLottie = async (): Promise<void> => {
-  // Vérifier si on est sur la home (présence du Lottie hero)
-  const heroLottieCanvas = document.querySelector<HTMLCanvasElement>('#lottie-home-hero');
-  const lottieCanvas = heroLottieCanvas
-    ? null
-    : document.querySelector<HTMLCanvasElement>('#lottie-preloader');
+const initPreloaderVideo = (): void => {
+  const video = document.querySelector<HTMLVideoElement>('#lottie-preloader');
+  if (!video) return;
 
-  // Si aucun canvas Lottie cible, on ne charge pas le SDK
-  if (!heroLottieCanvas && !lottieCanvas) return;
+  video.removeAttribute('data-lazy-video');
+  video.loop = true;
 
-  // Préparer le DOM avant le fetch async (évite un flash)
-  if (heroLottieCanvas) {
-    isHomePage = true;
-    heroLottieWrapper = heroLottieCanvas.parentElement;
-    if (heroLottieWrapper) {
-      heroLottieWrapper.style.zIndex = '10000';
-    }
-    gsap.set(heroLottieCanvas, { opacity: 0 });
-    heroLottieCanvas.setAttribute('data-preloader-initialized', 'true');
-  } else {
-    isHomePage = false;
-    if (lottieCanvas) gsap.set(lottieCanvas, { opacity: 0 });
+  const playPromise = video.play();
+  if (playPromise && typeof playPromise.catch === 'function') {
+    playPromise.catch(() => {
+      // Autoplay bloqué (rare avec muted+playsinline) — on laisse le poster.
+    });
   }
-
-  const DotLottie = await loadDotLottie();
-
-  if (heroLottieCanvas) {
-    const heroLottieUrl =
-      heroLottieCanvas.dataset.lottieSrc ||
-      'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
-
-    preloaderLottie = new DotLottie({
-      autoplay: true,
-      loop: true,
-      canvas: heroLottieCanvas,
-      src: heroLottieUrl,
-      useFrameInterpolation: false,
-      renderConfig: {
-        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
-        freezeOnOffscreen: true,
-      },
-    });
-
-    preloaderLottie.addEventListener('load', () => {
-      gsap.to(heroLottieCanvas, {
-        opacity: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-      });
-    });
-
-    autoPauseLottie(preloaderLottie);
-
-    return;
-  }
-
-  if (!lottieCanvas) return;
-
-  const lottieUrl =
-    lottieCanvas.dataset.lottieSrc ||
-    'https://nsbivjygtwdtnijkvewq.supabase.co/storage/v1/object/public/SR_assets/lotties/hero_mascotte-lottie-optimized%20-%2003.26.lottie';
-
-  preloaderLottie = new DotLottie({
-    autoplay: true,
-    loop: true,
-    canvas: lottieCanvas,
-    src: lottieUrl,
-    useFrameInterpolation: false,
-    renderConfig: {
-      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
-      freezeOnOffscreen: true,
-    },
-  });
-
-  preloaderLottie.addEventListener('load', () => {
-    gsap.to(lottieCanvas, {
-      opacity: 1,
-      duration: 0.3,
-      ease: 'power2.out',
-    });
-  });
-
-  autoPauseLottie(preloaderLottie);
 };
 
-/**
- * Met à jour l'affichage du pourcentage de chargement
- */
 const updateLoadingDisplay = (progress: number): void => {
   const countElement = document.querySelector<HTMLElement>('[preloader="loading-count"]');
   const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
@@ -190,7 +80,6 @@ const updateLoadingDisplay = (progress: number): void => {
   if (countElement) {
     countElement.textContent = `${Math.round(progress)}%`;
   }
-
   if (lineElement) {
     gsap.to(lineElement, {
       width: `${progress}%`,
@@ -201,136 +90,123 @@ const updateLoadingDisplay = (progress: number): void => {
 };
 
 /**
- * Simule une progression de chargement fluide
- * La progression accélère au début puis ralentit vers la fin
- * Se complète uniquement quand window.load est déclenché
+ * Simule une progression fluide jusqu'à 90%. Les derniers 10% sont joués
+ * dans `maybeCompletePreloader` une fois toutes les conditions remplies.
  */
 const simulateProgress = (): void => {
-  // Animation de progression qui va jusqu'à 90% max
-  // Les derniers 10% sont réservés pour quand le load est vraiment terminé
-  const progressTween = gsap.to(
+  progressTween = gsap.to(
     { value: 0 },
     {
       value: 90,
       duration: 2.5,
       ease: 'power2.out',
       onUpdate: function () {
-        if (!isLoadComplete) {
+        if (!exitTriggered) {
           loadProgress = this.targets()[0].value;
           updateLoadingDisplay(loadProgress);
         }
       },
     }
   );
-
-  // Fonction de complétion du chargement
-  const completeLoading = (): void => {
-    if (isLoadComplete) return; // Éviter double appel
-    isLoadComplete = true;
-    progressTween.kill();
-
-    // Calculer le temps restant pour atteindre la durée minimum
-    const elapsedTime = Date.now() - preloaderStartTime;
-    const remainingTime = Math.max(0, MINIMUM_PRELOADER_DURATION - elapsedTime);
-
-    // Durée de l'animation de 90% à 100% (ajustée selon le temps restant)
-    const completionDuration = Math.max(0.5, remainingTime / 1000);
-
-    // Compléter de la position actuelle à 100%
-    gsap.to(
-      { value: loadProgress },
-      {
-        value: 100,
-        duration: completionDuration,
-        ease: 'power2.out',
-        onUpdate: function () {
-          updateLoadingDisplay(this.targets()[0].value);
-        },
-        onComplete: () => {
-          // Petit délai pour que l'utilisateur voie le 100%
-          gsap.delayedCall(0.3, animatePreloaderOut);
-        },
-      }
-    );
-  };
-
-  // Si la page est déjà chargée, compléter immédiatement
-  // Sinon attendre l'événement load
-  if (document.readyState === 'complete') {
-    completeLoading();
-  } else {
-    window.addEventListener('load', completeLoading, { once: true });
-  }
 };
 
 /**
- * Animation de sortie du preloader
- * Sur la home : le Lottie reste visible (c'est celui du hero)
- * Sur les autres pages : tout fade out
+ * Tente de lancer la sortie. Conditions :
+ *   windowLoaded ∧ (elapsed ≥ MINIMUM_PRELOADER_DURATION)
+ * Sinon on re-planifie un check après le temps restant.
  */
+const maybeCompletePreloader = (): void => {
+  if (exitTriggered) return;
+  if (!windowLoaded) return;
+
+  const remaining = MINIMUM_PRELOADER_DURATION - (Date.now() - preloaderStartTime);
+  if (remaining > 0) {
+    gsap.delayedCall(remaining / 1000, maybeCompletePreloader);
+    return;
+  }
+
+  exitTriggered = true;
+  progressTween?.kill();
+
+  gsap.to(
+    { value: loadProgress },
+    {
+      value: 100,
+      duration: 0.5,
+      ease: 'power2.out',
+      onUpdate: function () {
+        updateLoadingDisplay(this.targets()[0].value);
+      },
+      onComplete: () => {
+        gsap.delayedCall(0.3, animatePreloaderOut);
+      },
+    }
+  );
+};
+
+const onWindowLoad = (): void => {
+  windowLoaded = true;
+  maybeCompletePreloader();
+};
+
 const animatePreloaderOut = (): void => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
+  if (!component) return;
+
   const background = document.querySelector<HTMLElement>('[preloader="background"]');
   const logo = document.querySelector<HTMLElement>('[preloader="logo"]');
   const countElement = document.querySelector<HTMLElement>('[preloader="loading-count"]');
   const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
+  const video = document.querySelector<HTMLVideoElement>('#lottie-preloader');
+  // On fade le wrapper plutôt que la <video> elle-même : la classe Webflow
+  // `.video-component` applique une `transition: opacity` CSS qui s'ajoute au
+  // tween GSAP et fait persister la mascotte ~0.5s de plus que le reste.
+  const videoWrapper = document.querySelector<HTMLElement>('[preloader="mascotte"]');
 
-  if (!component) return;
+  // Sur la home uniquement : on recycle la <video> du preloader pour remplacer
+  // celle du hero mascotte (mêmes URL Supabase). 1 download, 1 décodeur, et la
+  // lecture n'est jamais interrompue. Selector home-spécifique pour ne pas
+  // déplacer la vidéo dans la mascotte d'autres pages (Approche, etc.) qui
+  // utilisent aussi [asset="mascotte"] sur d'autres types de wrappers.
+  const heroMascotteContainer = document.querySelector<HTMLElement>(
+    '.home_hero_background-asset.is-mascotte'
+  );
+  const reuseVideoForHero = video !== null && heroMascotteContainer !== null;
 
   const tl = gsap.timeline({
     onComplete: () => {
-      // Cacher complètement le preloader
-      component.style.display = 'none';
-      component.style.visibility = 'hidden';
-
-      if (isHomePage) {
-        // HOME : Mettre le z-index final du Lottie hero
-        if (heroLottieWrapper) {
-          heroLottieWrapper.style.zIndex = HERO_LOTTIE_FINAL_ZINDEX;
-        }
-        // Ne pas détruire le Lottie, il appartient au hero maintenant
-        preloaderLottie = null;
-      } else {
-        // AUTRES PAGES : Détruire l'instance Lottie du preloader
-        if (preloaderLottie) {
-          preloaderLottie.destroy();
-          preloaderLottie = null;
-        }
+      if (reuseVideoForHero && video) {
+        // La <video> originale du hero a déjà été retirée dans initPreloader()
+        // pour éviter le double download. On déplace AVANT `display:none` pour
+        // que le navigateur ne la blanchisse pas pendant le re-parent.
+        video.removeAttribute('id');
+        heroMascotteContainer.appendChild(video);
+      } else if (video) {
+        // Pages hors home : libérer le décodeur (la vidéo continuait de tourner
+        // sous le `display:none` du component, gaspillant CPU/GPU).
+        video.pause();
       }
 
-      // Marquer comme vu pour cette session
+      component.style.display = 'none';
+      component.style.visibility = 'hidden';
       markPreloaderAsShown();
-
-      // Réactiver le scroll
       document.body.style.overflow = '';
-
-      // Dispatch un event custom pour signaler la fin du preloader
       window.dispatchEvent(new CustomEvent('preloaderComplete'));
     },
   });
 
-  // 1. Fade out des éléments de loading (count + line)
-  tl.to(
-    [countElement, lineElement],
-    {
-      opacity: 0,
-      duration: 0.3,
-      ease: 'power2.out',
-    },
-    0
-  );
+  tl.to([countElement, lineElement], { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
 
-  // 2. Logo : scale de 1 à 0 + se déplace vers top-right du component
   if (logo) {
     tl.to(
       logo,
       {
         scale: 0,
         opacity: 0,
-        xPercent: 100, // déplace vers la droite
-        yPercent: -100, // déplace vers le haut
-        y: '1.5rem', // décale de 2rem vers le haut en plus du yPercent
-        x: '5rem', // décale de 2rem vers la droite en plus du xPercent
+        xPercent: 100,
+        yPercent: -100,
+        y: '1.5rem',
+        x: '5rem',
         duration: 0.5,
         ease: 'power2.in',
       },
@@ -338,96 +214,69 @@ const animatePreloaderOut = (): void => {
     );
   }
 
-  // 3. Sur autres pages : fade out du Lottie preloader
-  if (!isHomePage) {
-    const preloaderLottieCanvas = document.querySelector<HTMLElement>('#lottie-preloader');
-    if (preloaderLottieCanvas) {
-      tl.to(
-        preloaderLottieCanvas,
-        {
-          opacity: 0,
-          duration: 0.4,
-          ease: 'power2.out',
-        },
-        0.2
-      );
-    }
+  // Wrapper de la vidéo + background : sync parfait (mêmes position, durée, ease)
+  // pour que la mascotte disparaisse exactement en même temps que le fond.
+  // Sur la home on saute (la vidéo doit rester visible pour le swap dans le hero).
+  if (videoWrapper && !reuseVideoForHero) {
+    tl.to(videoWrapper, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.3);
   }
 
-  // 4. Fade out du background
   if (background) {
-    tl.to(
-      background,
-      {
-        opacity: 0,
-        duration: 0.5,
-        ease: 'power2.out',
-      },
-      0.3
-    );
+    tl.to(background, { opacity: 0, duration: 0.5, ease: 'power2.out' }, 0.3);
   }
 
-  // 5. Cacher le component (pour s'assurer qu'il est bien caché)
-  tl.set(component, { autoAlpha: 0 });
+  // Sur la home on évite l'autoAlpha (qui masquerait la vidéo via héritage CSS
+  // avant qu'on la déplace dans le hero). `display:none` dans onComplete suffit.
+  if (!reuseVideoForHero) {
+    tl.set(component, { autoAlpha: 0 });
+  }
 };
 
-/**
- * Initialise le preloader si c'est la première visite
- */
 export const initPreloader = (): void => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
-
   if (!component) return;
 
-  // Bots / Lighthouse / PageSpeed → on cache le preloader.
-  // Le hero Lottie sera initialisé normalement par lottieFiles.ts (data-preloader-initialized
-  // n'est pas posé donc le check de skip ne s'applique pas).
-  if (isHeadlessAgent()) {
+  // Bots / Lighthouse / PageSpeed → on cache le preloader (pénalise le score sans
+  // servir leur usage).
+  if (isHeadlessAgent() || !shouldShowPreloader()) {
+    // Pas de preloader affiché : on retire sa <video> pour qu'elle n'utilise pas
+    // de bande passante en arrière-plan (preload="auto" + display:none ne stoppe
+    // pas toujours le download selon les browsers).
+    document.querySelector('#lottie-preloader')?.remove();
     component.style.display = 'none';
     component.style.visibility = 'hidden';
     return;
   }
 
-  // Si ce n'est pas la première visite, s'assurer que le preloader est caché
-  if (!shouldShowPreloader()) {
-    component.style.display = 'none';
-    component.style.visibility = 'hidden';
-    return;
-  }
+  // Sur la home : la <video> du hero mascotte a la MÊME URL Supabase que celle
+  // du preloader. Si on la laisse, le browser télécharge le fichier 2× en
+  // parallèle (les deux <video preload="auto"> partent en même temps). On la
+  // retire dès maintenant — la requête en cours est annulée par le browser, et
+  // à la fin du preloader on déplacera la vidéo du preloader à sa place
+  // (cf. animatePreloaderOut).
+  // NB: selector ciblé sur la classe home-spécifique — d'autres pages ont aussi
+  // un wrapper [asset="mascotte"] (page Approche par ex.) qu'on ne doit PAS toucher.
+  document.querySelector('.home_hero_background-asset.is-mascotte video')?.remove();
 
-  // Première visite : afficher le preloader
   component.style.display = 'flex';
   component.style.visibility = 'visible';
   component.style.opacity = '1';
 
-  // Enregistrer le temps de démarrage pour la durée minimum
   preloaderStartTime = Date.now();
-
-  // Bloquer le scroll pendant le chargement
   document.body.style.overflow = 'hidden';
 
-  // Initialiser l'affichage à 0%
   updateLoadingDisplay(0);
-
-  // Initialiser la ligne de progression à 0%
   const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
   if (lineElement) {
     gsap.set(lineElement, { width: '0%' });
   }
 
-  // Initialiser le Lottie
-  initPreloaderLottie();
-
-  // Démarrer la simulation de progression
+  initPreloaderVideo();
   simulateProgress();
-};
 
-/**
- * Détruit le preloader et nettoie les ressources
- */
-export const destroyPreloader = (): void => {
-  if (preloaderLottie) {
-    preloaderLottie.destroy();
-    preloaderLottie = null;
+  if (document.readyState === 'complete') {
+    onWindowLoad();
+  } else {
+    window.addEventListener('load', onWindowLoad, { once: true });
   }
 };
