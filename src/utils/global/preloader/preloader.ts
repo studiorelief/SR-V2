@@ -9,15 +9,17 @@
  * Éléments Webflow requis :
  * - preloader="component" : wrapper principal
  * - preloader="logo" : logo du studio
- * - #lottie-preloader : <video> qui se joue 1× au démarrage
+ * - #preloader-video-mascotte : <video> qui boucle pendant toute la durée du preloader
  * - preloader="loading-count" : texte affichant le % de chargement
  * - preloader="loading-line" : ligne de progression visuelle
+ *
+ * Sur la home : la vidéo du preloader est ensuite déplacée dans le wrapper
+ * `.home_hero_background-asset.is-mascotte` et son id devient #home-hero-video-mascotte,
+ * ce qui évite un double download (preloader + hero ont la même URL Supabase).
  *
  * Sortie déclenchée quand les 2 conditions sont remplies :
  *   - window load terminé
  *   - durée minimum atteinte (2.5s)
- *
- * La vidéo boucle pendant toute la durée du preloader (loop forcé en JS).
  */
 
 import gsap from 'gsap';
@@ -59,7 +61,7 @@ const markPreloaderAsShown = (): void => {
  * - Force `play()` ; si bloqué, le poster reste affiché — pas bloquant pour la sortie.
  */
 const initPreloaderVideo = (): void => {
-  const video = document.querySelector<HTMLVideoElement>('#lottie-preloader');
+  const video = document.querySelector<HTMLVideoElement>('#preloader-video-mascotte');
   if (!video) return;
 
   video.removeAttribute('data-lazy-video');
@@ -157,7 +159,7 @@ const animatePreloaderOut = (): void => {
   const logo = document.querySelector<HTMLElement>('[preloader="logo"]');
   const countElement = document.querySelector<HTMLElement>('[preloader="loading-count"]');
   const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
-  const video = document.querySelector<HTMLVideoElement>('#lottie-preloader');
+  const video = document.querySelector<HTMLVideoElement>('#preloader-video-mascotte');
   // On fade le wrapper plutôt que la <video> elle-même : la classe Webflow
   // `.video-component` applique une `transition: opacity` CSS qui s'ajoute au
   // tween GSAP et fait persister la mascotte ~0.5s de plus que le reste.
@@ -176,10 +178,12 @@ const animatePreloaderOut = (): void => {
   const tl = gsap.timeline({
     onComplete: () => {
       if (reuseVideoForHero && video) {
-        // La <video> originale du hero a déjà été retirée dans initPreloader()
-        // pour éviter le double download. On déplace AVANT `display:none` pour
-        // que le navigateur ne la blanchisse pas pendant le re-parent.
-        video.removeAttribute('id');
+        // La <video> originale du hero (#home-hero-video-mascotte) a déjà été neutralisée
+        // (cf. initPreloader + script inline du head) pour éviter le double
+        // download. On déplace AVANT `display:none` pour que le navigateur ne
+        // la blanchisse pas pendant le re-parent. On renomme l'id pour que
+        // toute requête future à `#home-hero-video-mascotte` retrouve l'instance vivante.
+        video.id = 'home-hero-video-mascotte';
         heroMascotteContainer.appendChild(video);
       } else if (video) {
         // Pages hors home : libérer le décodeur (la vidéo continuait de tourner
@@ -237,26 +241,24 @@ export const initPreloader = (): void => {
   if (!component) return;
 
   // Bots / Lighthouse / PageSpeed → on cache le preloader (pénalise le score sans
-  // servir leur usage).
+  // servir leur usage). Pour les bots, on laisse #home-hero-video-mascotte charger
+  // normalement puisque le preloader ne lui fournira pas la vidéo.
   if (isHeadlessAgent() || !shouldShowPreloader()) {
     // Pas de preloader affiché : on retire sa <video> pour qu'elle n'utilise pas
     // de bande passante en arrière-plan (preload="auto" + display:none ne stoppe
     // pas toujours le download selon les browsers).
-    document.querySelector('#lottie-preloader')?.remove();
+    document.getElementById('preloader-video-mascotte')?.remove();
     component.style.display = 'none';
     component.style.visibility = 'hidden';
     return;
   }
 
-  // Sur la home : la <video> du hero mascotte a la MÊME URL Supabase que celle
-  // du preloader. Si on la laisse, le browser télécharge le fichier 2× en
-  // parallèle (les deux <video preload="auto"> partent en même temps). On la
-  // retire dès maintenant — la requête en cours est annulée par le browser, et
-  // à la fin du preloader on déplacera la vidéo du preloader à sa place
-  // (cf. animatePreloaderOut).
-  // NB: selector ciblé sur la classe home-spécifique — d'autres pages ont aussi
-  // un wrapper [asset="mascotte"] (page Approche par ex.) qu'on ne doit PAS toucher.
-  document.querySelector('.home_hero_background-asset.is-mascotte video')?.remove();
+  // Sur la home : #home-hero-video-mascotte a la MÊME URL Supabase que #preloader-video-mascotte.
+  // Le script inline du head a déjà neutralisé son `src` avant le fetch (et posé
+  // `data-sr-suppressed`) pour éviter le double download. Ici on le retire du
+  // DOM proprement — il sera remplacé à la fin du preloader par la vidéo du
+  // preloader, déplacée et renommée en #home-hero-video-mascotte (cf. animatePreloaderOut).
+  document.getElementById('home-hero-video-mascotte')?.remove();
 
   component.style.display = 'flex';
   component.style.visibility = 'visible';
