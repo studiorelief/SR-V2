@@ -40,6 +40,12 @@ const OFFRE_SUR_MESURE: OffreConfig = {
   text: 'Offre Sur-mesure',
 };
 
+const OFFRE_CONTACT: OffreConfig = {
+  color: 'var(--_theme---text-color--primary)',
+  background: 'var(--_theme---background--accent-blue)',
+  text: 'Contact',
+};
+
 const STARTER_BUDGET_VALUE = '5 000 €';
 const SUR_MESURE_BUDGET_VALUE = '5 000 - 10 000€';
 
@@ -99,6 +105,13 @@ const STEP4_FIELDS = ['prenom', 'nom', 'entreprise', 'telephone', 'email', 'desc
 
 const LAST_CARDS_SELECTORS = '.cards-line_component.is-last, .contact-form_cards-line.is-last';
 
+const SKIP_HIDDEN_SELECTORS = [
+  '[summary="project-wrapper"]',
+  '[summary="project-divider"]',
+  '[summary="services-wrapper"]',
+  '[summary="services-divider"]',
+].join(', ');
+
 /*
  *------------------------------------------
  * MODULE STATE
@@ -121,6 +134,8 @@ let fileObserver: MutationObserver | null = null;
 
 let currentStepIndex = 0;
 let step1NextBtn: HTMLElement | null = null;
+let skipOfferBtn: HTMLElement | null = null;
+let isSkipMode = false;
 
 // Cached DOM refs (set once at init, stable across the page lifecycle)
 let cachedGlobalWrapper: HTMLElement | null = null;
@@ -754,6 +769,11 @@ function hideServiceItems(): void {
 function applyStepState(stepIndex: number): void {
   const isForward = stepIndex > currentStepIndex;
 
+  if (stepIndex === 0 && isSkipMode) {
+    clearSkipMode();
+    resetToInitial();
+  }
+
   if (stepIndex >= 1) {
     revealSummaryFields(isForward && stepIndex === 1);
   } else {
@@ -778,6 +798,7 @@ function applyStepState(stepIndex: number): void {
 function showLastCards(): void {
   const doShow = () => {
     document.querySelectorAll<HTMLElement>(LAST_CARDS_SELECTORS).forEach((el) => {
+      if (isSkipMode && el.matches(SKIP_HIDDEN_SELECTORS)) return;
       el.style.display = 'flex';
       gsap.fromTo(
         el,
@@ -796,6 +817,7 @@ function showLastCards(): void {
 function hideLastCards(): void {
   const doHide = () => {
     document.querySelectorAll<HTMLElement>(LAST_CARDS_SELECTORS).forEach((el) => {
+      if (isSkipMode && el.matches(SKIP_HIDDEN_SELECTORS)) return;
       gsap.killTweensOf(el);
       el.style.display = 'none';
       gsap.set(el, { clearProps: 'opacity,yPercent' });
@@ -871,12 +893,39 @@ function handleStep1Next(e: Event): void {
   validateStep4Submit();
 }
 
+function applySkipMode(): void {
+  applyConfig(OFFRE_CONTACT);
+  document.querySelectorAll<HTMLElement>(SKIP_HIDDEN_SELECTORS).forEach((el) => {
+    el.style.setProperty('display', 'none', 'important');
+  });
+  isSkipMode = true;
+}
+
+function clearSkipMode(): void {
+  if (!isSkipMode) return;
+  document.querySelectorAll<HTMLElement>(SKIP_HIDDEN_SELECTORS).forEach((el) => {
+    el.style.removeProperty('display');
+  });
+  isSkipMode = false;
+}
+
+function handleSkipOffer(e: Event): void {
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  applySkipMode();
+  goToStep(3);
+  applyStepState(3);
+  validateStep4Submit();
+}
+
 function handleRadioChange(): void {
   if (starterRadio?.checked) {
+    clearSkipMode();
     applyConfig(OFFRE_STARTER);
     addStarterBudget();
     applyPresets(STARTER_PRESETS, STARTER_CHECKBOXES);
   } else if (surMesureRadio?.checked) {
+    clearSkipMode();
     applyConfig(OFFRE_SUR_MESURE);
     removeStarterBudget();
     applyPresets(SUR_MESURE_PRESETS, SUR_MESURE_CHECKBOXES);
@@ -933,6 +982,9 @@ export function initContactLogic(): void {
     step1NextBtn = cachedSteps[0].querySelector<HTMLElement>('[data-form="next-btn"]');
     step1NextBtn?.addEventListener('click', handleStep1Next, true);
     addStepNavListener(step1NextBtn, () => applyStepState(1));
+
+    skipOfferBtn = cachedSteps[0].querySelector<HTMLElement>('[data-form="skip-offer"]');
+    skipOfferBtn?.addEventListener('click', handleSkipOffer, true);
   }
   if (cachedSteps[1]) {
     addStepNavListener(cachedSteps[1].querySelector('[data-form="back-btn"]'), () =>
@@ -979,6 +1031,7 @@ export function destroyContactLogic(): void {
   starterRadio?.removeEventListener('change', handleRadioChange);
   surMesureRadio?.removeEventListener('change', handleRadioChange);
   step1NextBtn?.removeEventListener('click', handleStep1Next, true);
+  skipOfferBtn?.removeEventListener('click', handleSkipOffer, true);
 
   for (const { el, handler } of progressListeners) {
     el.removeEventListener('click', handler);
@@ -996,6 +1049,8 @@ export function destroyContactLogic(): void {
   starterRadio = null;
   surMesureRadio = null;
   step1NextBtn = null;
+  skipOfferBtn = null;
+  isSkipMode = false;
   cachedGlobalWrapper = null;
   cachedSubmitBtn = null;
   cachedSteps = [];
