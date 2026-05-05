@@ -25,6 +25,10 @@ import {
 import { initPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
 import { initProduitsParallax } from '$utils/page/hero/produitsHero';
 import {
+  initHomeApprocheFalaiseParallax,
+  initHomeApprocheLueurMouseParallax,
+} from '$utils/page/home/homeApprocheAnimations';
+import {
   destroyPortfolioBaseline,
   initPortfolioBaseline,
 } from '$utils/page/portfolio/portfolioBaseline';
@@ -94,6 +98,17 @@ registerNamespace('approche', {
     initApprocheProcessParallax();
     initApprocheStepScale();
     initApprocheLampAnimations();
+  },
+});
+
+registerNamespace('home', {
+  animate: () => {
+    initHomeApprocheFalaiseParallax();
+    initHomeApprocheLueurMouseParallax();
+  },
+  init: () => {
+    initHomeApprocheFalaiseParallax();
+    initHomeApprocheLueurMouseParallax();
   },
 });
 

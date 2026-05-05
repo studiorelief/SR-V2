@@ -1,0 +1,24 @@
+/* Floating loop animation on home approche mousquetons
+ * Pure CSS keyframes — runs on the compositor thread.
+ * Both mousquetons share the same animation for a synchronized float.
+ */
+
+@keyframes home-mousqueton-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+[section-approche='mousqueton'] {
+  animation: home-mousqueton-float 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [section-approche='mousqueton'] {
+    animation: none;
+  }
+}

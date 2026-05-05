@@ -94,7 +94,6 @@ import { initCustomFavicon, updateFavicon } from '$utils/global/brand/customFav'
 import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
 import { initDropdownFiltersClickOutside } from '$utils/global/optimisations/dropdownFilters';
-import { hideDynListIfEmpty } from '$utils/global/optimisations/hideEmptyCMS';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
 import { mirrorClick } from '$utils/global/optimisations/mirrorClick';
 import { initPreloader } from '$utils/global/preloader/preloader';
@@ -118,6 +117,10 @@ import {
 } from '$utils/page/hero/cmsPortfolioHero';
 import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
 import { destroyPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
+import {
+  destroyHomeApprocheFalaiseParallax,
+  destroyHomeApprocheLueurMouseParallax,
+} from '$utils/page/home/homeApprocheAnimations';
 import { destroyHomeServices, initHomeServices } from '$utils/page/home/homeServices';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { destroyPortfolioBaseline } from '$utils/page/portfolio/portfolioBaseline';
@@ -176,7 +179,6 @@ const initGlobalFunctions = (): void => {
   initInnerHighlight();
 
   // Optimisations DOM légères (préviennent CLS)
-  hideDynListIfEmpty();
   initCmsSummaryFade();
   initLazyVideos();
 
@@ -303,6 +305,8 @@ const init = () => {
     destroyHomeHero();
     destroyHomeServices();
     destroyMonkeyFall();
+    destroyHomeApprocheFalaiseParallax();
+    destroyHomeApprocheLueurMouseParallax();
     destroyClientLoop();
     destroyRessourcesLabs();
     destroyRessourcesBlog();
