@@ -252,7 +252,6 @@ const init = () => {
 
   // Init global functions on first load
   initGlobalFunctions();
-  initGlobalHero();
   initNavbar();
   initNavbarMobile();
   initCtaText();
@@ -267,8 +266,13 @@ const init = () => {
     initRessourcesStack();
     initCustomFavicon();
 
-    // Animations spécifiques par namespace (après layout stable)
+    // ScrollTriggers par namespace AVANT setupAndAnimateGlobalHero, pour matcher
+    // l'ordre du flow Swup (page:view -> runNamespaceAnimate, puis enter -> setupAndAnimateGlobalHero).
+    // Sinon les ScrollTriggers du hero (.hero_background) capturent des dimensions
+    // instables pendant que SplitText/yPercent/opacity tournent sur les enfants
+    // → scroll saccadé sur direct load / refresh.
     runNamespaceInit();
+    initGlobalHero();
   });
 
   // Initialize Swup after DOM is ready
