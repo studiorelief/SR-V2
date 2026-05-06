@@ -66,11 +66,12 @@
 *==========================================
 */
 
-/* 
+/*
 * ↳ Home
 */
 
 @import './utils/component/section/ressources.css';
+@import './utils/page/home/home-approche-float.css';
 
 /*
 * ↳ Stack

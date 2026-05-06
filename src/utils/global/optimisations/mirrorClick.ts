@@ -11,5 +11,16 @@ export function mirrorClick(): void {
     trigger.addEventListener('click', () => {
       target.click();
     });
+
+    const syncVisibility = () => {
+      const isHidden = target.style.display === 'none';
+      trigger.style.display = isHidden ? 'none' : '';
+    };
+
+    syncVisibility();
+    new MutationObserver(syncVisibility).observe(target, {
+      attributes: true,
+      attributeFilter: ['style'],
+    });
   });
 }
