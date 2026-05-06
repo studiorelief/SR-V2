@@ -93,6 +93,10 @@ import { initTextPath } from '$utils/global/animations/textPath';
 import { initCustomFavicon, updateFavicon } from '$utils/global/brand/customFav';
 import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
 import { initCmsSummaryFade } from '$utils/global/optimisations/cmsRt';
+import {
+  dedupeRelatedItems,
+  initRelatedItemsDedupe,
+} from '$utils/global/optimisations/dedupe-related-items';
 import { initDropdownFiltersClickOutside } from '$utils/global/optimisations/dropdownFilters';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
 import { mirrorClick } from '$utils/global/optimisations/mirrorClick';
@@ -250,6 +254,11 @@ const init = () => {
   // Preloader - doit être initialisé en premier (uniquement première visite)
   initPreloader();
 
+  // Dédoublonnage des Collection Lists "Related Items" (relations CMS bidirectionnelles).
+  // Hook dans la file Finsweet List + passe sync sur les items déjà rendus.
+  // Le hook se redéclenche automatiquement après chaque restart Finsweet.
+  initRelatedItemsDedupe();
+
   // Init global functions on first load
   initGlobalFunctions();
   initNavbar();
@@ -341,6 +350,9 @@ const init = () => {
     requestAnimationFrame(() => {
       restartWebflow();
       restartFsAttributesModules();
+      // Re-dédoublonner après chaque transition Swup : le nouveau DOM
+      // injecté contient les items CMS de la page cible.
+      dedupeRelatedItems();
     });
   });
 
