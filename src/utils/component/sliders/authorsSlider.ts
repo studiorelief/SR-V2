@@ -6,7 +6,7 @@
 
 import gsap from 'gsap';
 
-import Swiper from './_swiperSetup';
+import Swiper, { trackSwiper } from './_swiperSetup';
 
 /*
  * Clothesline curve — maps Swiper slide.progress to visual properties.
@@ -88,7 +88,7 @@ export function initAuthorsSlider() {
     const prevBtn = component?.querySelector<HTMLElement>('[author-slider="left"]') || null;
     const nextBtn = component?.querySelector<HTMLElement>('[author-slider="right"]') || null;
 
-    const swiper = new Swiper(swiperEl as HTMLElement, {
+    const swiper: Swiper = new Swiper(swiperEl as HTMLElement, {
       direction: 'horizontal',
       initialSlide: originalCount,
       slidesPerView: 'auto',
@@ -107,6 +107,7 @@ export function initAuthorsSlider() {
       navigation: { prevEl: nextBtn, nextEl: prevBtn },
       touchEventsTarget: 'wrapper',
     });
+    trackSwiper(swiper);
 
     /* ── Manual loop ── */
     swiper.on('slideChangeTransitionEnd', () => {

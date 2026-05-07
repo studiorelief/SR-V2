@@ -24,4 +24,7 @@ typings/
 # dotenv environment variables file
 .env
 
+# Claude Code agent worktrees (orphan source dirs left after merges)
+.claude/worktrees/
+
 # Production files

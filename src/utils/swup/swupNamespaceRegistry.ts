@@ -1,5 +1,6 @@
 import { initCal } from '$utils/global/script/loadCal';
 import {
+  initApprocheCardFloat,
   initApprocheGrotteScroll,
   initApprocheHeroScroll,
   initApprocheLampAnimations,
@@ -89,6 +90,7 @@ registerNamespace('approche', {
     initApprocheProcessParallax();
     initApprocheStepScale();
     initApprocheLampAnimations();
+    initApprocheCardFloat();
   },
   init: () => {
     initApprocheParallax();
@@ -98,6 +100,7 @@ registerNamespace('approche', {
     initApprocheProcessParallax();
     initApprocheStepScale();
     initApprocheLampAnimations();
+    initApprocheCardFloat();
   },
 });
 

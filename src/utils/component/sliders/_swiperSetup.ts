@@ -27,4 +27,37 @@ import { EffectFade, Keyboard, Mousewheel, Navigation, Pagination } from 'swiper
 
 Swiper.use([Pagination, Navigation, Keyboard, Mousewheel, EffectFade]);
 
+/*
+ *============================================================================
+ * SWIPER LIFECYCLE — TRACKER POUR CLEANUP SWUP
+ *============================================================================
+ *
+ * Chaque init de slider crée un `new Swiper(...)` qui attache observers /
+ * mousewheel / keyboard / pointer listeners + lance sa propre boucle interne.
+ * Sur swup transition, le DOM du slider est remplacé mais l'instance Swiper
+ * orpheline reste vivante en mémoire (références gardées par ses listeners
+ * + son ticker interne) → elle continue à consommer du CPU sur des nodes
+ * détachés. Sur N navigations, on accumule N instances ghosts.
+ *
+ * Pour éviter ça : chaque init appelle `trackSwiper()`, et `destroyAllSliders`
+ * est appelé dans `content:replace` pour libérer toutes les instances avant
+ * que le nouveau DOM soit injecté.
+ */
+const trackedSwipers: Swiper[] = [];
+
+export const trackSwiper = (swiper: Swiper): void => {
+  trackedSwipers.push(swiper);
+};
+
+export const destroyAllSliders = (): void => {
+  trackedSwipers.forEach((swiper) => {
+    try {
+      swiper.destroy(true, true);
+    } catch {
+      /* déjà détruit, on ignore */
+    }
+  });
+  trackedSwipers.length = 0;
+};
+
 export default Swiper;

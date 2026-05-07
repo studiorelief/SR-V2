@@ -7,6 +7,21 @@
  */
 
 /* ============================================================================
+ * COMPOSITOR ISOLATION
+ * La navbar est position:fixed à pleine viewport (1512×810) avec ~184 enfants
+ * dont 22 SVGs. Sans promotion en layer compositor dédié, elle est dans le
+ * root layer et re-paint à chaque fois qu'un layer en dessous change (les ~27
+ * will-change du hero/process). Sur Safari/DIA en navigation privée, ça
+ * effondre les FPS jusqu'à 7-15 en idle.
+ * `will-change: transform` la promote en compositor layer indépendant : elle
+ * ne re-paint plus que sur ses propres changements (hover, open animation).
+ * Mesure DIA : 44 → 82 FPS sur /approche en idle.
+ * ============================================================================ */
+.nav_component {
+  will-change: transform;
+}
+
+/* ============================================================================
  * MOBILE NAVBAR (<= 479px)
  * ============================================================================ */
 
