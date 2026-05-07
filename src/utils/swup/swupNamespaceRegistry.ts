@@ -20,7 +20,14 @@ import {
   initCmsPortfolioParallax,
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
+import {
+  destroyOffresMarmotte,
+  initOffresMarmotte,
+  initOffresParallax,
+  initOffresParallaxBig,
+} from '$utils/page/hero/offresHero';
 import { initPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
+import { initProduitsParallax } from '$utils/page/hero/produitsHero';
 import {
   initHomeApprocheFalaiseParallax,
   initHomeApprocheLueurMouseParallax,
@@ -68,18 +75,20 @@ registerNamespace('portfolio', {
     }),
 });
 
-// Lazy-load : `offres` est un namespace 100% GSAP sans cleanup non-GSAP,
-// son module n'est téléchargé que sur navigation vers /offres. Le chunk est
-// pré-fetché par SwupPreloadPlugin au hover du lien → latence quasi-nulle.
+// Note : tentative de lazy-load (Phase 3 initiale) reverté.
+// Le gain bundle (~1.8KB) ne compensait pas le round-trip réseau supplémentaire
+// sur cold load /offres. setup() kill explicitement la marmotte (cycle récursif
+// via onComplete = en dehors du gsap.context, donc non couvert par ctx.revert).
 registerNamespace('offres', {
-  run: async () => {
-    const m = await import('$utils/page/hero/offresHero');
-    return gsap.context(() => {
-      m.initOffresParallax();
-      m.initOffresParallaxBig();
-      m.initOffresMarmotte();
-    });
+  setup: () => {
+    destroyOffresMarmotte();
   },
+  run: () =>
+    gsap.context(() => {
+      initOffresParallax();
+      initOffresParallaxBig();
+      initOffresMarmotte();
+    }),
 });
 
 registerNamespace('approche', {
@@ -104,14 +113,11 @@ registerNamespace('home', {
     }),
 });
 
-// Lazy-load : idem `offres`, namespace 100% GSAP, chunk séparé.
 registerNamespace('produits', {
-  run: async () => {
-    const m = await import('$utils/page/hero/produitsHero');
-    return gsap.context(() => {
-      m.initProduitsParallax();
-    });
-  },
+  run: () =>
+    gsap.context(() => {
+      initProduitsParallax();
+    }),
 });
 
 registerNamespace('contact', {

@@ -70,18 +70,24 @@ export const initOffresParallaxBig = (): void => {
 };
 
 /**
- * Marmotte pop-up animation on offres page
- * Element pops from yPercent: 100 to 0 with back.out ease
- * Random interval between appearances (4-10s) and random visible duration (4-8s)
+ * Marmotte pop-up animation on offres page.
+ *
+ * Cycle récursif via onComplete (donc EN DEHORS du gsap.context du namespace —
+ * `ctx.revert()` ne le couvre pas). On gate avec un IntersectionObserver pour
+ * ne pas tweener en continu quand le hero est hors viewport (gain CPU/idle).
+ * destroyOffresMarmotte est appelé via le `setup` du namespace offres pour
+ * stopper proprement le cycle au teardown Swup.
  */
 let marmotteActive = false;
+let marmotteObserver: IntersectionObserver | null = null;
+const visibleMarmottes = new Set<HTMLElement>();
 
 const randomBetween = (min: number, max: number): number => {
   return Math.random() * (max - min) + min;
 };
 
 const runMarmotteCycle = (el: HTMLElement): void => {
-  if (!marmotteActive) return;
+  if (!marmotteActive || !visibleMarmottes.has(el)) return;
 
   const delay = randomBetween(2, 4);
   const visibleDuration = randomBetween(2, 4);
@@ -96,7 +102,7 @@ const runMarmotteCycle = (el: HTMLElement): void => {
     ease: 'power2.out',
     delay,
     onComplete: () => {
-      if (!marmotteActive) return;
+      if (!marmotteActive || !visibleMarmottes.has(el)) return;
 
       gsap.to(el, {
         yPercent: 100,
@@ -113,16 +119,48 @@ export const initOffresMarmotte = (): void => {
   const marmotteElements = document.querySelectorAll<HTMLElement>('[offres-trigger="marmotte"]');
   if (marmotteElements.length === 0) return;
 
+  // Cleanup défensif si initOffresMarmotte est rappelé sans destroy préalable.
+  if (marmotteObserver) {
+    marmotteObserver.disconnect();
+    marmotteObserver = null;
+  }
+  visibleMarmottes.clear();
+
   marmotteActive = true;
+
+  marmotteObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const el = entry.target as HTMLElement;
+        if (entry.isIntersecting) {
+          if (!visibleMarmottes.has(el)) {
+            visibleMarmottes.add(el);
+            gsap.set(el, { yPercent: 100 });
+            runMarmotteCycle(el);
+          }
+        } else {
+          visibleMarmottes.delete(el);
+          gsap.killTweensOf(el);
+        }
+      });
+    },
+    { threshold: 0 }
+  );
 
   marmotteElements.forEach((el) => {
     gsap.set(el, { yPercent: 100 });
-    runMarmotteCycle(el);
+    marmotteObserver!.observe(el);
   });
 };
 
 export const destroyOffresMarmotte = (): void => {
   marmotteActive = false;
+  visibleMarmottes.clear();
+
+  if (marmotteObserver) {
+    marmotteObserver.disconnect();
+    marmotteObserver = null;
+  }
 
   const marmotteElements = document.querySelectorAll<HTMLElement>('[offres-trigger="marmotte"]');
   marmotteElements.forEach((el) => {
@@ -132,7 +170,10 @@ export const destroyOffresMarmotte = (): void => {
 };
 
 /**
- * Destroy offres parallax ScrollTrigger
+ * Destroy offres parallax ScrollTrigger.
+ * Note : avec gsap.context() côté namespace registry, ctx.revert() couvre
+ * déjà ces ScrollTriggers. Garde ici pour compatibilité externe / cas
+ * d'usage hors namespace.
  */
 export const destroyOffresParallax = (): void => {
   if (offresParallaxTrigger) {
