@@ -4,7 +4,7 @@
  *============================================================================
  */
 
-import Swiper from './_swiperSetup';
+import Swiper, { trackSwiper } from './_swiperSetup';
 
 export function initCategoriesSlider() {
   const swipers = document.querySelectorAll('.swiper.is-categories');
@@ -52,6 +52,7 @@ export function initCategoriesSlider() {
         },
       },
     });
+    trackSwiper(swiper);
 
     // Custom pagination — only render bullets for original slides
     if (paginationEl && originalCount > 0) {

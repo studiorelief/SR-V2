@@ -6,7 +6,7 @@
 
 import gsap from 'gsap';
 
-import Swiper from './_swiperSetup';
+import Swiper, { trackSwiper } from './_swiperSetup';
 
 export function initReviewSlider() {
   const swipers = document.querySelectorAll('.swiper.is-review');
@@ -38,6 +38,7 @@ export function initReviewSlider() {
       },
       touchEventsTarget: 'wrapper',
     });
+    trackSwiper(swiper);
 
     // Animation sur les éléments asset (left to right) & text (right to left)
     const animateSlideIn = (slide: Element) => {

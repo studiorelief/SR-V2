@@ -9,6 +9,7 @@ let parallaxScrollTriggers: ScrollTrigger[] = [];
 let stepScrollTriggers: ScrollTrigger[] = [];
 let lampScrollTriggers: ScrollTrigger[] = [];
 let lampMouseMoveHandler: ((e: MouseEvent) => void) | null = null;
+let cardFloatObserver: IntersectionObserver | null = null;
 
 /**
  * Scroll animation on approche hero
@@ -98,8 +99,15 @@ export const destroyApprocheGrotteScroll = (): void => {
 
 /**
  * Scroll parallax on elements with [approche-parallax] attribute
- * Trigger: closest .approche_process_step-wrapper (parent)
+ * Trigger: the element itself (its visual viewport range)
  * Elements translate upward based on attribute value: small | medium | big
+ *
+ * Note : on N'utilise PAS .approche_process_step-wrapper comme trigger.
+ * Les éléments `is-step-1` vivent dans un wrapper structurel `.is-empty`
+ * placé en haut de la section (page-y ≈ 226), mais ils sont positionnés
+ * en absolute beaucoup plus bas (page-y ≈ 1318). Si on prend le wrapper,
+ * le start ('top bottom') tombe à un scroll négatif → progress > 0 dès
+ * scroll=0 → la parallax apparaît déjà à mi-course au chargement.
  */
 export const initApprocheProcessParallax = (): void => {
   const parallaxElements = document.querySelectorAll<HTMLElement>('[approche-parallax]');
@@ -112,9 +120,6 @@ export const initApprocheProcessParallax = (): void => {
   };
 
   parallaxElements.forEach((element) => {
-    const wrapper = element.closest<HTMLElement>('.approche_process_step-wrapper');
-    if (!wrapper) return;
-
     const size = element.getAttribute('approche-parallax')?.trim() ?? '';
     const distance = distanceMap[size];
     if (!distance) return;
@@ -125,7 +130,7 @@ export const initApprocheProcessParallax = (): void => {
     });
 
     const trigger = ScrollTrigger.create({
-      trigger: wrapper,
+      trigger: element,
       start: 'top bottom',
       end: 'bottom top',
       scrub: 2,
@@ -258,6 +263,54 @@ export const initApprocheLampAnimations = (): void => {
   };
 
   window.addEventListener('mousemove', lampMouseMoveHandler);
+};
+
+/**
+ * Pause les animations CSS infinies des cards approche quand elles sont hors viewport.
+ *
+ * Sans ça, les ~17 elements `[approche-card]` (cards + decoratives) gardent leurs
+ * `@keyframes ... infinite` actifs en permanence — chacun crée un layer compositor
+ * (translate3d) qui re-paint à chaque frame, même hors écran. Sur /approche c'est
+ * 17 animations × 60 fps = compositor saturé en continu (76% painting time mesuré
+ * sur DIA), tout le site devient laggy.
+ *
+ * On toggle `animation-play-state` via IntersectionObserver : seuls les 2-3 cards
+ * visibles à un scroll donné consomment du GPU, le reste est en pause.
+ */
+export const initApprocheCardFloat = (): void => {
+  const cards = document.querySelectorAll<HTMLElement>('[approche-card]');
+  if (!cards.length) return;
+
+  cardFloatObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        (entry.target as HTMLElement).style.animationPlayState = entry.isIntersecting
+          ? 'running'
+          : 'paused';
+      }
+    },
+    { rootMargin: '100px' }
+  );
+
+  cards.forEach((card) => {
+    // Démarre en pause — l'IO va activer les visibles dès la 1ère callback (sync).
+    card.style.animationPlayState = 'paused';
+    cardFloatObserver?.observe(card);
+  });
+};
+
+/**
+ * Destroy approche card float observer + clear inline styles.
+ */
+export const destroyApprocheCardFloat = (): void => {
+  if (cardFloatObserver) {
+    cardFloatObserver.disconnect();
+    cardFloatObserver = null;
+  }
+  const cards = document.querySelectorAll<HTMLElement>('[approche-card]');
+  cards.forEach((card) => {
+    card.style.removeProperty('animation-play-state');
+  });
 };
 
 /**

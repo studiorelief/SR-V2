@@ -4,7 +4,7 @@
  *============================================================================
  */
 
-import Swiper from './_swiperSetup';
+import Swiper, { trackSwiper } from './_swiperSetup';
 
 export function initCmsProjetsSlider() {
   const swipers = document.querySelectorAll('.swiper.is-cms-projets');
@@ -19,7 +19,7 @@ export function initCmsProjetsSlider() {
     const paginationEl =
       parent?.querySelector('.swiper-pagination') || swiperEl.querySelector('.swiper-pagination');
 
-    new Swiper(swiperEl as HTMLElement, {
+    const swiper = new Swiper(swiperEl as HTMLElement, {
       direction: 'horizontal',
       //   loop: true,
       centeredSlides: true,
@@ -53,5 +53,6 @@ export function initCmsProjetsSlider() {
         },
       },
     });
+    trackSwiper(swiper);
   });
 }

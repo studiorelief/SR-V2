@@ -49,6 +49,23 @@ const isHeadlessAgent = (): boolean => {
 
 const shouldShowPreloader = (): boolean => !sessionStorage.getItem(PRELOADER_SHOWN_KEY);
 
+/**
+ * Indique si le préloader sera affiché lors de cet `initPreloader()`.
+ * Permet aux callers de différer leur travail (ex: animation d'entrée du hero)
+ * jusqu'à `preloaderComplete` pour qu'il soit visible, plutôt que joué derrière
+ * le rideau.
+ *
+ * Conditions miroirs de l'early-return de `initPreloader()` :
+ *   - Le component DOM existe
+ *   - Pas un bot / Lighthouse / etc.
+ *   - sessionStorage `sr-preloader-shown` pas encore marqué (1ère visite)
+ */
+export const isPreloaderVisible = (): boolean => {
+  const component = document.querySelector<HTMLElement>('[preloader="component"]');
+  if (!component) return false;
+  return !isHeadlessAgent() && shouldShowPreloader();
+};
+
 const markPreloaderAsShown = (): void => {
   sessionStorage.setItem(PRELOADER_SHOWN_KEY, 'true');
 };
@@ -186,9 +203,22 @@ const animatePreloaderOut = (): void => {
         video.id = 'home-hero-video-mascotte';
         heroMascotteContainer.appendChild(video);
       } else if (video) {
-        // Pages hors home : libérer le décodeur (la vidéo continuait de tourner
-        // sous le `display:none` du component, gaspillant CPU/GPU).
+        // Pages hors home : libérer COMPLÈTEMENT le décodeur vidéo.
+        // pause() seul ne libère pas les ressources de décodage sur WebKit
+        // (Safari) et DIA en navigation privée — le décodeur reste alloué
+        // en mémoire GPU pour toute la session, ce qui ralentit l'ensemble
+        // du compositor pour les autres animations/parallaxes du site.
+        // Pour libérer : pause + remove src + load() (flush buffer) + remove DOM.
         video.pause();
+        const sourceEl = video.querySelector('source');
+        if (sourceEl) sourceEl.removeAttribute('src');
+        video.removeAttribute('src');
+        try {
+          video.load(); // déclenche la libération du décodeur
+        } catch {
+          /* noop */
+        }
+        video.remove();
       }
 
       component.style.display = 'none';
