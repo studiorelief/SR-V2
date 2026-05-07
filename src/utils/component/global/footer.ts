@@ -2,6 +2,12 @@
  * Footer Component with GSAP Animations
  * - Infinite horizontal marquee loop for footer items
  * - City badges drop animation on scroll
+ *
+ * Le footer est PERSISTANT (hors #swup). Le DOM survit aux transitions,
+ * donc pas de destroy paired : l'idempotence est gérée via le flag
+ * `data-footer-loop-initialized` (marquee, init unique) et via le filter
+ * `ScrollTrigger.getAll().filter(trigger === footerComponent).kill()` dans
+ * initFooterDrop (re-init propre à chaque page:view).
  */
 
 import gsap from 'gsap';
@@ -17,7 +23,7 @@ const initFooterLoop = (): void => {
   const containers = document.querySelectorAll<HTMLElement>('.footer_collection-list');
 
   containers.forEach((container) => {
-    // Skip if already initialized
+    // Skip if already initialized (footer persistant → flag survit aux nav).
     if (container.hasAttribute('data-footer-loop-initialized')) return;
     container.setAttribute('data-footer-loop-initialized', 'true');
 
@@ -103,8 +109,8 @@ export function initFooterDrop(): void {
   const footerComponent = document.querySelector('.footer_component');
   if (!footerComponent) return;
 
-  // Clean up any existing ScrollTriggers for the footer before creating new ones
-  // This prevents conflicts when reinitializing during Barba.js page transitions
+  // Clean up any existing ScrollTriggers for the footer before creating new ones.
+  // Évite les conflits quand initFooterDrop est rappelé sur Swup page:view.
   ScrollTrigger.getAll().forEach((st) => {
     if (st.trigger === footerComponent) {
       st.kill();
@@ -168,9 +174,6 @@ export function initFooterDrop(): void {
         index * 0.15 // Stagger timing
       );
     });
-
-    // Refresh ScrollTrigger after creating the timeline to ensure it calculates correctly
-    // ScrollTrigger.refresh();
   });
 }
 

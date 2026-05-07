@@ -78,8 +78,10 @@ export const initAccordionScrollTrigger = (): void => {
     setupAccordionObservers();
   });
 
-  // Watch the entire document body for new accordion elements
-  treeObserver.observe(document.body, {
+  // Scope l'observer au container Swup pour éviter de fire sur chaque mutation
+  // hors-#swup (head, navbar persistante, body inserts). Hot path sinon.
+  const swupContainer = document.querySelector<HTMLElement>('#swup') ?? document.body;
+  treeObserver.observe(swupContainer, {
     childList: true,
     subtree: true,
   });

@@ -41,7 +41,7 @@ import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
 } from '$utils/component/cards/cardVideoPlayer';
-import { initSearchBar } from '$utils/component/form/searchBar';
+import { destroySearchBar, initSearchBar } from '$utils/component/form/searchBar';
 import { initAiShare } from '$utils/component/global/aiShare';
 import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
@@ -57,8 +57,8 @@ import {
   initNavbarTriggers,
 } from '$utils/component/global/navbar';
 import { initScrollbar } from '$utils/component/global/scrollbar';
-import { initSocialShare } from '$utils/component/global/socialShare';
-import { initSticker } from '$utils/component/global/sticker';
+import { destroySocialShare, initSocialShare } from '$utils/component/global/socialShare';
+import { destroyAllStickers, initSticker } from '$utils/component/global/sticker';
 import { initTooltip } from '$utils/component/global/tooltip';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { destroyClientLoop, initClientLoop } from '$utils/component/section/clientsLoop';
@@ -89,7 +89,7 @@ import {
 import { destroyCountAnimation, initCountAnimation } from '$utils/global/animations/countAnimation';
 import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lottieFiles';
 import { initScrollTop } from '$utils/global/animations/scrollTop';
-import { initSunHeroParallax } from '$utils/global/animations/sunHero';
+import { initSunHeroParallax, killSunHeroParallax } from '$utils/global/animations/sunHero';
 import { initTextPath } from '$utils/global/animations/textPath';
 import { initCustomFavicon, updateFavicon } from '$utils/global/brand/customFav';
 import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
@@ -433,6 +433,15 @@ const init = () => {
     destroyAccordionScrollTrigger();
     destroyCardVideoPlayer();
     destroyCardHoverIcon();
+    destroyAllStickers();
+    // destroyFooter() volontairement NON appelé : le footer est PERSISTANT
+    // (hors #swup). Le DOM survit la transition, son init est idempotent
+    // via le flag `data-footer-loop-initialized` + le filter ScrollTrigger
+    // dans initFooterDrop. Kill la timeline ici casserait le marquee après
+    // la 1ère navigation (re-init skip via flag, plus de timeline live).
+    destroySearchBar();
+    destroySocialShare();
+    killSunHeroParallax();
     destroyHomeHero();
     destroyHomeServices();
     destroyMonkeyFall();

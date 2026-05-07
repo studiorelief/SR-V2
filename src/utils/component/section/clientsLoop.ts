@@ -2,17 +2,30 @@ import gsap from 'gsap';
 
 import { EASINGS } from '$utils/global/easings/easings';
 
-// Stockage des références pour le cleanup
+// State module-scope pour le cleanup. activeContainers garde une ref vers le
+// dernier container animé (le tween live), listenerCleanups stocke chaque
+// removeEventListener pour ne pas laisser de hover handlers orphans après
+// content:replace Swup.
 let activeContainers: HTMLElement[] = [];
+const listenerCleanups: Array<() => void> = [];
 
 /**
- * Détruit les animations du client loop
+ * Détruit les animations du client loop : kill tweens, retire les listeners
+ * hover, et nettoie les items clonés (marqués `data-cloned`) pour éviter
+ * d'accumuler des doublons si initClientLoop est rappelé sans Swup destroy.
  */
 export function destroyClientLoop(): void {
   activeContainers.forEach((container) => {
     gsap.killTweensOf(container);
+
+    container.querySelectorAll<HTMLElement>('[data-cloned="true"]').forEach((clone) => {
+      clone.remove();
+    });
   });
   activeContainers = [];
+
+  listenerCleanups.forEach((fn) => fn());
+  listenerCleanups.length = 0;
 }
 
 /**
@@ -21,7 +34,7 @@ export function destroyClientLoop(): void {
 export function initClientLoop() {
   const containers = document.querySelectorAll<HTMLElement>('.clients-loop_collection-list');
 
-  // Reset containers list
+  // Reset list for new init.
   activeContainers = [];
 
   containers.forEach((container) => {
@@ -29,25 +42,22 @@ export function initClientLoop() {
 
     if (items.length === 0) return;
 
-    // Track container for cleanup
     activeContainers.push(container);
 
-    // Clone items to create seamless loop
+    // Clone items to create seamless loop. Marqués `data-cloned` pour cleanup.
     items.forEach((item) => {
       const clone = item.cloneNode(true) as HTMLElement;
+      clone.setAttribute('data-cloned', 'true');
       container.appendChild(clone);
     });
 
-    // Get all items including clones for hover effects
     const allItems = container.querySelectorAll<HTMLElement>('.clients-loop_collection-item');
 
-    // Calculate total width of original items
     let totalWidth = 0;
     items.forEach((item) => {
       totalWidth += item.offsetWidth;
     });
 
-    // Set container display to flex for proper layout
     gsap.set(container, {
       display: 'flex',
       flexWrap: 'nowrap',
@@ -65,12 +75,11 @@ export function initClientLoop() {
       }
     });
 
-    // Create the infinite loop animation
-    const duration = totalWidth / 50; // Adjust speed by changing divisor (higher = slower)
+    const duration = totalWidth / 50; // higher = slower
 
     gsap.to(container, {
       x: -totalWidth,
-      duration: duration,
+      duration,
       ease: 'none',
       repeat: -1,
       modifiers: {
@@ -78,36 +87,38 @@ export function initClientLoop() {
       },
     });
 
-    // Add hover effects to each item
+    // Hover effects, listeners trackés pour destroy.
     allItems.forEach((item) => {
       const hoverWrapper = item.querySelector<HTMLElement>('.clients-loop_card_hover-wrapper');
+      if (!hoverWrapper) return;
 
-      if (hoverWrapper) {
-        // Random rotation: 2° or -2°
-        const randomRotation = Math.random() > 0.5 ? 2 : -2;
+      const randomRotation = Math.random() > 0.5 ? 2 : -2;
 
-        item.addEventListener('mouseenter', () => {
-          gsap.to(hoverWrapper, {
-            opacity: 1,
-            scale: 1,
-            yPercent: -100,
-            rotation: randomRotation,
-            duration: 0.3,
-            ease: EASINGS.backOut,
-          });
+      const onEnter = (): void => {
+        gsap.to(hoverWrapper, {
+          opacity: 1,
+          scale: 1,
+          yPercent: -100,
+          rotation: randomRotation,
+          duration: 0.3,
+          ease: EASINGS.backOut,
         });
-
-        item.addEventListener('mouseleave', () => {
-          gsap.to(hoverWrapper, {
-            opacity: 0,
-            scale: 0,
-            yPercent: 0,
-            rotation: 0,
-            duration: 0.3,
-            ease: EASINGS.customBounce,
-          });
+      };
+      const onLeave = (): void => {
+        gsap.to(hoverWrapper, {
+          opacity: 0,
+          scale: 0,
+          yPercent: 0,
+          rotation: 0,
+          duration: 0.3,
+          ease: EASINGS.customBounce,
         });
-      }
+      };
+
+      item.addEventListener('mouseenter', onEnter);
+      item.addEventListener('mouseleave', onLeave);
+      listenerCleanups.push(() => item.removeEventListener('mouseenter', onEnter));
+      listenerCleanups.push(() => item.removeEventListener('mouseleave', onLeave));
     });
   });
 }
