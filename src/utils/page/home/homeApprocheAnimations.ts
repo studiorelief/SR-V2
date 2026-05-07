@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 let falaiseScrollTriggers: ScrollTrigger[] = [];
 let lueurMouseMoveHandler: ((e: MouseEvent) => void) | null = null;
 

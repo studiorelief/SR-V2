@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 /**
  * Animation parallax du hero de la home
  * Unified timeline pour toutes les animations = plus smooth

@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 // Store ScrollTrigger instances for cleanup
 let ctaScrollTriggers: ScrollTrigger[] = [];
 

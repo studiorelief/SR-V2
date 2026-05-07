@@ -16,12 +16,6 @@ import { swupEnterAnimation, swupLeaveAnimation } from '$utils/swup/swupTransiti
  * Initialise Swup avec les plugins et les transitions
  */
 export const initSwup = (): Swup => {
-  // Vérifier que le container existe
-  const container = document.querySelector('#swup');
-  if (!container) {
-    // console.warn('[Swup] Container #swup not found! Add id="swup" to your main content wrapper.');
-  }
-
   const swup = new Swup({
     animationSelector: false, // On utilise SwupJsPlugin pour les animations
     containers: ['#swup'],
@@ -100,13 +94,6 @@ export const initSwup = (): Swup => {
     },
     true // capture phase — se déclenche avant le handler de Swup
   );
-
-  // Debug logs
-  // swup.hooks.on('visit:start', () => console.log('[Swup] Visit started'));
-  // swup.hooks.on('content:replace', () => console.log('[Swup] Content replaced'));
-  // swup.hooks.on('visit:end', () => console.log('[Swup] Visit ended'));
-
-  // console.log('[Swup] Initialized successfully');
 
   return swup;
 };

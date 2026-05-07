@@ -289,9 +289,8 @@ export function destroyAllButtons(): void {
   buttonInstances.length = 0; // Vide le tableau
 }
 
-// Auto-initialize on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initButtonHover);
-} else {
-  initButtonHover();
-}
+// Auto-init volontairement retirée : l'orchestration vient d'index.ts via
+// `whenIdle` après le boot (avec destroyAllButtons paired sur Swup
+// content:replace). L'auto-init créait un double init au cold load
+// (DOMContentLoaded fire avant le whenIdle) → instances stockées 2× et
+// listeners qui doublaient sur le 1er flux.

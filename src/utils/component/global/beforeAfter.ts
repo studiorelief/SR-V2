@@ -1,9 +1,6 @@
-import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 
-gsap.registerPlugin(Draggable);
-
-// Store Draggable instances for cleanup (e.g. Barba transitions)
+// Store Draggable instances for cleanup on Swup transitions
 const beforeAfterInstances: Draggable[] = [];
 
 /**

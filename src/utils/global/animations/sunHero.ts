@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 /**
  * Animation parallax globale du soleil hero
  * Fonctionne sur toutes les pages ayant un élément [transition-trigger="hero-sun"]

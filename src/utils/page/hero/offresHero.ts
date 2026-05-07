@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 let offresParallaxTrigger: ScrollTrigger | null = null;
 let offresParallaxBigTrigger: ScrollTrigger | null = null;
 

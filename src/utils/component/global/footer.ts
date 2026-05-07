@@ -13,8 +13,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 /**
  * Initialize Footer Collection Loop
  * Creates infinite horizontal marquee loop using GSAP

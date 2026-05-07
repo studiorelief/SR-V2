@@ -1,7 +1,4 @@
-import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
-
-gsap.registerPlugin(Draggable);
 
 // Store Draggable instances for cleanup
 const draggableInstances: Draggable[] = [];

@@ -22,11 +22,13 @@ import './index.css';
 
 import { restartWebflow } from '@finsweet/ts-utils';
 import gsap from 'gsap';
+import { Draggable } from 'gsap/Draggable';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
 
-gsap.registerPlugin(ScrollTrigger);
-
-// console.log('[SR-V2] Script loaded');
+// Enregistrement unique des plugins GSAP (idempotent côté GSAP, mais évite
+// d'avoir à refaire le call dans chaque module qui utilise un plugin).
+gsap.registerPlugin(ScrollTrigger, Draggable, SplitText);
 
 /*
  *==========================================
@@ -135,11 +137,7 @@ import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { destroyPortfolioBaseline } from '$utils/page/portfolio/portfolioBaseline';
 import { initGlobalHero } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
-import {
-  runNamespaceAnimate,
-  runNamespaceInit,
-  runNamespaceSetup,
-} from '$utils/swup/swupNamespaces';
+import { runNamespaceRun, runNamespaceSetup } from '$utils/swup/swupNamespaces';
 
 /*
  *==========================================
@@ -315,8 +313,8 @@ const init = () => {
    */
   const runHeavyHeroInit = (): void => {
     // ScrollTriggers par namespace AVANT setupAndAnimateGlobalHero, pour matcher
-    // l'ordre du flow Swup (page:view -> runNamespaceAnimate, puis enter -> setupAndAnimateGlobalHero).
-    runNamespaceInit();
+    // l'ordre du flow Swup (page:view -> runNamespaceRun, puis enter -> setupAndAnimateGlobalHero).
+    runNamespaceRun();
     initGlobalHero();
   };
 
@@ -484,7 +482,7 @@ const init = () => {
     initNavbarCurrentState(); // Met à jour w--current sur les liens
 
     // Animations spécifiques par namespace (dès que le contenu est injecté)
-    runNamespaceAnimate();
+    runNamespaceRun();
 
     requestAnimationFrame(() => {
       restartWebflow();

@@ -3,8 +3,6 @@ import { SplitText } from 'gsap/SplitText';
 
 import { setupAndAnimateGlareHero } from '$utils/global/animations/glareHero';
 
-gsap.registerPlugin(SplitText);
-
 // Type étendu pour stocker SplitText sur l'élément
 type H2WithSplit = HTMLElement & { _splitText?: SplitText };
 
