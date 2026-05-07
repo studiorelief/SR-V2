@@ -20,13 +20,7 @@ import {
   initCmsPortfolioParallax,
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
-import {
-  initOffresMarmotte,
-  initOffresParallax,
-  initOffresParallaxBig,
-} from '$utils/page/hero/offresHero';
 import { initPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
-import { initProduitsParallax } from '$utils/page/hero/produitsHero';
 import {
   initHomeApprocheFalaiseParallax,
   initHomeApprocheLueurMouseParallax,
@@ -74,13 +68,18 @@ registerNamespace('portfolio', {
     }),
 });
 
+// Lazy-load : `offres` est un namespace 100% GSAP sans cleanup non-GSAP,
+// son module n'est téléchargé que sur navigation vers /offres. Le chunk est
+// pré-fetché par SwupPreloadPlugin au hover du lien → latence quasi-nulle.
 registerNamespace('offres', {
-  run: () =>
-    gsap.context(() => {
-      initOffresParallax();
-      initOffresParallaxBig();
-      initOffresMarmotte();
-    }),
+  run: async () => {
+    const m = await import('$utils/page/hero/offresHero');
+    return gsap.context(() => {
+      m.initOffresParallax();
+      m.initOffresParallaxBig();
+      m.initOffresMarmotte();
+    });
+  },
 });
 
 registerNamespace('approche', {
@@ -105,11 +104,14 @@ registerNamespace('home', {
     }),
 });
 
+// Lazy-load : idem `offres`, namespace 100% GSAP, chunk séparé.
 registerNamespace('produits', {
-  run: () =>
-    gsap.context(() => {
-      initProduitsParallax();
-    }),
+  run: async () => {
+    const m = await import('$utils/page/hero/produitsHero');
+    return gsap.context(() => {
+      m.initProduitsParallax();
+    });
+  },
 });
 
 registerNamespace('contact', {

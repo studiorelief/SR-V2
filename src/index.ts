@@ -102,7 +102,7 @@ import {
 } from '$utils/global/optimisations/dedupe-related-items';
 import { initDropdownFiltersClickOutside } from '$utils/global/optimisations/dropdownFilters';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
-import { mirrorClick } from '$utils/global/optimisations/mirrorClick';
+import { destroyMirrorClick, mirrorClick } from '$utils/global/optimisations/mirrorClick';
 import { initPreloader, isPreloaderVisible } from '$utils/global/preloader/preloader';
 import {
   destroyFsAttributesScripts,
@@ -232,7 +232,6 @@ const initGlobalFunctions = (): void => {
 
     // ScrollTriggers + interactions deferrables
     requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
       initButtonHover();
       initDraggable();
       initCtaFixed();
@@ -241,6 +240,12 @@ const initGlobalFunctions = (): void => {
       initCardVideoPlayer();
       initCardHoverIcon();
       initScrollbar();
+
+      // Refresh APRÈS la création des nouveaux ScrollTriggers (initCtaFixed,
+      // initCtaHeading, initAccordionScrollTrigger). Avant, le refresh
+      // tournait sur les anciens triggers déjà killés → no-op. Le double rAF
+      // laisse le browser layout/paint avant la mesure.
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     });
   });
 };
@@ -439,6 +444,7 @@ const init = () => {
     // la 1ère navigation (re-init skip via flag, plus de timeline live).
     destroySearchBar();
     destroySocialShare();
+    destroyMirrorClick();
     killSunHeroParallax();
     destroyHomeHero();
     destroyHomeServices();

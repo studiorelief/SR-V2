@@ -15,14 +15,17 @@
 
 import type gsap from 'gsap';
 
+type RunResult = void | gsap.Context | Promise<void | gsap.Context>;
+
 type NamespaceHandlers = {
   /** Appelé AVANT que le rideau se lève (`content:replace`). */
   setup?: () => void;
   /**
    * Appelé APRÈS le rideau (`page:view`) ET au boot. Peut retourner un
-   * `gsap.Context` pour profiter du revert auto au teardown.
+   * `gsap.Context` (pour cleanup auto au teardown), ou une Promise du
+   * même type quand le module est dynamiquement importé.
    */
-  run?: () => void | gsap.Context;
+  run?: () => RunResult;
 };
 
 const namespaceRegistry: Record<string, NamespaceHandlers> = {};
@@ -57,17 +60,38 @@ export const runNamespaceSetup = (): void => {
   namespaceRegistry[ns]?.setup?.();
 };
 
+const isContext = (v: unknown): v is gsap.Context =>
+  typeof v === 'object' && v !== null && typeof (v as gsap.Context).revert === 'function';
+
 /**
  * Run du namespace courant. Appelé dans `page:view` après content:replace
- * ET au tout premier chargement. Si le `run()` retourne un gsap.Context,
- * il est tracké pour le revert au prochain teardown.
+ * ET au tout premier chargement.
+ *
+ * Async-aware : un `run()` peut retourner directement un gsap.Context (sync)
+ * ou une Promise<gsap.Context> (cas dynamic import). Le context est tracké
+ * dès qu'il est résolu, pour le revert au prochain teardown.
+ *
+ * Fire-and-forget côté caller : si l'utilisateur scrolle avant la résolution
+ * de l'import, le ScrollTrigger.kill global du content:replace nettoiera de
+ * toute façon. SwupPreloadPlugin (preloadHoveredLinks) garde les chunks
+ * chauds en pratique, donc latence quasi-nulle.
  */
 export const runNamespaceRun = (): void => {
   const ns = getNamespace();
   if (!ns) return;
 
   const result = namespaceRegistry[ns]?.run?.();
-  if (result && typeof (result as gsap.Context).revert === 'function') {
-    namespaceContexts.set(ns, result as gsap.Context);
+  if (!result) return;
+
+  if (isContext(result)) {
+    namespaceContexts.set(ns, result);
+    return;
   }
+
+  // Promise<void | gsap.Context>
+  void Promise.resolve(result).then((resolved) => {
+    if (isContext(resolved)) {
+      namespaceContexts.set(ns, resolved);
+    }
+  });
 };
