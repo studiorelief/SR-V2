@@ -58,25 +58,20 @@ const shouldShowPreloader = (): boolean => !sessionStorage.getItem(PRELOADER_SHO
  * Cas où on retourne `true` :
  *   1. 1ère visite (sessionStorage `sr-preloader-shown` pas encore marqué)
  *      → préloader complet 2.5 s
- *   2. Refresh d'une inner page (hors home) : le head global Webflow force
- *      `[preloader="component"]{display:flex !important}` pour contourner le
- *      degenerate compositor Dia/WebKit. `initPreloader` fade-out après ~1 s.
+ *   2. Tout refresh (sessionStorage set) : préloader fade-out après ~1 s.
+ *      → masque les `gsap.set` initiaux du hero/SplitText/CTA pour qu'ils
+ *        soient posés derrière le rideau (pas de bump visuel "élément en
+ *        position naturelle → set → animation"). Aussi : sur les inner pages,
+ *        contourne le degenerate compositor Dia/WebKit.
  *
  * Cas où on retourne `false` :
- *   - Pas de DOM préloader, bot/Lighthouse, ou refresh sur home (pas de bug Dia
- *     à compenser → hide instant pour UX snappy).
+ *   - Pas de DOM préloader, bot/Lighthouse.
  */
 export const isPreloaderVisible = (): boolean => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
   if (!component) return false;
   if (isHeadlessAgent()) return false;
-  // 1ère visite
-  if (shouldShowPreloader()) return true;
-  // Refresh : visible uniquement sur les inner pages (le head global Webflow
-  // force le CSS display:flex là, et initPreloader fait un fade-out doux).
-  const path = window.location.pathname;
-  const isHomePage = path === '/' || path === '/index.html' || path === '';
-  return !isHomePage;
+  return true;
 };
 
 const markPreloaderAsShown = (): void => {
@@ -300,30 +295,23 @@ export const initPreloader = (): void => {
   }
 
   // Refresh / 2e visite (sessionStorage `sr-preloader-shown` set) : on ne rejoue
-  // pas le préloader complet (UX), MAIS on évite le hide instantané qui causait
-  // un flash brutal (~0.5 s) sur les refresh des inner pages — où le head global
-  // Webflow force le CSS `[preloader="component"]{display:flex !important}` pour
-  // contourner le degenerate compositor Dia/WebKit. On fade-out doucement après
-  // une durée minimale pour laisser le compositor finir sa rasterization.
+  // pas le préloader complet (UX), MAIS on garde un mini-rideau de ~1 s pour :
+  //   - masquer les `gsap.set` initiaux du hero/SplitText/CTA → pas de bump
+  //     visuel "élément en position naturelle → set → animation"
+  //   - sur les inner pages : contourner le degenerate compositor Dia/WebKit
+  //     (le head global Webflow force le CSS display:flex pour laisser le
+  //     temps au compositor de raster les SVG en background)
+  //   - éviter le flash brutal du hide instantané (~0.5 s)
+  // Cohérent home + inner page : 1 s minHold + 0.3 s fade-out partout.
   if (!shouldShowPreloader()) {
-    const path = window.location.pathname;
-    const isHomePage = path === '/' || path === '/index.html' || path === '';
-    // Home : pas de bug Dia (1 hero image eager) → hide rapide pour UX snappy.
-    // Inner pages : tampon ~1 s minimum + fade 0.3 s pour adoucir le flash et
-    // garantir que le compositor a fini de rasterizer avant qu'on lève le rideau.
-    const minHoldMs = isHomePage ? 0 : 1000;
-    const fadeDurationMs = isHomePage ? 0 : 300;
+    const minHoldMs = 1000;
+    const fadeDurationMs = 300;
 
     const cleanup = (): void => {
       component.style.display = 'none';
       component.style.visibility = 'hidden';
       document.getElementById('preloader-video-mascotte')?.remove();
     };
-
-    if (minHoldMs === 0) {
-      cleanup();
-      return;
-    }
 
     // Bloque le scroll pendant le rideau (sinon l'utilisateur peut scroller
     // PENDANT que le compositor n'est pas warm → re-déclenche le bug).
