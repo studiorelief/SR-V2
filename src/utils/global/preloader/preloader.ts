@@ -205,6 +205,15 @@ const animatePreloaderOut = (): void => {
   );
   const reuseVideoForHero = video !== null && heroMascotteContainer !== null;
 
+  // Fire `preloaderComplete` IMMÉDIATEMENT, AVANT que le rideau ne commence
+  // à fade-out. Sans ça, le hero devient progressivement visible PENDANT le
+  // fade dans sa position naturelle (CSS Webflow), puis quand l'event fire
+  // à la fin, GSAP `set` le saute en position de départ → l'utilisateur voit
+  // la saccade : "soleil/lueurs en place → disparition (set) → réapparition
+  // animée". En firant maintenant, l'init JS pose le state initial pendant
+  // que le rideau couvre encore l'écran, et l'animation joue PENDANT le fade.
+  window.dispatchEvent(new CustomEvent('preloaderComplete'));
+
   const tl = gsap.timeline({
     onComplete: () => {
       if (reuseVideoForHero && video) {
@@ -238,7 +247,6 @@ const animatePreloaderOut = (): void => {
       component.style.visibility = 'hidden';
       markPreloaderAsShown();
       document.body.style.overflow = '';
-      window.dispatchEvent(new CustomEvent('preloaderComplete'));
     },
   });
 
@@ -340,19 +348,32 @@ export const initPreloader = (): void => {
       onUpdate: () => updateLoadingDisplay(counter.value),
     });
 
-    // Fade-out après minHold puis fire `preloaderComplete` pour que les
-    // animations hero (init JS dans index.ts) démarrent SUR LE CONTENU
-    // RÉVÉLÉ et pas pendant que le rideau couvre encore l'écran.
+    // Après minHold, fire `preloaderComplete` AVANT le fade-out pour que
+    // l'init JS pose le state initial GSAP (set des hero) PENDANT que le
+    // rideau couvre encore l'écran. Sinon on voit : hero en position
+    // naturelle (visible pendant les 300 ms de fade) → set → animation
+    // = saccade ("soleil en place → disparition → réapparition").
+    //
+    // Wait 2 rAF entre l'event et le fade-out : laisse 1 frame au listener
+    // (`runHeavyHeroInit` dans index.ts) pour exécuter `runNamespaceInit`
+    // qui pose les `gsap.set` initiaux, puis 1 frame de paint stabilisé.
+    // Le fade-out joue ensuite EN PARALLÈLE des animations hero — l'utilisateur
+    // voit le rideau lever sur une scène déjà en train d'animer.
     gsap.delayedCall(minHoldMs / 1000, () => {
-      gsap.to(component, {
-        autoAlpha: 0,
-        duration: fadeDurationMs / 1000,
-        ease: 'power2.out',
-        onComplete: () => {
-          cleanup();
-          document.body.style.overflow = '';
-          window.dispatchEvent(new CustomEvent('preloaderComplete'));
-        },
+      window.dispatchEvent(new CustomEvent('preloaderComplete'));
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          gsap.to(component, {
+            autoAlpha: 0,
+            duration: fadeDurationMs / 1000,
+            ease: 'power2.out',
+            onComplete: () => {
+              cleanup();
+              document.body.style.overflow = '';
+            },
+          });
+        });
       });
     });
 
