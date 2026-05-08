@@ -3,8 +3,6 @@ import './sticker.css';
 import gsap from 'gsap';
 import { Draggable } from 'gsap/Draggable';
 
-gsap.registerPlugin(Draggable);
-
 interface StickerOptions {
   rotate?: number;
   peelBackHoverPct?: number;

@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 type InitAllAnchorFillsOptions = {
   navRoot?: ParentNode; // ex: document.querySelector("nav")!
   linkSelector?: string; // ex: 'a.anchor'

@@ -3,14 +3,69 @@ import { SplitText } from 'gsap/SplitText';
 
 import { setupAndAnimateGlareHero } from '$utils/global/animations/glareHero';
 
-gsap.registerPlugin(SplitText);
-
 // Type étendu pour stocker SplitText sur l'élément
 type H2WithSplit = HTMLElement & { _splitText?: SplitText };
 
 /**
- * Setup ET animation du hero global en une seule fonction
- * Cette fonction fait le setup puis crée la timeline d'animation
+ * Pose UNIQUEMENT l'état initial des éléments hero (positions pré-animation).
+ * À appeler tôt — typiquement au tout début de `init()`, AVANT que le
+ * préloader ne devienne visible — pour éviter un FOUC où les sun / lueurs / h2
+ * apparaissent dans leur position naturelle Webflow pendant le fade out du
+ * préloader, puis snap à l'état pré-animation au moment où l'animation démarre.
+ *
+ * Idempotent : safe si rappelé plusieurs fois (revert l'ancien SplitText
+ * avant d'en recréer un). C'est attendu : le boot pose l'état initial une
+ * fois tôt, puis `setupAndAnimateGlobalHero` (à preloaderComplete ou sur
+ * Swup transition) le rappelle pour assurer la fraîcheur sur le DOM courant.
+ */
+export const setupGlobalHeroInitialState = (): void => {
+  const sections = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-section"]');
+  const suns = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-sun"]');
+  const lueurs = document.querySelectorAll<HTMLElement>('[transition-trigger="hero-lueurs"]');
+
+  if (sections.length === 0 && suns.length === 0 && lueurs.length === 0) return;
+
+  // 1. Suns : position basse, prêts à remonter
+  if (suns.length > 0) {
+    gsap.set(suns, { yPercent: 25 });
+  }
+
+  // 2. Lueurs : position haute, invisibles, scale réduit (sauf mobile)
+  if (lueurs.length > 0) {
+    const isMobile = window.matchMedia('(max-width: 479px)').matches;
+    gsap.set(lueurs, {
+      yPercent: -25,
+      opacity: 0,
+      scale: isMobile ? 1 : 0.75,
+      transformOrigin: 'top',
+    });
+  }
+
+  // 3. h2 → SplitText + chars invisibles, prêts à remonter
+  sections.forEach((section) => {
+    const h2 = section.querySelector('h2') as H2WithSplit | null;
+    if (!h2) return;
+
+    if (h2._splitText) {
+      h2._splitText.revert();
+    }
+
+    const split = new SplitText(h2, {
+      type: 'chars',
+      charsClass: 'char',
+    });
+    h2._splitText = split;
+
+    gsap.set(split.chars, { opacity: 0, yPercent: 50 });
+  });
+};
+
+/**
+ * Setup ET animation du hero global en une seule fonction.
+ * Cette fonction ré-applique l'état initial (idempotent — safe si déjà fait
+ * au boot via `setupGlobalHeroInitialState`) puis ajoute les animations à
+ * la timeline parent.
+ *
  * @param parentTl - Timeline parent à laquelle ajouter les animations
  * @param startPosition - Position de départ dans la timeline parent
  */
@@ -27,15 +82,15 @@ export const setupAndAnimateGlobalHero = (
   if (sections.length === 0 && suns.length === 0 && lueurs.length === 0 && heroTags.length === 0)
     return;
 
+  // Garantit l'état initial — couvre le cas Swup transition (DOM fraîchement
+  // injecté), et reste idempotent si déjà posé au boot.
+  setupGlobalHeroInitialState();
+
   // ============================================
-  // 1. SUNS - Setup + Animation
+  // 1. SUNS - Animation
   // ============================================
   if (suns.length > 0) {
     suns.forEach((sun) => {
-      // Setup
-      gsap.set(sun, { yPercent: 25 });
-
-      // Animation
       parentTl.to(
         sun,
         {
@@ -50,21 +105,10 @@ export const setupAndAnimateGlobalHero = (
   }
 
   // ============================================
-  // 2. LUEURS - Setup + Animation (inverse du sun, du haut vers le bas)
+  // 2. LUEURS - Animation (descend du haut avec scale)
   // ============================================
   if (lueurs.length > 0) {
-    const isMobile = window.matchMedia('(max-width: 479px)').matches;
-
     lueurs.forEach((lueur) => {
-      // Setup - position initiale en haut avec scale réduit et perspective top-center
-      gsap.set(lueur, {
-        yPercent: -25,
-        opacity: 0,
-        scale: isMobile ? 1 : 0.75,
-        transformOrigin: 'top',
-      });
-
-      // Animation - descend vers position finale avec scale normal
       parentTl.to(
         lueur,
         {
@@ -81,46 +125,27 @@ export const setupAndAnimateGlobalHero = (
   }
 
   // ============================================
-  // 3 & 4. Pour chaque section : h2 SplitText + hero_content
+  // 3. h2 SplitText - Animation
   // ============================================
   sections.forEach((section) => {
     const h2 = section.querySelector('h2') as H2WithSplit | null;
+    if (!h2 || !h2._splitText) return;
 
-    // H2 - Setup + Animation avec SplitText
-    if (h2) {
-      // Revert l'ancien SplitText s'il existe
-      if (h2._splitText) {
-        h2._splitText.revert();
-      }
-
-      // Créer un nouveau SplitText
-      const split = new SplitText(h2, {
-        type: 'chars',
-        charsClass: 'char',
-      });
-
-      h2._splitText = split;
-
-      // Setup (hidden)
-      gsap.set(split.chars, { opacity: 0, yPercent: 50 });
-
-      // Animation - même temps que sun
-      parentTl.to(
-        split.chars,
-        {
-          opacity: 1,
-          yPercent: 0,
-          duration: 0.5,
-          stagger: 0.03,
-          ease: 'back.out(1.7)',
-        },
-        startPosition
-      );
-    }
+    parentTl.to(
+      h2._splitText.chars,
+      {
+        opacity: 1,
+        yPercent: 0,
+        duration: 0.5,
+        stagger: 0.03,
+        ease: 'back.out(1.7)',
+      },
+      startPosition
+    );
   });
 
   // ============================================
-  // 5. GLARE sur hero-tag (après SplitText ~1s ou immédiatement)
+  // 4. GLARE sur hero-tag (après SplitText ~1s ou immédiatement)
   // ============================================
   if (heroTags.length > 0) {
     // Si SplitText existe, attendre ~1s, sinon démarrer tout de suite

@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 export const initHomeServices = (): void => {
   const section = document.querySelector<HTMLElement>('[home-services="cards-wrapper"]');
   const cards = document.querySelectorAll<HTMLElement>('[home-services="cards"]');

@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 /**
  * Animation de chute du monkey
  * L'élément tombe depuis yPercent -100% et rotate -10° vers 0% et 0°

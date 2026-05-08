@@ -1,8 +1,265 @@
-# Finsweet Developer Starter
+# Studio Relief — V2 Front-End
 
-A starter template for both Client & Power projects.
+Custom TypeScript + GSAP + Swup, packagé en bundle ESM avec esbuild, déployé via CDN GitHub et injecté dans Webflow custom code.
 
-Before starting to work with this template, please take some time to read through the documentation.
+> **Pour les conventions du starter Finsweet sous-jacent (build, CI, Changesets, etc.), voir [§ Finsweet developer starter](#finsweet-developer-starter) plus bas.**
+
+## Sommaire
+
+- [Stack](#stack)
+- [Architecture](#architecture)
+  - [Lifecycle Swup](#lifecycle-swup)
+  - [Namespace registry](#namespace-registry)
+  - [Pattern init / destroy](#pattern-init--destroy)
+  - [Heavy hero defer (cold load WebKit)](#heavy-hero-defer-cold-load-webkit)
+  - [Persistant vs page-level (#swup)](#persistant-vs-page-level-swup)
+- [Dev local](#dev-local)
+- [Quality checks](#quality-checks)
+- [Conventions](#conventions)
+- [Ajouter une nouvelle page / namespace](#ajouter-une-nouvelle-page--namespace)
+
+---
+
+## Stack
+
+|                   |                                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| Front HTML/CSS    | **Webflow** (Client-First conventions)                                                             |
+| TS/JS bundler     | **esbuild** (ESM, code-splitting, format ES2020 prod)                                              |
+| Page transitions  | **Swup 4** (`@swup/head-plugin`, `@swup/preload-plugin`, `@swup/scroll-plugin`, `@swup/js-plugin`) |
+| Animations        | **GSAP 3.13** (`ScrollTrigger`, `Draggable`, `SplitText`)                                          |
+| Sliders           | **Swiper 12**                                                                                      |
+| CMS helpers       | **Finsweet Attributes v2** (`@finsweet/ts-utils`)                                                  |
+| Lottie            | `@lottiefiles/dotlottie-web` + `@lottiefiles/lottie-player`                                        |
+| Backend (form)    | **Supabase** (`@supabase/supabase-js`)                                                             |
+| Code highlighting | **Shiki** (lazy-loaded chunk)                                                                      |
+
+Entry point unique : [src/index.ts](src/index.ts). Tous les plugins GSAP sont enregistrés une seule fois en haut du fichier.
+
+---
+
+## Architecture
+
+### Lifecycle Swup
+
+```
+Click sur lien interne (hors hash, hors self-link, hors anchor)
+│
+├─ visit:start
+├─ leaveAnimation        → swupLeaveAnimation() — rideau orange descend, animateGlobalHeroLeave (sun + lueurs sortent)
+├─ content:replace       (le rideau couvre l'écran, le DOM va être remplacé)
+│   ├─ ScrollTrigger.getAll().kill()       — kill global de tous les triggers
+│   ├─ runNamespaceSetup()                 — ctx.revert() du namespace sortant + setup() custom
+│   ├─ destroy*()                          — sticker, draggable, button, lottie, lazyVideos, sliders, search, social, mirror, sun, …
+│   └─ updateFavicon()                     — switch favicon par namespace
+├─ enterAnimation        → swupEnterAnimation() — rideau remonte, setupAndAnimateGlobalHero (entrée hero global)
+├─ page:view             (le contenu est injecté, le rideau est remonté)
+│   ├─ initGlobalFunctions()               — re-init listeners et animations globales (sticker, footer, hero global, …)
+│   ├─ initNavbarCurrentState()            — w--current sur les liens
+│   ├─ runNamespaceRun()                   — anims spécifiques au namespace courant (parallax, etc.)
+│   └─ rAF: restartWebflow + restartFsAttributesModules + dedupeRelatedItems
+└─ visit:end             → initCtaAnimation, initRessources*, …
+```
+
+**Règle d'or** : tout `init*` qui pose un listener doit avoir un `destroy*` paired appelé dans `content:replace`, **sauf** s'il vit hors `#swup` (élément persistant) — dans ce cas l'init doit être idempotent (flag attribute) et appelé une seule fois au boot.
+
+### Namespace registry
+
+Chaque page Webflow a un attribut `data-swup-namespace="..."` sur son `<main id="swup">`. Le registry centralise les init / setup par namespace :
+
+```ts
+// src/utils/swup/swupNamespaceRegistry.ts
+registerNamespace('approche', {
+  setup: () => {
+    /* teardown perso (rare, ctx.revert le fait déjà) */
+  },
+  run: () =>
+    gsap.context(() => {
+      // toutes les anims/scrollTriggers du namespace
+      initApprocheParallax();
+      initApprocheHeroScroll();
+      // ...
+    }),
+});
+```
+
+`run()` est appelé sur `page:view` ET au boot (premier chargement). Si `run()` retourne un `gsap.Context`, le registry le tracke automatiquement et appellera `ctx.revert()` au prochain `setup()` (au teardown du namespace).
+
+`setup()` est optionnel et fire au `content:replace` AVANT que le DOM ne soit remplacé. À utiliser pour :
+
+- Les cleanups **non-GSAP** que `ctx.revert()` ne couvre pas (cycles `onComplete` récursifs, observers, listeners externes, debounce timers).
+- Préparer l'état initial du namespace entrant si nécessaire.
+
+7 namespaces enregistrés : `home`, `approche`, `offres`, `produits`, `portfolio`, `cms-portfolio`, `contact`.
+
+### Pattern init / destroy
+
+```ts
+// Module-scope state pour permettre un cleanup propre
+const cleanups = new Set<() => void>();
+
+export const initFoo = (): void => {
+  const el = document.querySelector('.foo');
+  if (!el) return; // null check obligatoire
+
+  const handler = () => {
+    /* ... */
+  };
+  el.addEventListener('click', handler);
+  cleanups.add(() => el.removeEventListener('click', handler));
+};
+
+export const destroyFoo = (): void => {
+  cleanups.forEach((fn) => fn());
+  cleanups.clear();
+};
+```
+
+`destroyFoo` est appelé dans le `swup.hooks.on('content:replace', …)` de [src/index.ts](src/index.ts).
+
+### Heavy hero defer (cold load WebKit)
+
+Sur direct refresh d'une inner page (`/approche`, `/offres`, …), le browser doit décoder ~20 MB de WebP hero (parallax animals, lueurs, falaises, mascotte) en parallèle. Si on init GSAP en même temps :
+
+- 28+ éléments avec `will-change: transform` → autant de compositor layers.
+- ScrollTriggers + timelines hero qui consomment du main thread.
+- Sur WebKit/DIA, le scheduler ne lisse pas → 86 % du frame budget en Commit, **7 FPS visible**.
+
+Solution dans [src/index.ts](src/index.ts) (`runHeavyHeroInit`) : on attend `window.load` PUIS `img.decode()` sur les images hero **avant** de créer les compositor layers et les triggers. Les images mobile-only (display:none sur desktop) sont filtrées via `img.complete && img.naturalWidth > 0` pour éviter un hang infini. Safety timeout 1500 ms.
+
+**Pourquoi ça marche en navigation Swup** : Swup pré-fetch et pré-décode les images en background AVANT de swap le DOM. Le timing diffère du cold load direct.
+
+### Persistant vs page-level (#swup)
+
+```
+<body>
+  <nav class="nav_component">    ← PERSISTANT (hors #swup)
+    ...
+  </nav>
+
+  <main id="swup" data-swup-namespace="home">    ← PAGE-LEVEL (DOM remplacé à chaque transition)
+    ...
+  </main>
+
+  <footer class="footer_component">    ← PERSISTANT (hors #swup)
+    ...
+  </footer>
+</body>
+```
+
+| Composant                                                           | Position              | Stratégie cleanup                                                            |
+| ------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------- |
+| Navbar                                                              | hors `#swup`          | Init unique au boot, listeners attachés une fois pour la session             |
+| Footer                                                              | hors `#swup`          | Init flag-gated (`data-footer-loop-initialized`), idempotent sur `page:view` |
+| `[scroll-top]` button                                               | hors `#swup` (footer) | Flag `data-scroll-top-init`                                                  |
+| Hero, sliders, sticker, search, share, accordions, …, tout le reste | dans `#swup`          | DOM swap → `init/destroy` paired dans `content:replace`                      |
+
+---
+
+## Dev local
+
+```bash
+pnpm install
+pnpm dev          # esbuild watch + serveur localhost:3000
+```
+
+Dans Webflow custom code (Project Settings → Custom Code → Footer Code), injecter en dev :
+
+```html
+<script type="module" src="http://localhost:3000/index.js"></script>
+<link href="http://localhost:3000/index.css" rel="stylesheet" type="text/css" />
+```
+
+> **Important** : `type="module"` est obligatoire — esbuild produit de l'ESM avec code-splitting (Shiki, DotLottie, Supabase, Marker chargés en chunks séparés).
+
+En prod, le bundle vient du CDN GitHub Pages du repo (master ou tag).
+
+## Quality checks
+
+À passer avant chaque commit :
+
+```bash
+pnpm check        # tsc --noEmit
+pnpm lint:fix     # eslint --fix
+pnpm lint         # eslint + prettier --check
+pnpm build        # build production dans dist/
+```
+
+Smoke test post-deploy sur Webflow staging :
+
+1. Cold load `/approche` (direct refresh) → hero animations smooth ≥ 60 FPS
+2. Nav Home → Approche → Portfolio → CMS portfolio → Contact → Home (5 pages)
+3. Console : `ScrollTrigger.getAll().length` stable entre 2 visites de la même page
+4. DevTools Memory : "Detached HTMLElement" count stable entre 2 visites
+
+## Conventions
+
+### CSS — Client-First (côté Webflow)
+
+- Custom classes : `component_element` avec underscores (`header_content`, `form_input`)
+- Utility classes : pas d'underscore, `property-type-value` (`margin-bottom-large`, `text-color-primary`)
+- Modifiers : préfixe `is-` en combo class (`button` + `is-brand`)
+- Pas d'abréviations
+
+### TypeScript
+
+- `init*` / `destroy*` paired prefix
+- Module-scope state pour stocker les références (timelines, observers, listener cleanups)
+- `if (!element) return;` early-return obligatoire avant tout `addEventListener`
+- Import des plugins GSAP : valeur uniquement, le `registerPlugin` est centralisé dans `src/index.ts`
+- Path alias `$utils/*` pour `src/utils/*`
+- JSDoc seulement quand le **WHY** est non-évident (préférer un nom de fonction clair à un commentaire)
+
+### Commit messages
+
+Conventional Commits : `feat`, `fix`, `perf`, `refactor`, `chore`, `docs` + scope optionnel.
+
+```
+perf(swup): close listener leaks on page transitions
+fix(offres): hotfix cold-load slowness
+refactor(gsap): centralize plugin registration
+```
+
+---
+
+## Ajouter une nouvelle page / namespace
+
+1. **Côté Webflow** : ajouter `data-swup-namespace="ma-page"` sur le `<main id="swup">` de la page.
+
+2. **Côté code** : créer le module d'animations dans [src/utils/page/{ma-page}/](src/utils/page/) et exporter des `init*` (et `destroy*` si listeners non-GSAP).
+
+3. **Enregistrer le namespace** dans [src/utils/swup/swupNamespaceRegistry.ts](src/utils/swup/swupNamespaceRegistry.ts) :
+
+   ```ts
+   registerNamespace('ma-page', {
+     run: () =>
+       gsap.context(() => {
+         initMaPageAnim();
+         // ...
+       }),
+   });
+   ```
+
+4. **Si listeners non-GSAP** (mousemove, debounce, observer, cycle récursif via onComplete), ajouter aussi un `setup` qui appelle le destroy explicite :
+
+   ```ts
+   registerNamespace('ma-page', {
+     setup: () => destroyMaPageListeners(),
+     run: () =>
+       gsap.context(() => {
+         initMaPageAnim();
+         initMaPageListeners();
+       }),
+   });
+   ```
+
+5. **Si la page a un hero global** (sun, lueurs, h2 SplitText, hero-tag glare), pas d'action — ces anims sont gérées par [src/utils/swup/swupGlobalHero.ts](src/utils/swup/swupGlobalHero.ts) via les attributs `transition-trigger="hero-section|hero-sun|hero-lueurs|hero-tag"`.
+
+---
+
+# Finsweet developer starter
+
+> Conventions et outils du starter Finsweet sous-jacent (build, CI, Changesets, …). Conservé tel quel pour référence.
 
 ## Reference
 

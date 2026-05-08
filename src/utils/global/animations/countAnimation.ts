@@ -7,8 +7,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
  * L'animation se déclenche quand la <section> parente entre dans le viewport.
  */
 
-gsap.registerPlugin(ScrollTrigger);
-
 const SELECTOR = '.stack_tools_heading-number [fs-list-element="items-count"]';
 const DURATION = 1.5;
 const DEBOUNCE_MS = 400;

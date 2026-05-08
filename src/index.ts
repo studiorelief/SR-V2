@@ -22,11 +22,13 @@ import './index.css';
 
 import { restartWebflow } from '@finsweet/ts-utils';
 import gsap from 'gsap';
+import { Draggable } from 'gsap/Draggable';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
 
-gsap.registerPlugin(ScrollTrigger);
-
-// console.log('[SR-V2] Script loaded');
+// Enregistrement unique des plugins GSAP (idempotent côté GSAP, mais évite
+// d'avoir à refaire le call dans chaque module qui utilise un plugin).
+gsap.registerPlugin(ScrollTrigger, Draggable, SplitText);
 
 /*
  *==========================================
@@ -41,7 +43,7 @@ import {
   destroyCardVideoPlayer,
   initCardVideoPlayer,
 } from '$utils/component/cards/cardVideoPlayer';
-import { initSearchBar } from '$utils/component/form/searchBar';
+import { destroySearchBar, initSearchBar } from '$utils/component/form/searchBar';
 import { initAiShare } from '$utils/component/global/aiShare';
 import { initBeforeAfter } from '$utils/component/global/beforeAfter';
 import { destroyAllButtons, initButtonHover } from '$utils/component/global/button';
@@ -57,8 +59,8 @@ import {
   initNavbarTriggers,
 } from '$utils/component/global/navbar';
 import { initScrollbar } from '$utils/component/global/scrollbar';
-import { initSocialShare } from '$utils/component/global/socialShare';
-import { initSticker } from '$utils/component/global/sticker';
+import { destroySocialShare, initSocialShare } from '$utils/component/global/socialShare';
+import { destroyAllStickers, initSticker } from '$utils/component/global/sticker';
 import { initTooltip } from '$utils/component/global/tooltip';
 import { initAllAnchorFills } from '$utils/component/section/anchor';
 import { destroyClientLoop, initClientLoop } from '$utils/component/section/clientsLoop';
@@ -89,7 +91,7 @@ import {
 import { destroyCountAnimation, initCountAnimation } from '$utils/global/animations/countAnimation';
 import { destroyLottieFiles, initLottieFiles } from '$utils/global/animations/lottieFiles';
 import { initScrollTop } from '$utils/global/animations/scrollTop';
-import { initSunHeroParallax } from '$utils/global/animations/sunHero';
+import { initSunHeroParallax, killSunHeroParallax } from '$utils/global/animations/sunHero';
 import { initTextPath } from '$utils/global/animations/textPath';
 import { initCustomFavicon, updateFavicon } from '$utils/global/brand/customFav';
 import { initCmsCodeBlock } from '$utils/global/optimisations/cmsCodeBlock';
@@ -100,7 +102,7 @@ import {
 } from '$utils/global/optimisations/dedupe-related-items';
 import { initDropdownFiltersClickOutside } from '$utils/global/optimisations/dropdownFilters';
 import { destroyLazyVideos, initLazyVideos } from '$utils/global/optimisations/lazyVideo';
-import { mirrorClick } from '$utils/global/optimisations/mirrorClick';
+import { destroyMirrorClick, mirrorClick } from '$utils/global/optimisations/mirrorClick';
 import { initPreloader, isPreloaderVisible } from '$utils/global/preloader/preloader';
 import {
   destroyFsAttributesScripts,
@@ -133,13 +135,9 @@ import {
 import { destroyHomeServices, initHomeServices } from '$utils/page/home/homeServices';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { destroyPortfolioBaseline } from '$utils/page/portfolio/portfolioBaseline';
-import { initGlobalHero } from '$utils/swup/swupGlobalHero';
+import { initGlobalHero, setupGlobalHeroInitialState } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
-import {
-  runNamespaceAnimate,
-  runNamespaceInit,
-  runNamespaceSetup,
-} from '$utils/swup/swupNamespaces';
+import { runNamespaceRun, runNamespaceSetup } from '$utils/swup/swupNamespaces';
 
 /*
  *==========================================
@@ -234,7 +232,6 @@ const initGlobalFunctions = (): void => {
 
     // ScrollTriggers + interactions deferrables
     requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
       initButtonHover();
       initDraggable();
       initCtaFixed();
@@ -243,6 +240,12 @@ const initGlobalFunctions = (): void => {
       initCardVideoPlayer();
       initCardHoverIcon();
       initScrollbar();
+
+      // Refresh APRÈS la création des nouveaux ScrollTriggers (initCtaFixed,
+      // initCtaHeading, initAccordionScrollTrigger). Avant, le refresh
+      // tournait sur les anciens triggers déjà killés → no-op. Le double rAF
+      // laisse le browser layout/paint avant la mesure.
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     });
   });
 };
@@ -259,6 +262,15 @@ const initGlobalFunctions = (): void => {
  * Premier chargement de la page + initialisation Swup
  */
 const init = () => {
+  // Pose l'état initial du hero (sun yPercent:25, lueurs invisibles, h2 chars
+  // invisibles) AVANT que le préloader ne devienne visible. Sans ça, les
+  // éléments hero apparaissent dans leur position naturelle Webflow pendant
+  // le fade out du préloader, puis snap à l'état pré-animation au moment
+  // où l'animation démarre → FOUC visible. Idempotent : `setupAndAnimateGlobalHero`
+  // (appelé après preloaderComplete via runHeavyHeroInit) le rappellera mais
+  // c'est safe.
+  setupGlobalHeroInitialState();
+
   // Preloader - doit être initialisé en premier (uniquement première visite)
   initPreloader();
 
@@ -315,8 +327,8 @@ const init = () => {
    */
   const runHeavyHeroInit = (): void => {
     // ScrollTriggers par namespace AVANT setupAndAnimateGlobalHero, pour matcher
-    // l'ordre du flow Swup (page:view -> runNamespaceAnimate, puis enter -> setupAndAnimateGlobalHero).
-    runNamespaceInit();
+    // l'ordre du flow Swup (page:view -> runNamespaceRun, puis enter -> setupAndAnimateGlobalHero).
+    runNamespaceRun();
     initGlobalHero();
   };
 
@@ -433,6 +445,16 @@ const init = () => {
     destroyAccordionScrollTrigger();
     destroyCardVideoPlayer();
     destroyCardHoverIcon();
+    destroyAllStickers();
+    // destroyFooter() volontairement NON appelé : le footer est PERSISTANT
+    // (hors #swup). Le DOM survit la transition, son init est idempotent
+    // via le flag `data-footer-loop-initialized` + le filter ScrollTrigger
+    // dans initFooterDrop. Kill la timeline ici casserait le marquee après
+    // la 1ère navigation (re-init skip via flag, plus de timeline live).
+    destroySearchBar();
+    destroySocialShare();
+    destroyMirrorClick();
+    killSunHeroParallax();
     destroyHomeHero();
     destroyHomeServices();
     destroyMonkeyFall();
@@ -475,7 +497,7 @@ const init = () => {
     initNavbarCurrentState(); // Met à jour w--current sur les liens
 
     // Animations spécifiques par namespace (dès que le contenu est injecté)
-    runNamespaceAnimate();
+    runNamespaceRun();
 
     requestAnimationFrame(() => {
       restartWebflow();

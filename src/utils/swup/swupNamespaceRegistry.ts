@@ -1,3 +1,5 @@
+import gsap from 'gsap';
+
 import { initCal } from '$utils/global/script/loadCal';
 import {
   initApprocheCardFloat,
@@ -19,6 +21,7 @@ import {
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
 import {
+  destroyOffresMarmotte,
   initOffresMarmotte,
   initOffresParallax,
   initOffresParallaxBig,
@@ -37,102 +40,91 @@ import { registerNamespace } from '$utils/swup/swupNamespaces';
 
 /*
  *==========================================
- * SWUP
- * ↳ NAMESPACES REGISTRY
+ * SWUP NAMESPACES REGISTRY
+ *
+ * Pattern :
+ * - Namespaces GSAP-only (approche, home, offres, produits, cms-portfolio)
+ *   wrap leurs inits dans `gsap.context()` → cleanup auto au teardown.
+ * - Namespaces avec listeners DOM custom (contact) ou destroy explicite
+ *   existant (portfolio) : pas de gsap.context, juste run().
+ *
+ * Les `destroy*` explicites côté `index.ts:content:replace` restent en place
+ * comme garde-fou ; le ctx.revert() les rend redondants pour la partie GSAP
+ * mais ne casse pas le flow (idempotent).
  *==========================================
  */
 
 registerNamespace('cms-portfolio', {
   setup: initSetupCmsPortfolioHero,
-  animate: () => {
-    initAnimateCmsPortfolioHero();
-    initCmsPortfolioParallax();
-  },
-  init: () => {
-    initCmsPortfolioHero();
-    initCmsPortfolioParallax();
-  },
+  run: () =>
+    gsap.context(() => {
+      initCmsPortfolioHero();
+      initAnimateCmsPortfolioHero();
+      initCmsPortfolioParallax();
+    }),
 });
 
 registerNamespace('portfolio', {
   setup: () => {
     destroyPortfolioBaseline();
   },
-  animate: () => {
-    initPortfolioSecondPlan();
-    initPortfolioBaseline();
-  },
-  init: () => {
-    initPortfolioSecondPlan();
-    initPortfolioBaseline();
-  },
+  run: () =>
+    gsap.context(() => {
+      initPortfolioSecondPlan();
+      initPortfolioBaseline();
+    }),
 });
 
+// Note : tentative de lazy-load (Phase 3 initiale) reverté.
+// Le gain bundle (~1.8KB) ne compensait pas le round-trip réseau supplémentaire
+// sur cold load /offres. setup() kill explicitement la marmotte (cycle récursif
+// via onComplete = en dehors du gsap.context, donc non couvert par ctx.revert).
 registerNamespace('offres', {
-  animate: () => {
-    initOffresParallax();
-    initOffresParallaxBig();
-    initOffresMarmotte();
+  setup: () => {
+    destroyOffresMarmotte();
   },
-  init: () => {
-    initOffresParallax();
-    initOffresParallaxBig();
-    initOffresMarmotte();
-  },
+  run: () =>
+    gsap.context(() => {
+      initOffresParallax();
+      initOffresParallaxBig();
+      initOffresMarmotte();
+    }),
 });
 
 registerNamespace('approche', {
-  animate: () => {
-    initApprocheParallax();
-    initApprocheParallaxInvert();
-    initApprocheHeroScroll();
-    initApprocheGrotteScroll();
-    initApprocheProcessParallax();
-    initApprocheStepScale();
-    initApprocheLampAnimations();
-    initApprocheCardFloat();
-  },
-  init: () => {
-    initApprocheParallax();
-    initApprocheParallaxInvert();
-    initApprocheHeroScroll();
-    initApprocheGrotteScroll();
-    initApprocheProcessParallax();
-    initApprocheStepScale();
-    initApprocheLampAnimations();
-    initApprocheCardFloat();
-  },
+  run: () =>
+    gsap.context(() => {
+      initApprocheParallax();
+      initApprocheParallaxInvert();
+      initApprocheHeroScroll();
+      initApprocheGrotteScroll();
+      initApprocheProcessParallax();
+      initApprocheStepScale();
+      initApprocheLampAnimations();
+      initApprocheCardFloat();
+    }),
 });
 
 registerNamespace('home', {
-  animate: () => {
-    initHomeApprocheFalaiseParallax();
-    initHomeApprocheLueurMouseParallax();
-  },
-  init: () => {
-    initHomeApprocheFalaiseParallax();
-    initHomeApprocheLueurMouseParallax();
-  },
+  run: () =>
+    gsap.context(() => {
+      initHomeApprocheFalaiseParallax();
+      initHomeApprocheLueurMouseParallax();
+    }),
 });
 
 registerNamespace('produits', {
-  animate: () => {
-    initProduitsParallax();
-  },
-  init: () => {
-    initProduitsParallax();
-  },
+  run: () =>
+    gsap.context(() => {
+      initProduitsParallax();
+    }),
 });
 
 registerNamespace('contact', {
-  animate: () => {
-    initContactMultiStep();
-    initContactFileUpload();
-    initContactLogic();
-    initContactSuccess();
-    initCal();
-  },
-  init: () => {
+  run: () => {
+    // Pas de gsap.context : ce namespace gère majoritairement des listeners
+    // DOM (formulaire multi-step, file upload) et des intégrations externes
+    // (Cal.com). Les inits gèrent leur propre cleanup en interne.
     initContactMultiStep();
     initContactFileUpload();
     initContactLogic();

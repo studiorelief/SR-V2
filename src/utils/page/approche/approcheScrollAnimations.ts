@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 let heroScrollTrigger: ScrollTrigger | null = null;
 let grotteScrollTrigger: ScrollTrigger | null = null;
 let parallaxScrollTriggers: ScrollTrigger[] = [];

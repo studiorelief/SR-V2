@@ -1,8 +1,6 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-
 /**
  * Animation parallax globale du soleil hero
  * Fonctionne sur toutes les pages ayant un élément [transition-trigger="hero-sun"]
@@ -67,12 +65,21 @@ export const initSunHeroParallax = (): void => {
 };
 
 /**
- * Nettoie tous les ScrollTriggers liés aux soleils hero
+ * Nettoie tous les ScrollTriggers liés aux soleils hero + reset le willChange.
+ * Appelé sur Swup content:replace : sans ce cleanup, willChange:'transform'
+ * reste sur les nodes détachés et garde un compositor layer alloué pour rien.
  */
 export const killSunHeroParallax = (): void => {
   ScrollTrigger.getAll().forEach((st) => {
     if (typeof st.vars.id === 'string' && st.vars.id.startsWith('hero-sun-parallax')) {
       st.kill();
     }
+  });
+
+  const suns = document.querySelectorAll<HTMLElement>(
+    '[transition-trigger="hero-sun"], [transition-trigger="hero-lueurs"]'
+  );
+  suns.forEach((sun) => {
+    gsap.set(sun, { willChange: 'auto' });
   });
 };
