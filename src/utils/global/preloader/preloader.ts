@@ -55,15 +55,28 @@ const shouldShowPreloader = (): boolean => !sessionStorage.getItem(PRELOADER_SHO
  * jusqu'à `preloaderComplete` pour qu'il soit visible, plutôt que joué derrière
  * le rideau.
  *
- * Conditions miroirs de l'early-return de `initPreloader()` :
- *   - Le component DOM existe
- *   - Pas un bot / Lighthouse / etc.
- *   - sessionStorage `sr-preloader-shown` pas encore marqué (1ère visite)
+ * Cas où on retourne `true` :
+ *   1. 1ère visite (sessionStorage `sr-preloader-shown` pas encore marqué)
+ *      → préloader complet 2.5 s
+ *   2. Refresh d'une inner page (hors home) : le head global Webflow force
+ *      `[preloader="component"]{display:flex !important}` pour contourner le
+ *      degenerate compositor Dia/WebKit. `initPreloader` fade-out après ~1 s.
+ *
+ * Cas où on retourne `false` :
+ *   - Pas de DOM préloader, bot/Lighthouse, ou refresh sur home (pas de bug Dia
+ *     à compenser → hide instant pour UX snappy).
  */
 export const isPreloaderVisible = (): boolean => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
   if (!component) return false;
-  return !isHeadlessAgent() && shouldShowPreloader();
+  if (isHeadlessAgent()) return false;
+  // 1ère visite
+  if (shouldShowPreloader()) return true;
+  // Refresh : visible uniquement sur les inner pages (le head global Webflow
+  // force le CSS display:flex là, et initPreloader fait un fade-out doux).
+  const path = window.location.pathname;
+  const isHomePage = path === '/' || path === '/index.html' || path === '';
+  return !isHomePage;
 };
 
 const markPreloaderAsShown = (): void => {
@@ -293,16 +306,6 @@ export const initPreloader = (): void => {
     const minHoldMs = isHomePage ? 0 : 1000;
     const fadeDurationMs = isHomePage ? 0 : 300;
 
-    // Pause la vidéo immédiat : pas besoin qu'elle joue pendant un fade.
-    const video = document.getElementById('preloader-video-mascotte') as HTMLVideoElement | null;
-    if (video) {
-      try {
-        video.pause();
-      } catch {
-        /* noop */
-      }
-    }
-
     const cleanup = (): void => {
       component.style.display = 'none';
       component.style.visibility = 'hidden';
@@ -314,14 +317,44 @@ export const initPreloader = (): void => {
       return;
     }
 
-    setTimeout(() => {
+    // Bloque le scroll pendant le rideau (sinon l'utilisateur peut scroller
+    // PENDANT que le compositor n'est pas warm → re-déclenche le bug).
+    document.body.style.overflow = 'hidden';
+
+    // Initialise visiblement le préloader : count à 0%, line à 0%.
+    updateLoadingDisplay(0);
+    const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
+    if (lineElement) {
+      gsap.set(lineElement, { width: '0%' });
+    }
+
+    // Lance la vidéo (cohérence visuelle avec la 1ère visite).
+    initPreloaderVideo();
+
+    // Anime le count 0 → 100 % pendant le minHold (au lieu de rester figé).
+    const counter = { value: 0 };
+    gsap.to(counter, {
+      value: 100,
+      duration: minHoldMs / 1000,
+      ease: 'power2.out',
+      onUpdate: () => updateLoadingDisplay(counter.value),
+    });
+
+    // Fade-out après minHold puis fire `preloaderComplete` pour que les
+    // animations hero (init JS dans index.ts) démarrent SUR LE CONTENU
+    // RÉVÉLÉ et pas pendant que le rideau couvre encore l'écran.
+    gsap.delayedCall(minHoldMs / 1000, () => {
       gsap.to(component, {
         autoAlpha: 0,
         duration: fadeDurationMs / 1000,
         ease: 'power2.out',
-        onComplete: cleanup,
+        onComplete: () => {
+          cleanup();
+          document.body.style.overflow = '';
+          window.dispatchEvent(new CustomEvent('preloaderComplete'));
+        },
       });
-    }, minHoldMs);
+    });
 
     return;
   }
