@@ -328,8 +328,8 @@ const init = () => {
   };
 
   /**
-   * Force le décodage GPU + la rasterization compositor des images hero +
-   * cta_background AVANT de poser will-change.
+   * Force le décodage GPU complet des images hero + cta_background AVANT de
+   * poser will-change.
    *
    * `window.load` fire quand les images sont DOWNLOADED (img.complete === true),
    * mais sur WebKit/DIA, le décodage + upload GPU peut être encore en cours
@@ -338,51 +338,41 @@ const init = () => {
    * Si on init GSAP juste après load, on alloue 28+ compositor layers PENDANT
    * que WebKit décode encore → main thread sature, 45 FPS au lieu de 120.
    *
-   * Phase 1 — `img.decode()` : retourne une Promise qui resolve quand l'image
-   * est full décodée et prête à compositer. EFFICACE pour WebP/PNG/JPG (le
-   * décodage prend 200-500 ms sur de gros assets), mais NO-OP pour les SVG
-   * (le decode = parsing XML, ~5 ms) → la Promise resolve avant que le SVG
-   * soit rasterizé en GPU. /offres n'a QUE des SVG dans son hero (6 SVG +
-   * 8 CTA SVG) → tampon decode nul → bug Dia.
+   * `img.decode()` retourne une Promise qui resolve UNIQUEMENT quand l'image
+   * est full décodée et prête à compositer. C'est l'équivalent du temps
+   * "rideau swup" pour le cold load sur pages avec WebP/PNG/JPG.
    *
-   * Phase 2 — double-rAF + 300 ms : laisse le compositor faire au moins un
-   * cycle paint+composite et finir la rasterization GPU des SVG. C'est
-   * l'équivalent du temps "rideau swup" pour le cold load sur pages SVG-only.
+   * Note : sur les pages SVG-heavy (/offres), `img.decode()` est un no-op
+   * (parsing XML ~5 ms), le tampon est donc inefficace. Le contournement
+   * pour ces pages est d'afficher le préloader Webflow au cold-load (head
+   * global Webflow → skipPreloader true uniquement sur la home + bots).
    */
-  const waitForHeroPaint = async (): Promise<void> => {
-    // Phase 1 — decode (utile pour WebP, no-op pour SVG)
+  const waitForHeroImages = async (): Promise<void> => {
     const heroImgs = document.querySelectorAll<HTMLImageElement>(
       '.section_hero img, .hero_background img, [class*="hero_background-asset"], [class*="cta_background-asset"]'
     );
+    if (heroImgs.length === 0) return;
     // IMPORTANT : on filtre les images NON complètes (`img.complete === false`).
     // Sur Webflow, les images mobile-only (display:none sur desktop) ne sont
     // jamais downloadées → `img.decode()` hang indéfiniment → `runHeavyHeroInit`
     // n'est jamais exécuté → animations cassées. Seules les images COMPLETE
     // peuvent être décodées en safe.
     const completeImgs = Array.from(heroImgs).filter((img) => img.complete && img.naturalWidth > 0);
-    if (completeImgs.length > 0) {
-      // Safety timeout de 1500 ms : même si une image hang, on n'attend pas
-      // indéfiniment et on init quand même les animations.
-      await Promise.race([
-        Promise.all(
-          completeImgs.map((img) =>
-            img.decode === undefined ? Promise.resolve() : img.decode().catch(() => undefined)
-          )
-        ),
-        new Promise((resolve) => setTimeout(resolve, 1500)),
-      ]);
-    }
-    // Phase 2 — laisse le compositor rasteriser les layers SVG.
-    // Double-rAF garantit qu'on a passé un cycle complet de paint+composite ;
-    // setTimeout 300 ms couvre le coût de rasterization GPU différé sur Dia
-    // pour les pages SVG-heavy (/offres : 14 SVG eager au cold-load).
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 300)))
-    );
+    if (completeImgs.length === 0) return;
+    // Safety timeout de 1500 ms : même si une image hang, on n'attend pas
+    // indéfiniment et on init quand même les animations.
+    await Promise.race([
+      Promise.all(
+        completeImgs.map((img) =>
+          img.decode === undefined ? Promise.resolve() : img.decode().catch(() => undefined)
+        )
+      ),
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ]);
   };
 
   const runHeavyHeroInitAfterDecode = async (): Promise<void> => {
-    await waitForHeroPaint();
+    await waitForHeroImages();
     requestAnimationFrame(runHeavyHeroInit);
   };
 
