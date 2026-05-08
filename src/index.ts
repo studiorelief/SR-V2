@@ -388,9 +388,12 @@ const init = () => {
 
   if (isPreloaderVisible()) {
     // 1ère visite : préloader couvre l'écran ~2.5 s pendant que les images
-    // décodent en background. Heavy init après preloaderComplete = images
-    // déjà prêtes ET user va voir l'animation hero (pas cachée par le rideau).
-    window.addEventListener('preloaderComplete', () => void runHeavyHeroInitAfterDecode(), {
+    // décodent en background. À preloaderComplete tout est déjà rasterizé en
+    // GPU, donc on appelle runHeavyHeroInit DIRECTEMENT (pas runHeavyHeroInitAfterDecode).
+    // Le tampon `waitForHeroPaint` (decode + double-rAF + 300 ms) ferait démarrer
+    // l'animation hero TROP TARD après que le préloader a disparu : on verrait
+    // le sun en position initiale, puis le `gsap.set` saccader, puis l'animation.
+    window.addEventListener('preloaderComplete', () => requestAnimationFrame(runHeavyHeroInit), {
       once: true,
     });
   } else if (document.readyState === 'complete') {
