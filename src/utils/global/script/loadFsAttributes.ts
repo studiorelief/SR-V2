@@ -79,9 +79,16 @@ export default function loadScript(
 }
 
 export function initFsAttributesScripts() {
-  // Vérifier si FinsweetAttributes est déjà disponible (le script est chargé et initialisé)
-  if (typeof window !== 'undefined' && (window as WindowWithFinsweet).FinsweetAttributes) {
-    return;
+  // Vérifier si FinsweetAttributes est déjà CHARGÉ (objet API).
+  // ⚠️ Ne PAS bail-out si c'est encore le bootstrap queue (Array) — d'autres
+  // modules (ex: dedupe-related-items) push `[name, cb]` dans la queue avant
+  // que ce script tourne. Sans ce filtre, on prenait `[]` truthy pour "déjà
+  // chargé" et le script attributes.js n'était jamais injecté.
+  if (typeof window !== 'undefined') {
+    const fa = (window as WindowWithFinsweet).FinsweetAttributes;
+    if (fa && !Array.isArray(fa)) {
+      return;
+    }
   }
 
   // Vérifier si le script est déjà chargé dans le DOM pour éviter les doublons
@@ -152,7 +159,9 @@ export function destroyFsAttributesScripts(): void {
 
   const { FinsweetAttributes } = window as WindowWithFinsweet;
 
-  if (FinsweetAttributes) {
+  // Ne pas appeler .destroy() sur le bootstrap queue (Array) — il n'a pas
+  // cette méthode. On agit uniquement sur l'objet API.
+  if (FinsweetAttributes && !Array.isArray(FinsweetAttributes)) {
     try {
       FinsweetAttributes.destroy();
     } catch {
@@ -173,8 +182,9 @@ export function restartFsAttributesModules(retryCount = 0): void {
 
   const { FinsweetAttributes } = window as WindowWithFinsweet;
 
-  // Si FinsweetAttributes n'est pas disponible, réessayer après un court délai (max 3 tentatives)
-  if (!FinsweetAttributes) {
+  // Si FinsweetAttributes n'est pas dispo OU encore en état queue (Array,
+  // script pas encore exécuté), réessayer au prochain macrotask (max 3×).
+  if (!FinsweetAttributes || Array.isArray(FinsweetAttributes)) {
     if (retryCount < 3) {
       setTimeout(() => {
         restartFsAttributesModules(retryCount + 1);
