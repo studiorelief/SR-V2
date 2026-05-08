@@ -270,16 +270,59 @@ export const initPreloader = (): void => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
   if (!component) return;
 
-  // Bots / Lighthouse / PageSpeed → on cache le preloader (pénalise le score sans
-  // servir leur usage). Pour les bots, on laisse #home-hero-video-mascotte charger
-  // normalement puisque le preloader ne lui fournira pas la vidéo.
-  if (isHeadlessAgent() || !shouldShowPreloader()) {
-    // Pas de preloader affiché : on retire sa <video> pour qu'elle n'utilise pas
-    // de bande passante en arrière-plan (preload="auto" + display:none ne stoppe
-    // pas toujours le download selon les browsers).
+  // Bots / Lighthouse / PageSpeed → hide instantané (pénalise le score sinon).
+  if (isHeadlessAgent()) {
     document.getElementById('preloader-video-mascotte')?.remove();
     component.style.display = 'none';
     component.style.visibility = 'hidden';
+    return;
+  }
+
+  // Refresh / 2e visite (sessionStorage `sr-preloader-shown` set) : on ne rejoue
+  // pas le préloader complet (UX), MAIS on évite le hide instantané qui causait
+  // un flash brutal (~0.5 s) sur les refresh des inner pages — où le head global
+  // Webflow force le CSS `[preloader="component"]{display:flex !important}` pour
+  // contourner le degenerate compositor Dia/WebKit. On fade-out doucement après
+  // une durée minimale pour laisser le compositor finir sa rasterization.
+  if (!shouldShowPreloader()) {
+    const path = window.location.pathname;
+    const isHomePage = path === '/' || path === '/index.html' || path === '';
+    // Home : pas de bug Dia (1 hero image eager) → hide rapide pour UX snappy.
+    // Inner pages : tampon ~1 s minimum + fade 0.3 s pour adoucir le flash et
+    // garantir que le compositor a fini de rasterizer avant qu'on lève le rideau.
+    const minHoldMs = isHomePage ? 0 : 1000;
+    const fadeDurationMs = isHomePage ? 0 : 300;
+
+    // Pause la vidéo immédiat : pas besoin qu'elle joue pendant un fade.
+    const video = document.getElementById('preloader-video-mascotte') as HTMLVideoElement | null;
+    if (video) {
+      try {
+        video.pause();
+      } catch {
+        /* noop */
+      }
+    }
+
+    const cleanup = (): void => {
+      component.style.display = 'none';
+      component.style.visibility = 'hidden';
+      document.getElementById('preloader-video-mascotte')?.remove();
+    };
+
+    if (minHoldMs === 0) {
+      cleanup();
+      return;
+    }
+
+    setTimeout(() => {
+      gsap.to(component, {
+        autoAlpha: 0,
+        duration: fadeDurationMs / 1000,
+        ease: 'power2.out',
+        onComplete: cleanup,
+      });
+    }, minHoldMs);
+
     return;
   }
 
