@@ -135,7 +135,7 @@ import {
 import { destroyHomeServices, initHomeServices } from '$utils/page/home/homeServices';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { destroyPortfolioBaseline } from '$utils/page/portfolio/portfolioBaseline';
-import { initGlobalHero } from '$utils/swup/swupGlobalHero';
+import { initGlobalHero, setupGlobalHeroInitialState } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
 import { runNamespaceRun, runNamespaceSetup } from '$utils/swup/swupNamespaces';
 
@@ -262,6 +262,15 @@ const initGlobalFunctions = (): void => {
  * Premier chargement de la page + initialisation Swup
  */
 const init = () => {
+  // Pose l'état initial du hero (sun yPercent:25, lueurs invisibles, h2 chars
+  // invisibles) AVANT que le préloader ne devienne visible. Sans ça, les
+  // éléments hero apparaissent dans leur position naturelle Webflow pendant
+  // le fade out du préloader, puis snap à l'état pré-animation au moment
+  // où l'animation démarre → FOUC visible. Idempotent : `setupAndAnimateGlobalHero`
+  // (appelé après preloaderComplete via runHeavyHeroInit) le rappellera mais
+  // c'est safe.
+  setupGlobalHeroInitialState();
+
   // Preloader - doit être initialisé en premier (uniquement première visite)
   initPreloader();
 
