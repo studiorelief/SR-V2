@@ -1,6 +1,6 @@
 /**
- * Footer Component with GSAP Animations
- * - Infinite horizontal marquee loop for footer items
+ * Footer Component
+ * - Infinite horizontal marquee loop (pure CSS @keyframes)
  * - City badges drop animation on scroll
  */
 
@@ -10,89 +10,52 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Initialize Footer Collection Loop
- * Creates infinite horizontal marquee loop using GSAP
+ * Footer marquee — pure CSS @keyframes, zéro ticker JS, zéro clone.
+ *
+ * Le seul travail JS au runtime :
+ *   1. Ajouter `.is-marquee` pour activer la keyframe CSS.
+ *   2. IntersectionObserver pour `animation-play-state: paused` quand le footer
+ *      est hors viewport — sans ça l'animation compose un layer transform à
+ *      chaque frame même hors écran, ce qui satura le compositor (cause directe
+ *      du lag observé).
+ *
+ * Le footer est hors `#swup` → DOM persiste à travers les transitions, donc
+ * un seul init suffit pour toute la session.
  */
+let footerMarqueeInitialized = false;
+
 const initFooterLoop = (): void => {
-  const containers = document.querySelectorAll<HTMLElement>('.footer_collection-list');
+  if (footerMarqueeInitialized) return;
 
-  containers.forEach((container) => {
-    // Skip if already initialized
-    if (container.hasAttribute('data-footer-loop-initialized')) return;
-    container.setAttribute('data-footer-loop-initialized', 'true');
+  const lists = document.querySelectorAll<HTMLElement>('.footer_collection-list');
+  if (lists.length === 0) return;
 
-    const items = Array.from(container.querySelectorAll<HTMLElement>('.footer_collection-item'));
-    if (items.length === 0) return;
+  lists.forEach((list) => {
+    if (list.classList.contains('is-marquee')) return;
+    if (list.querySelectorAll('.footer_collection-item').length === 0) return;
 
-    // Set container display to flex for proper layout with gap
-    gsap.set(container, {
-      display: 'flex',
-      flexWrap: 'nowrap',
-      gap: 'var(--_layout---spacing--xxhuge)',
-    });
-
-    // Clone items to create seamless loop
-    items.forEach((item) => {
-      const clone = item.cloneNode(true) as HTMLElement;
-      container.appendChild(clone);
-    });
-
-    // Get all items including clones
-    const allItems = Array.from(container.querySelectorAll<HTMLElement>('.footer_collection-item'));
-
-    // Use double RAF to ensure layout is calculated
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        // Get gap value
-        const gap = parseFloat(getComputedStyle(container).gap) || 0;
-
-        // Calculate width of original items + gaps (including gap after last original item)
-        let totalWidth = 0;
-        items.forEach((item) => {
-          totalWidth += item.offsetWidth + gap;
-        });
-
-        // Create seamless loop using onRepeat to reset position
-        const duration = totalWidth / 50; // Speed: higher = slower
-
-        const tl = gsap.timeline({ repeat: -1 });
-
-        tl.fromTo(
-          container,
-          { x: 0 },
-          {
-            x: -totalWidth,
-            duration: duration,
-            ease: 'none',
-          }
-        );
-
-        // Hover pause/resume avec debounce
-        let isHovering = false;
-
-        const handleMouseEnter = (): void => {
-          if (isHovering) return;
-          isHovering = true;
-          gsap.to(tl, { timeScale: 0, duration: 0.3, ease: 'power2.out', overwrite: true });
-        };
-
-        const handleMouseLeave = (): void => {
-          if (!isHovering) return;
-          isHovering = false;
-          gsap.to(tl, { timeScale: 1, duration: 0.3, ease: 'power2.out', overwrite: true });
-        };
-
-        // Listen on container instead of individual items for better performance
-        container.addEventListener('mouseenter', handleMouseEnter);
-        container.addEventListener('mouseleave', handleMouseLeave);
-
-        // Also pause on individual item hover for when mouse moves between items
-        allItems.forEach((item) => {
-          item.addEventListener('mouseenter', handleMouseEnter);
-        });
-      });
-    });
+    list.classList.add('is-marquee');
+    // Démarre en pause — l'IO active dès le 1er callback si visible.
+    list.style.animationPlayState = 'paused';
   });
+
+  const marqueeLists = document.querySelectorAll<HTMLElement>('.footer_collection-list.is-marquee');
+  if (marqueeLists.length === 0) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        (entry.target as HTMLElement).style.animationPlayState = entry.isIntersecting
+          ? 'running'
+          : 'paused';
+      }
+    },
+    { rootMargin: '200px' }
+  );
+
+  marqueeLists.forEach((list) => observer.observe(list));
+
+  footerMarqueeInitialized = true;
 };
 
 /**

@@ -4,11 +4,52 @@
  *============================================================================
  */
 
-/* Ville Drop - City Badges */
+/* Ville Drop - City Badges
+ * Pas de `will-change` static : `initFooterDrop()` (footer.ts) pose
+ * `will-change: transform` dynamiquement via gsap.set au moment de l'animation
+ * et le retire ensuite. Static créerait 4 compositor layers permanents. */
 [trigger='footer-tours'],
 [trigger='footer-paris'],
 [trigger='footer-bordeaux'],
 [trigger='footer-everywhere'] {
   transform-origin: center center;
-  will-change: transform, opacity;
+}
+
+/* Footer marquee — pure CSS @keyframes (zéro JS ticker en runtime).
+ * La classe `.is-marquee` est ajoutée au runtime APRÈS clonage des items
+ * (cf. footer.ts → initFooterLoop). On scope tout sur `.is-marquee` pour
+ * que le rendu Webflow Designer (sans la classe) reste intact.
+ *
+ * `translateX(-50%)` : on a cloné une fois → la liste fait 2× sa largeur
+ * d'origine. À 50% de translation, la 2e copie occupe exactement la position
+ * de la 1ère au point de départ → loop seamless.
+ *
+ * `animation-play-state: paused` est posé inline par l'IntersectionObserver
+ * (initFooterLoop) → ne tourne que quand le footer est visible.
+ * `:hover` override → arrêt au survol. */
+.footer_collection-list.is-marquee {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--_layout---spacing--xxhuge);
+  width: max-content;
+  animation: footer-marquee 60s linear infinite;
+}
+
+.footer_collection-list.is-marquee:hover {
+  animation-play-state: paused !important;
+}
+
+@keyframes footer-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer_collection-list.is-marquee {
+    animation: none;
+  }
 }

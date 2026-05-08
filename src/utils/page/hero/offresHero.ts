@@ -5,6 +5,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 let offresParallaxTrigger: ScrollTrigger | null = null;
 let offresParallaxBigTrigger: ScrollTrigger | null = null;
+let marmotteObserver: IntersectionObserver | null = null;
 
 /**
  * Parallax effect on offres page elements
@@ -117,14 +118,39 @@ export const initOffresMarmotte = (): void => {
 
   marmotteActive = true;
 
+  // L'IO démarre le cycle quand la marmotte entre dans le viewport (callback sync
+  // après observe), et kill le tween en cours quand elle sort. Sans ça, le cycle
+  // gsap.to → onComplete → gsap.to chain tourne en permanence même après scroll
+  // hors hero, gaspillant frame budget compositor.
+  marmotteObserver = new IntersectionObserver(
+    (entries) => {
+      if (!marmotteActive) return;
+      for (const entry of entries) {
+        const el = entry.target as HTMLElement;
+        gsap.killTweensOf(el);
+        if (entry.isIntersecting) {
+          runMarmotteCycle(el);
+        } else {
+          gsap.set(el, { yPercent: 100 });
+        }
+      }
+    },
+    { rootMargin: '100px' }
+  );
+
   marmotteElements.forEach((el) => {
     gsap.set(el, { yPercent: 100 });
-    runMarmotteCycle(el);
+    marmotteObserver?.observe(el);
   });
 };
 
 export const destroyOffresMarmotte = (): void => {
   marmotteActive = false;
+
+  if (marmotteObserver) {
+    marmotteObserver.disconnect();
+    marmotteObserver = null;
+  }
 
   const marmotteElements = document.querySelectorAll<HTMLElement>('[offres-trigger="marmotte"]');
   marmotteElements.forEach((el) => {

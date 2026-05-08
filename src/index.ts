@@ -125,6 +125,7 @@ import {
   initSetupCmsPortfolioHero,
 } from '$utils/page/hero/cmsPortfolioHero';
 import { destroyHomeHero, initHomeHero } from '$utils/page/hero/homeHero';
+import { destroyOffresMarmotte, destroyOffresParallax } from '$utils/page/hero/offresHero';
 import { destroyPortfolioSecondPlan } from '$utils/page/hero/portfolioHero';
 import {
   destroyHomeApprocheFalaiseParallax,
@@ -176,7 +177,6 @@ const initGlobalFunctions = (): void => {
   initFsLibrairiesScripts();
 
   // Layout / hero / above-the-fold
-  initFooter();
   initLottieFiles();
   initHomeHero();
   initSunHeroParallax();
@@ -204,6 +204,12 @@ const initGlobalFunctions = (): void => {
    * ──────────────────────────────────────────────────────────────────────
    */
   whenIdle(() => {
+    // Footer below-the-fold : init en idle pour ne pas concurrencer la
+    // rasterization GPU des hero/CTA images au cold-load (city drop ScrollTrigger
+    // + marquee CSS animation seraient sinon créés pendant que Dia/WebKit
+    // rasterize encore les SVG hero, saturant le compositor).
+    initFooter();
+
     // Animations & comportements globaux non visibles immédiatement
     initScrollTop();
     initTextPath();
@@ -295,9 +301,10 @@ const init = () => {
    * HEAVY HERO INIT — déféré jusqu'à window.load (cold load) ou
    * preloaderComplete (1ère visite avec préloader)
    *
-   * Sur cold load (refresh direct sur /approche, /offres, …), le browser doit
-   * décoder en parallèle ~20 MB de WebP hero (animals 2880×900, lueurs 1000×1916,
-   * falaises, mascotte, …). Si on initialise en MÊME temps :
+   * Sur cold load (refresh direct sur /approche, /offres, /portfolio, /studio, …),
+   * le browser doit décoder en parallèle ~20-100 MB de WebP : hero (animals 2880×900,
+   * lueurs 1000×1916, falaises, mascotte) + 8× cta_background-asset 2880×520 (~46 MB
+   * sur toutes les pages avec section CTA). Si on initialise en MÊME temps :
    *   - GSAP timelines sur le hero (setupAndAnimateGlobalHero, SplitText, etc.)
    *   - Scroll triggers (initApprocheHeroScroll, parallax, process, lamps)
    *   - will-change: transform sur 28+ éléments → autant de compositor layers
@@ -321,44 +328,61 @@ const init = () => {
   };
 
   /**
-   * Force le décodage GPU complet des images hero AVANT de poser will-change.
+   * Force le décodage GPU + la rasterization compositor des images hero +
+   * cta_background AVANT de poser will-change.
    *
    * `window.load` fire quand les images sont DOWNLOADED (img.complete === true),
    * mais sur WebKit/DIA, le décodage + upload GPU peut être encore en cours
-   * (les hero pèsent ~26 MB en RGBA : lueurs 1440×2760 + animals 2880×900).
+   * (les hero pèsent ~26 MB en RGBA, et 8× cta_background-asset ajoutent ~46 MB
+   * sur les pages avec section CTA — /offres, /portfolio, /studio, etc.).
    * Si on init GSAP juste après load, on alloue 28+ compositor layers PENDANT
    * que WebKit décode encore → main thread sature, 45 FPS au lieu de 120.
    *
-   * `img.decode()` retourne une Promise qui resolve UNIQUEMENT quand l'image
-   * est full décodée et prête à compositer. C'est l'équivalent du temps
-   * "rideau swup" pour le cold load.
+   * Phase 1 — `img.decode()` : retourne une Promise qui resolve quand l'image
+   * est full décodée et prête à compositer. EFFICACE pour WebP/PNG/JPG (le
+   * décodage prend 200-500 ms sur de gros assets), mais NO-OP pour les SVG
+   * (le decode = parsing XML, ~5 ms) → la Promise resolve avant que le SVG
+   * soit rasterizé en GPU. /offres n'a QUE des SVG dans son hero (6 SVG +
+   * 8 CTA SVG) → tampon decode nul → bug Dia.
+   *
+   * Phase 2 — double-rAF + 300 ms : laisse le compositor faire au moins un
+   * cycle paint+composite et finir la rasterization GPU des SVG. C'est
+   * l'équivalent du temps "rideau swup" pour le cold load sur pages SVG-only.
    */
-  const waitForHeroImages = async (): Promise<void> => {
+  const waitForHeroPaint = async (): Promise<void> => {
+    // Phase 1 — decode (utile pour WebP, no-op pour SVG)
     const heroImgs = document.querySelectorAll<HTMLImageElement>(
-      '.section_hero img, .hero_background img, [class*="hero_background-asset"]'
+      '.section_hero img, .hero_background img, [class*="hero_background-asset"], [class*="cta_background-asset"]'
     );
-    if (heroImgs.length === 0) return;
     // IMPORTANT : on filtre les images NON complètes (`img.complete === false`).
     // Sur Webflow, les images mobile-only (display:none sur desktop) ne sont
     // jamais downloadées → `img.decode()` hang indéfiniment → `runHeavyHeroInit`
     // n'est jamais exécuté → animations cassées. Seules les images COMPLETE
     // peuvent être décodées en safe.
     const completeImgs = Array.from(heroImgs).filter((img) => img.complete && img.naturalWidth > 0);
-    if (completeImgs.length === 0) return;
-    // Safety timeout de 1500 ms : même si une image hang, on n'attend pas
-    // indéfiniment et on init quand même les animations.
-    await Promise.race([
-      Promise.all(
-        completeImgs.map((img) =>
-          img.decode === undefined ? Promise.resolve() : img.decode().catch(() => undefined)
-        )
-      ),
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-    ]);
+    if (completeImgs.length > 0) {
+      // Safety timeout de 1500 ms : même si une image hang, on n'attend pas
+      // indéfiniment et on init quand même les animations.
+      await Promise.race([
+        Promise.all(
+          completeImgs.map((img) =>
+            img.decode === undefined ? Promise.resolve() : img.decode().catch(() => undefined)
+          )
+        ),
+        new Promise((resolve) => setTimeout(resolve, 1500)),
+      ]);
+    }
+    // Phase 2 — laisse le compositor rasteriser les layers SVG.
+    // Double-rAF garantit qu'on a passé un cycle complet de paint+composite ;
+    // setTimeout 300 ms couvre le coût de rasterization GPU différé sur Dia
+    // pour les pages SVG-heavy (/offres : 14 SVG eager au cold-load).
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 300)))
+    );
   };
 
   const runHeavyHeroInitAfterDecode = async (): Promise<void> => {
-    await waitForHeroImages();
+    await waitForHeroPaint();
     requestAnimationFrame(runHeavyHeroInit);
   };
 
@@ -447,6 +471,8 @@ const init = () => {
     destroyPortfolioBaseline();
     destroyApprocheParallax();
     destroyApprocheParallaxInvert();
+    destroyOffresParallax();
+    destroyOffresMarmotte();
     destroyApprocheHeroScroll();
     destroyApprocheGrotteScroll();
     destroyApprocheProcessParallax();
