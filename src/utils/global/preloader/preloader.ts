@@ -55,15 +55,23 @@ const shouldShowPreloader = (): boolean => !sessionStorage.getItem(PRELOADER_SHO
  * jusqu'à `preloaderComplete` pour qu'il soit visible, plutôt que joué derrière
  * le rideau.
  *
- * Conditions miroirs de l'early-return de `initPreloader()` :
- *   - Le component DOM existe
- *   - Pas un bot / Lighthouse / etc.
- *   - sessionStorage `sr-preloader-shown` pas encore marqué (1ère visite)
+ * Cas où on retourne `true` :
+ *   1. 1ère visite (sessionStorage `sr-preloader-shown` pas encore marqué)
+ *      → préloader complet 2.5 s
+ *   2. Tout refresh (sessionStorage set) : préloader fade-out après ~1 s.
+ *      → masque les `gsap.set` initiaux du hero/SplitText/CTA pour qu'ils
+ *        soient posés derrière le rideau (pas de bump visuel "élément en
+ *        position naturelle → set → animation"). Aussi : sur les inner pages,
+ *        contourne le degenerate compositor Dia/WebKit.
+ *
+ * Cas où on retourne `false` :
+ *   - Pas de DOM préloader, bot/Lighthouse.
  */
 export const isPreloaderVisible = (): boolean => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
   if (!component) return false;
-  return !isHeadlessAgent() && shouldShowPreloader();
+  if (isHeadlessAgent()) return false;
+  return true;
 };
 
 const markPreloaderAsShown = (): void => {
@@ -192,6 +200,15 @@ const animatePreloaderOut = (): void => {
   );
   const reuseVideoForHero = video !== null && heroMascotteContainer !== null;
 
+  // Fire `preloaderComplete` IMMÉDIATEMENT, AVANT que le rideau ne commence
+  // à fade-out. Sans ça, le hero devient progressivement visible PENDANT le
+  // fade dans sa position naturelle (CSS Webflow), puis quand l'event fire
+  // à la fin, GSAP `set` le saute en position de départ → l'utilisateur voit
+  // la saccade : "soleil/lueurs en place → disparition (set) → réapparition
+  // animée". En firant maintenant, l'init JS pose le state initial pendant
+  // que le rideau couvre encore l'écran, et l'animation joue PENDANT le fade.
+  window.dispatchEvent(new CustomEvent('preloaderComplete'));
+
   const tl = gsap.timeline({
     onComplete: () => {
       if (reuseVideoForHero && video) {
@@ -225,7 +242,6 @@ const animatePreloaderOut = (): void => {
       component.style.visibility = 'hidden';
       markPreloaderAsShown();
       document.body.style.overflow = '';
-      window.dispatchEvent(new CustomEvent('preloaderComplete'));
     },
   });
 
@@ -270,16 +286,85 @@ export const initPreloader = (): void => {
   const component = document.querySelector<HTMLElement>('[preloader="component"]');
   if (!component) return;
 
-  // Bots / Lighthouse / PageSpeed → on cache le preloader (pénalise le score sans
-  // servir leur usage). Pour les bots, on laisse #home-hero-video-mascotte charger
-  // normalement puisque le preloader ne lui fournira pas la vidéo.
-  if (isHeadlessAgent() || !shouldShowPreloader()) {
-    // Pas de preloader affiché : on retire sa <video> pour qu'elle n'utilise pas
-    // de bande passante en arrière-plan (preload="auto" + display:none ne stoppe
-    // pas toujours le download selon les browsers).
+  // Bots / Lighthouse / PageSpeed → hide instantané (pénalise le score sinon).
+  if (isHeadlessAgent()) {
     document.getElementById('preloader-video-mascotte')?.remove();
     component.style.display = 'none';
     component.style.visibility = 'hidden';
+    return;
+  }
+
+  // Refresh / 2e visite (sessionStorage `sr-preloader-shown` set) : on ne rejoue
+  // pas le préloader complet (UX), MAIS on garde un mini-rideau de ~1 s pour :
+  //   - masquer les `gsap.set` initiaux du hero/SplitText/CTA → pas de bump
+  //     visuel "élément en position naturelle → set → animation"
+  //   - sur les inner pages : contourner le degenerate compositor Dia/WebKit
+  //     (le head global Webflow force le CSS display:flex pour laisser le
+  //     temps au compositor de raster les SVG en background)
+  //   - éviter le flash brutal du hide instantané (~0.5 s)
+  // Cohérent home + inner page : 1 s minHold + 0.3 s fade-out partout.
+  if (!shouldShowPreloader()) {
+    const minHoldMs = 1000;
+    const fadeDurationMs = 300;
+
+    const cleanup = (): void => {
+      component.style.display = 'none';
+      component.style.visibility = 'hidden';
+      document.getElementById('preloader-video-mascotte')?.remove();
+    };
+
+    // Bloque le scroll pendant le rideau (sinon l'utilisateur peut scroller
+    // PENDANT que le compositor n'est pas warm → re-déclenche le bug).
+    document.body.style.overflow = 'hidden';
+
+    // Initialise visiblement le préloader : count à 0%, line à 0%.
+    updateLoadingDisplay(0);
+    const lineElement = document.querySelector<HTMLElement>('[preloader="loading-line"]');
+    if (lineElement) {
+      gsap.set(lineElement, { width: '0%' });
+    }
+
+    // Lance la vidéo (cohérence visuelle avec la 1ère visite).
+    initPreloaderVideo();
+
+    // Anime le count 0 → 100 % pendant le minHold (au lieu de rester figé).
+    const counter = { value: 0 };
+    gsap.to(counter, {
+      value: 100,
+      duration: minHoldMs / 1000,
+      ease: 'power2.out',
+      onUpdate: () => updateLoadingDisplay(counter.value),
+    });
+
+    // Après minHold, fire `preloaderComplete` AVANT le fade-out pour que
+    // l'init JS pose le state initial GSAP (set des hero) PENDANT que le
+    // rideau couvre encore l'écran. Sinon on voit : hero en position
+    // naturelle (visible pendant les 300 ms de fade) → set → animation
+    // = saccade ("soleil en place → disparition → réapparition").
+    //
+    // Wait 2 rAF entre l'event et le fade-out : laisse 1 frame au listener
+    // (`runHeavyHeroInit` dans index.ts) pour exécuter `runNamespaceInit`
+    // qui pose les `gsap.set` initiaux, puis 1 frame de paint stabilisé.
+    // Le fade-out joue ensuite EN PARALLÈLE des animations hero — l'utilisateur
+    // voit le rideau lever sur une scène déjà en train d'animer.
+    gsap.delayedCall(minHoldMs / 1000, () => {
+      window.dispatchEvent(new CustomEvent('preloaderComplete'));
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          gsap.to(component, {
+            autoAlpha: 0,
+            duration: fadeDurationMs / 1000,
+            ease: 'power2.out',
+            onComplete: () => {
+              cleanup();
+              document.body.style.overflow = '';
+            },
+          });
+        });
+      });
+    });
+
     return;
   }
 
