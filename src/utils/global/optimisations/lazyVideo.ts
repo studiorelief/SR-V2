@@ -190,6 +190,8 @@ export const initLazyVideos = (): void => {
     if (states.has(video)) continue;
 
     const attr = video.getAttribute('data-lazy-video');
+    // "false" = opt-out explicite (ex: vidéos services home pilotées par homeServices.ts)
+    if (attr === 'false') continue;
     const wantsHover = attr === 'hover';
     // Sur mobile (pas de hover), on bascule les vidéos hover en mode viewport.
     const mode: 'viewport' | 'hover' = wantsHover && !touch ? 'hover' : 'viewport';

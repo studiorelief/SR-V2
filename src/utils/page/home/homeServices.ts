@@ -3,11 +3,76 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
+/**
+ * Ratio minimal de la vidéo réellement visible (viewport + recouvrement
+ * par les cards suivantes du stack) pour lancer la lecture.
+ */
+const VIDEO_VISIBLE_THRESHOLD = 0.25;
+
+const initServicesVideos = (section: HTMLElement, cards: NodeListOf<HTMLElement>): void => {
+  const videos = Array.from(cards).map((card) => card.querySelector<HTMLVideoElement>('video'));
+  if (!videos.some(Boolean)) return;
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const pauseAll = (): void => {
+    videos.forEach((video) => {
+      if (video && !video.paused) video.pause();
+    });
+  };
+
+  const updateVideos = (): void => {
+    videos.forEach((video, index) => {
+      if (!video) return;
+
+      const rect = video.getBoundingClientRect();
+      if (rect.height === 0) return;
+
+      // Bord bas réellement visible : limité par le viewport ET par la card
+      // suivante qui vient recouvrir celle-ci pendant le stack.
+      let visibleBottom = Math.min(rect.bottom, window.innerHeight);
+      for (let next = index + 1; next < cards.length; next++) {
+        visibleBottom = Math.min(visibleBottom, cards[next].getBoundingClientRect().top);
+      }
+      const visibleTop = Math.max(rect.top, 0);
+      const visibleRatio = Math.max(0, visibleBottom - visibleTop) / rect.height;
+
+      if (visibleRatio >= VIDEO_VISIBLE_THRESHOLD && !prefersReducedMotion) {
+        if (video.paused) {
+          video.play().catch(() => {
+            /* autoplay bloqué — silencieux */
+          });
+        }
+      } else if (!video.paused) {
+        video.pause();
+      }
+    });
+  };
+
+  ScrollTrigger.create({
+    id: 'home-services-videos',
+    trigger: section,
+    start: 'top bottom',
+    end: 'bottom top',
+    onUpdate: updateVideos,
+    onRefresh: updateVideos,
+    onToggle: (self) => {
+      if (self.isActive) updateVideos();
+      else pauseAll();
+    },
+  });
+
+  updateVideos();
+};
+
 export const initHomeServices = (): void => {
   const section = document.querySelector<HTMLElement>('[home-services="cards-wrapper"]');
   const cards = document.querySelectorAll<HTMLElement>('[home-services="cards"]');
 
   if (!section || cards.length === 0) return;
+
+  ScrollTrigger.getById('home-services-videos')?.kill();
+  initServicesVideos(section, cards);
 
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const topOffsets = [4 * rem, 10 * rem, 16.5 * rem];
@@ -44,7 +109,7 @@ export const initHomeServices = (): void => {
 
 export const destroyHomeServices = (): void => {
   ScrollTrigger.getAll().forEach((st) => {
-    if (typeof st.vars.id === 'string' && st.vars.id.startsWith('home-services-card')) {
+    if (typeof st.vars.id === 'string' && st.vars.id.startsWith('home-services-')) {
       st.kill();
     }
   });
