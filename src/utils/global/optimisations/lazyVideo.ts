@@ -190,8 +190,6 @@ export const initLazyVideos = (): void => {
     if (states.has(video)) continue;
 
     const attr = video.getAttribute('data-lazy-video');
-    // "false" = opt-out explicite (ex: vidéos services home pilotées par homeServices.ts)
-    if (attr === 'false') continue;
     const wantsHover = attr === 'hover';
     // Sur mobile (pas de hover), on bascule les vidéos hover en mode viewport.
     const mode: 'viewport' | 'hover' = wantsHover && !touch ? 'hover' : 'viewport';
@@ -225,6 +223,27 @@ export const initLazyVideos = (): void => {
       getObserver().observe(video);
     }
   }
+};
+
+/**
+ * Retire une vidéo du contrôle lazy (observer + listeners + état) pour qu'un
+ * autre module prenne la main sur play/pause (ex: vidéos services home
+ * pilotées par homeServices.ts). Restaure le src si encore strippé.
+ */
+export const releaseLazyVideo = (video: HTMLVideoElement): void => {
+  const state = states.get(video);
+  if (!state) return;
+
+  if (!state.loaded) {
+    restoreSrc(video);
+    state.loaded = true;
+  }
+  if (state.hoverTarget && state.handleEnter && state.handleLeave) {
+    state.hoverTarget.removeEventListener('mouseenter', state.handleEnter);
+    state.hoverTarget.removeEventListener('mouseleave', state.handleLeave);
+  }
+  observer?.unobserve(video);
+  states.delete(video);
 };
 
 /**

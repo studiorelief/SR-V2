@@ -1,6 +1,8 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+import { releaseLazyVideo } from '$utils/global/optimisations/lazyVideo';
+
 gsap.registerPlugin(ScrollTrigger);
 
 /**
@@ -12,6 +14,12 @@ const VIDEO_VISIBLE_THRESHOLD = 0.25;
 const initServicesVideos = (section: HTMLElement, cards: NodeListOf<HTMLElement>): void => {
   const videos = Array.from(cards).map((card) => card.querySelector<HTMLVideoElement>('video'));
   if (!videos.some(Boolean)) return;
+
+  // Reprend la main sur ces vidéos : lazyVideo les gère par défaut (viewport
+  // play/pause) mais ne sait pas qu'une card stackée n'est plus visible.
+  videos.forEach((video) => {
+    if (video) releaseLazyVideo(video);
+  });
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

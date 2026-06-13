@@ -134,6 +134,8 @@ import {
 import { destroyHomeServices, initHomeServices } from '$utils/page/home/homeServices';
 import { destroyMonkeyFall, initMonkeyFall } from '$utils/page/home/monkeyFall';
 import { destroyPortfolioBaseline } from '$utils/page/portfolio/portfolioBaseline';
+import { initCoreTeamSlider } from '$utils/page/studio/coreTeamSlider';
+import { destroySpiritParallax } from '$utils/page/studio/spiritParallax';
 import { initGlobalHero } from '$utils/swup/swupGlobalHero';
 import { initSwup } from '$utils/swup/swupInit';
 import {
@@ -236,6 +238,7 @@ const initGlobalFunctions = (): void => {
     initCategoriesSlider();
     initCmsCardsSlider();
     initCmsProjetsSlider();
+    initCoreTeamSlider();
     initReviewSlider();
 
     // ScrollTriggers + interactions deferrables
@@ -448,6 +451,7 @@ const init = () => {
     destroyLazyVideos();
     destroyFsAttributesScripts();
     destroyAccordionScrollTrigger();
+    destroySpiritParallax();
     destroyCardVideoPlayer();
     destroyCardHoverIcon();
     destroyHomeHero();
