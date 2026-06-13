@@ -33,6 +33,7 @@ import {
   destroyPortfolioBaseline,
   initPortfolioBaseline,
 } from '$utils/page/portfolio/portfolioBaseline';
+import { initSpiritParallax } from '$utils/page/studio/spiritParallax';
 import { registerNamespace } from '$utils/swup/swupNamespaces';
 
 /*
@@ -112,6 +113,15 @@ registerNamespace('home', {
   init: () => {
     initHomeApprocheFalaiseParallax();
     initHomeApprocheLueurMouseParallax();
+  },
+});
+
+registerNamespace('studio', {
+  animate: () => {
+    initSpiritParallax();
+  },
+  init: () => {
+    initSpiritParallax();
   },
 });
 

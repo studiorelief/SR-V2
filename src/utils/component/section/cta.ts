@@ -338,7 +338,7 @@ const animateCtaEagle = (
   element: HTMLElement,
   position: string | number
 ): void => {
-  gsap.set(element, { objectPosition: '0% 50%', yPercent: -100, xPercent: 0 });
+  gsap.set(element, { objectPosition: '0% 50%', yPercent: -100, xPercent: -80 });
 
   tl.to(
     element,
